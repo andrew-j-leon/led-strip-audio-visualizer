@@ -1,0 +1,5 @@
+numpy==1.21.4
+PyAudio==0.2.11
+pydub==0.25.1
+pynput==1.7.6
+PySimpleGUI==4.57.0

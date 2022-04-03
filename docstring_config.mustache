@@ -1,0 +1,28 @@
+
+    {{#parametersExist}}
+    Args:
+    {{#args}}
+        `{{var}} ({{typePlaceholder}})`: {{descriptionPlaceholder}}
+    {{/args}}
+    {{#kwargs}}
+        `{{var}} ({{typePlaceholder}}, optional)`: {{descriptionPlaceholder}}
+    {{/kwargs}}
+    {{/parametersExist}}
+    {{#returnsExist}}
+    Returns:
+    {{#returns}}
+        `{{typePlaceholder}}`: {{descriptionPlaceholder}}
+    {{/returns}}
+    {{/returnsExist}}
+    {{#yieldsExist}}
+    Yields:
+    {{#yields}}
+        `{{typePlaceholder}}`: {{descriptionPlaceholder}}
+    {{/yields}}
+    {{/yieldsExist}}
+    {{#exceptionsExist}}
+    Raises:
+    {{#exceptions}}
+        `{{type}}`: {{descriptionPlaceholder}}
+    {{/exceptions}}
+    {{/exceptionsExist}}

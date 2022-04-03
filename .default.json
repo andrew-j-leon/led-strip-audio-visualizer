@@ -1,0 +1,30 @@
+{
+    "general_settings": {
+        "led_index_range": {
+            "start_index": 60,
+            "end_index":600
+        },
+        "milliseconds_per_audio_chunk": 50
+    },
+
+    "serial_settings": {
+        "port": "COM3",
+        "baudrate": 115200,
+        "brightness": 15
+    },
+
+    "frequency_visualizer_settings": {
+        "frequency_range": {
+            "start_frequency": 0,
+            "end_frequency": 2200
+        },
+        "amplitude_to_rgb_filepath" : null,
+        "should_reverse_indicies": false,
+
+        "number_of_groups": 60
+    },
+
+    "amplitude_visualizer_settings": {
+
+    }
+}

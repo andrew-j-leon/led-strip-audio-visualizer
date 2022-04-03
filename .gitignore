@@ -1,0 +1,7 @@
+experiments/
+*.wav
+__pycache__/
+arduino_secrets.h
+tones/
+.vscode/
+*.odg
