@@ -5,15 +5,16 @@ import python.gui.audio_visualizer.audio_controller as audio_controller
 import python.gui.audio_visualizer.audio_in.audio_in_controller as audio_in_controller
 import python.gui.audio_visualizer.audio_out.audio_out_controller as audio_out_controller
 
+
 class MainController(controller.Controller):
     def __init__(self):
         controller.Controller.__init__(self, main_view.MainView())
-        self.__audio_controller:audio_controller.AudioController = None
+        self.__audio_controller: audio_controller.AudioController = None
 
     def start(self):
         self._view.run_concurrent(self.__on_gui_event)
 
-    def __on_gui_event(self, event:str):
+    def __on_gui_event(self, event: str):
         if (event == main_view.Event.START_AUDIO_IN_PLAYER):
             self._view.set_audio_player_is_running_state()
             self.__audio_controller = audio_in_controller.AudioInController()

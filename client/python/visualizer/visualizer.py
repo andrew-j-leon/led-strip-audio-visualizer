@@ -1,7 +1,8 @@
 import python.util.util as util
 
+
 class Visualizer:
-    def update_led_strips(self, audio_data:bytes, *args, **kwargs):
+    def update_led_strips(self, audio_data: bytes, *args, **kwargs):
         """
             Updates the led_strip to a new state based on audio_data. If
             audio_data is empty, all leds will turn off.
@@ -24,5 +25,8 @@ class Visualizer:
     def _do_stuff_on_del(self):
         pass
 
-    def _turn_on_leds(self, audio_data:bytes, *args, **kwargs):
-        pass
+    def _turn_on_leds(self, audio_data: bytes, *args, **kwargs):
+        try:
+            self._do_stuff_on_del("hello", "this is some more text that I would like to keep", "don't auto update me")
+        except:
+            pass

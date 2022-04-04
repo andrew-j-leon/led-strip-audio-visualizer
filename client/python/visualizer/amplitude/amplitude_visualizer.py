@@ -7,7 +7,6 @@
 # from python.visualizer.amplitude.util import ColorShifter
 
 
-
 # class AmplitudeVisualizer(Visualizer):
 #     """
 #     Uses an LED_Strip as an audio amplitude visualizer. Lights radiate out from the

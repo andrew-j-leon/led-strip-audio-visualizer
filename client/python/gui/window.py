@@ -5,7 +5,7 @@ class Window(sg.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def read(self, *args, **kwargs)->str:
+    def read(self, *args, **kwargs) -> str:
         """
         THE biggest deal method in the Window class! This is how you get all of your data from your Window.
             Pass in a timeout (in milliseconds) to wait for a maximum of timeout milliseconds. Will return timeout_key

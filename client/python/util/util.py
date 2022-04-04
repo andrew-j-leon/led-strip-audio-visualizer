@@ -6,14 +6,16 @@ import re
 
 import numpy
 
-def create_file(file_path:str):
+
+def create_file(file_path: str):
     """
         Creates an empty file file_path if it does not already exist.
     """
     if (not os.path.isfile(file_path)):
         open(file_path, "x").close()
 
-def string_is_int(string:str)->bool:
+
+def string_is_int(string: str) -> bool:
     """
         Returns:
             `bool`: True if int(string) is valid; False if otherwise.
@@ -24,7 +26,8 @@ def string_is_int(string:str)->bool:
     except ValueError:
         return False
 
-def get_non_builtin_items(type:Type)->Dict[str,Any]:
+
+def get_non_builtin_items(type: Type) -> Dict[str, Any]:
     """
         Args:
             `type (Type)`: The class whose __dict__.items() are searched through.
@@ -33,23 +36,26 @@ def get_non_builtin_items(type:Type)->Dict[str,Any]:
             match the regular expression "^__.*__$".
     """
     result = dict()
-    for key,value in type.__dict__.items():
+    for key, value in type.__dict__.items():
         if (not bool(re.match("^__.*__$", key) and not callable(value))):
-            result.update({key:value})
+            result.update({key: value})
     return result
 
-def foreach(iterable:Iterable, func:Callable):
+
+def foreach(iterable: Iterable, func: Callable):
     for item in iterable:
         func(item)
 
-def convert_milliseconds_to_hours_minutes_and_seconds(milliseconds:int)->str:
-    seconds=(milliseconds//1000)%60
-    minutes=(milliseconds//(1000*60))%60
-    hours=(milliseconds//(1000*60*60))%24
+
+def convert_milliseconds_to_hours_minutes_and_seconds(milliseconds: int) -> str:
+    seconds = (milliseconds // 1000) % 60
+    minutes = (milliseconds // (1000 * 60)) % 60
+    hours = (milliseconds // (1000 * 60 * 60)) % 24
 
     return "{:02d} : {:02d} : {:02d}".format(hours, minutes, seconds)
 
-def directory_contains_at_least_one_file_with_extension(directory_path:str, file_extensions:List[str])->bool:
+
+def directory_contains_at_least_one_file_with_extension(directory_path: str, file_extensions: List[str]) -> bool:
     """
         Args:
             `file_extensions (List[str])`: The extensions to consider. Can include or exclude the period '.' prefix.
@@ -66,7 +72,8 @@ def directory_contains_at_least_one_file_with_extension(directory_path:str, file
     except (FileNotFoundError, PermissionError):
         return False
 
-def filename_ends_with_extension(file_name:str, file_extensions:List[str])->bool:
+
+def filename_ends_with_extension(file_name: str, file_extensions: List[str]) -> bool:
     """
         Args:
             `file_extensions (List[str])`: The extensions to consider. Can include or exclude the period '.' prefix.
@@ -74,20 +81,23 @@ def filename_ends_with_extension(file_name:str, file_extensions:List[str])->bool
         Returns:
             `bool`: True if file_name ends with an extension in file_extensions. False if otherwise.
     """
-    extensions = list(map(lambda file_extension : __add_prefix_to_string_if_said_prefix_does_not_exist(file_extension, "."), file_extensions))
+    extensions = list(map(lambda file_extension: __add_prefix_to_string_if_said_prefix_does_not_exist(file_extension, "."), file_extensions))
 
     for extension in extensions:
         if file_name.endswith(extension):
             return True
     return False
 
-def __add_prefix_to_string_if_said_prefix_does_not_exist(string:str, prefix:str)->str:
-    return string if string.startswith(prefix) else prefix+string
 
-def have_read_permission(file_or_directory_path:str)->bool:
+def __add_prefix_to_string_if_said_prefix_does_not_exist(string: str, prefix: str) -> str:
+    return string if string.startswith(prefix) else prefix + string
+
+
+def have_read_permission(file_or_directory_path: str) -> bool:
     return os.access(file_or_directory_path, os.R_OK)
 
-def hsl_to_rgb(hue:int, saturation:int, lightness:int)->Tuple[int,int,int]:
+
+def hsl_to_rgb(hue: int, saturation: int, lightness: int) -> Tuple[int, int, int]:
     """
         Args:
             `hue (int)`: A value between [0 degrees, 360 degrees].
@@ -104,9 +114,10 @@ def hsl_to_rgb(hue:int, saturation:int, lightness:int)->Tuple[int,int,int]:
 
     # use colorsys.hsl_to_rgb to convert HSL to RGB, then use map(...) to convert RGB decimal values
     # to RGB integer values
-    return tuple(map(lambda x : int(x * 255), colorsys.hls_to_rgb(hue, lightness, saturation)))
+    return tuple(map(lambda x: int(x * 255), colorsys.hls_to_rgb(hue, lightness, saturation)))
 
-def rgb_to_hex(red:int, green:int, blue:int)->str:
+
+def rgb_to_hex(red: int, green: int, blue: int) -> str:
     """
         Args:
             `red (int)`: The red value within the range [0,255]
@@ -119,7 +130,8 @@ def rgb_to_hex(red:int, green:int, blue:int)->str:
     """
     return "#{:02x}{:02x}{:02x}".format(red, green, blue)
 
-def hsl_to_hex(hue:int, saturation:int, lightness:int)->str:
+
+def hsl_to_hex(hue: int, saturation: int, lightness: int) -> str:
     """
         Args:
             `hue (int)`: A value between [0 degrees, 360 degrees].
@@ -132,12 +144,13 @@ def hsl_to_hex(hue:int, saturation:int, lightness:int)->str:
     """
     return rgb_to_hex(*hsl_to_rgb(hue, saturation, lightness))
 
-def get_average_amplitude(audio_data:bytes)->float:
+
+def get_average_amplitude(audio_data: bytes) -> float:
     """
         Returns:
             `float`: The average amplitude of audio_data in decibels (dB)
     """
-    audio_data_in_decimal:List[int] = numpy.frombuffer(audio_data, dtype=numpy.int16) # convert bytes to List[int]
+    audio_data_in_decimal: List[int] = numpy.frombuffer(audio_data, dtype=numpy.int16)  # convert bytes to List[int]
 
     # Convert wav_data_int to an average amplitude (in decibels)
     # *RMS = root mean square (a statistical term which means the average of a set of values)
@@ -147,10 +160,12 @@ def get_average_amplitude(audio_data:bytes)->float:
         return 0
     return 20 * math.log10(linear_RMS)
 
-def is_empty(obj)->bool:
+
+def is_empty(obj) -> bool:
     return len(obj) == 0
 
-def get_nested_value(d:dict, path:str)->Any:
+
+def get_nested_value(d: dict, path: str) -> Any:
     """
         Args:
             `path (str)`: A forward slash deliminated path to the value you want to retrieve from
@@ -158,7 +173,7 @@ def get_nested_value(d:dict, path:str)->Any:
 
                 Example : If d = {"A":{"B": 10}}, to retrieve the value 10 you would set path = "A/B"
     """
-    keys:List[str] = path.split("/")
+    keys: List[str] = path.split("/")
 
     value = d[keys[0]]
 
@@ -167,7 +182,8 @@ def get_nested_value(d:dict, path:str)->Any:
 
     return value
 
-def get_absolute_path_from_relative_path(parent_path:str, relative_path:str)->str:
+
+def get_absolute_path_from_relative_path(parent_path: str, relative_path: str) -> str:
     """
         Returns:
             `str`: The normalized path formed by parent_path + relative_path.

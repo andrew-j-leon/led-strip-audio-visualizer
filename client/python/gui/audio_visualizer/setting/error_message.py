@@ -3,13 +3,14 @@ from typing import List
 import python.util.util as util
 import serial
 
-def get_amplitude_to_rgb_error_message(amplitude_to_rgb:str)->str:
-    error_message:str = ""
+
+def get_amplitude_to_rgb_error_message(amplitude_to_rgb: str) -> str:
+    error_message: str = ""
 
     if (amplitude_to_rgb != ""):
-        amplitude_to_rgb:List[str] = amplitude_to_rgb.split("\n")
+        amplitude_to_rgb: List[str] = amplitude_to_rgb.split("\n")
         for amplitude in range(len(amplitude_to_rgb)):
-            rgb:List[str] = amplitude_to_rgb[amplitude].split(",")
+            rgb: List[str] = amplitude_to_rgb[amplitude].split(",")
 
             if (len(rgb) != 3):
                 error_message += ("Line {} of amplitude_to_rgb ({}) must have three comma separated integer values.\n").format(amplitude, amplitude_to_rgb[amplitude])
@@ -23,8 +24,9 @@ def get_amplitude_to_rgb_error_message(amplitude_to_rgb:str)->str:
 
     return error_message
 
-def get_number_of_groups_error_message(number_of_groups:str)->str:
-    error_message:str = ""
+
+def get_number_of_groups_error_message(number_of_groups: str) -> str:
+    error_message: str = ""
 
     if (not util.string_is_int(number_of_groups)):
         error_message += ("number_of_groups ({}) must be an integer.\n").format(number_of_groups)
@@ -34,16 +36,18 @@ def get_number_of_groups_error_message(number_of_groups:str)->str:
 
     return error_message
 
-def get_should_reverse_indicies_error_message(should_reverse_indicies:bool)->str:
-    error_message:str = ""
+
+def get_should_reverse_indicies_error_message(should_reverse_indicies: bool) -> str:
+    error_message: str = ""
 
     if (not isinstance(should_reverse_indicies, bool)):
         error_message += ("__should_reverse_indicies should be a boolean value, not a {}.\n").format(type(should_reverse_indicies))
 
     return error_message
 
-def get_frequency_range_error_message(minimum_frequency:str, maximum_frequency:str)->str:
-    error_message:str = ""
+
+def get_frequency_range_error_message(minimum_frequency: str, maximum_frequency: str) -> str:
+    error_message: str = ""
 
     if (not util.string_is_int(minimum_frequency)):
         error_message += ("The minimum_frequency ({}) is not an integer.\n").format(minimum_frequency)
@@ -59,8 +63,9 @@ def get_frequency_range_error_message(minimum_frequency:str, maximum_frequency:s
 
     return error_message
 
-def get_brightness_error_message(brightness:str)->str:
-    error_message:str = ""
+
+def get_brightness_error_message(brightness: str) -> str:
+    error_message: str = ""
 
     if (not util.string_is_int(brightness)):
         error_message += ("The brightness ({}) is not an integer.\n").format(brightness)
@@ -70,16 +75,18 @@ def get_brightness_error_message(brightness:str)->str:
 
     return error_message
 
-def get_serial_baudrate_error_message(baudrate:str, baudrates:List[str])->str:
-    error_message:str = ""
+
+def get_serial_baudrate_error_message(baudrate: str, baudrates: List[str]) -> str:
+    error_message: str = ""
 
     if (baudrate not in baudrates):
         error_message += ("The baudrate ({}) is not a valid baudrate ({}).\n").format(baudrate, baudrates)
 
     return error_message
 
-def get_serial_port_error_message(serial_port:str)->str:
-    error_message:str = ""
+
+def get_serial_port_error_message(serial_port: str) -> str:
+    error_message: str = ""
 
     try:
         serial_connection = serial.Serial(port=serial_port)
@@ -89,7 +96,8 @@ def get_serial_port_error_message(serial_port:str)->str:
 
     return error_message
 
-def get_milliseconds_per_audio_chunk_error_message(milliseconds_per_audio_chunk:str)->str:
+
+def get_milliseconds_per_audio_chunk_error_message(milliseconds_per_audio_chunk: str) -> str:
     error_message = ""
 
     if (not util.string_is_int(milliseconds_per_audio_chunk)):
@@ -100,7 +108,8 @@ def get_milliseconds_per_audio_chunk_error_message(milliseconds_per_audio_chunk:
 
     return error_message
 
-def get_led_index_range_error_message(start_led_index:str, end_led_index:str)->str:
+
+def get_led_index_range_error_message(start_led_index: str, end_led_index: str) -> str:
     error_message = ""
 
     if (not util.string_is_int(start_led_index)):

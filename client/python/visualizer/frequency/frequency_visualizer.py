@@ -32,27 +32,27 @@ from python.led_strip.grouped.grouped_led_strip import GroupedLedStrip
 # The possible frequencies that can be calculated is given by the following arithmetic sequence where freq_0 = 0 Hz & freq_i is the i-th frequency calculated:
 #       freq_i = freq_0 + i*(sampling_rate/chunk_size)
 #
-#============================================================================================================================================================
-
+# ============================================================================================================================================================
 
 
 MIN_FREQUENCY_INDEX = 0
 MAX_FREQUENCY_INDEX = 1
 
 
-def _get_fft(audio_data:bytes)->numpy.ndarray:
+def _get_fft(audio_data: bytes) -> numpy.ndarray:
     """
         Returns:
             `numpy.ndarray`: The fast fourier transformation of the given audio_data. The i-th element contains
             the fft for the frequency equal to i*(sampling_rate / chunk_size) Hz.
     """
-    audio_data_decimal = numpy.frombuffer(audio_data, dtype=numpy.int16) # convert byte array to an array of ints
-    fft:numpy.ndarray = numpy.fft.fft(audio_data_decimal)
-    return fft[0:int(len(fft)/2)] # We only need the 1st half of the FFT data; the 2nd half is a mirror of the 1st half
+    audio_data_decimal = numpy.frombuffer(audio_data, dtype=numpy.int16)  # convert byte array to an array of ints
+    fft: numpy.ndarray = numpy.fft.fft(audio_data_decimal)
+    return fft[0:int(len(fft) / 2)]  # We only need the 1st half of the FFT data; the 2nd half is a mirror of the 1st half
     # Interesting fact : this [0:int(len(fft)/2)] has the same number of elements as the chunk_size (but only when the audio is in stereo?
     # When in mono, it's chunk_size/2? <- unsure...)
 
-def _get_fft_sublist_average_amplitude(fft_sublist:List[complex], number_of_fft_values:int)->float:
+
+def _get_fft_sublist_average_amplitude(fft_sublist: List[complex], number_of_fft_values: int) -> float:
     """
         Args:
             fft_sublist (List[complex]): A sub-list of fft values.
@@ -63,9 +63,10 @@ def _get_fft_sublist_average_amplitude(fft_sublist:List[complex], number_of_fft_
         Returns:
             float: The average amplitude of the frequencies described by fft_sublist.
     """
-    return sum(_get_fft_amplitude(complex_number, number_of_fft_values) for complex_number in fft_sublist)/len(fft_sublist)
+    return sum(_get_fft_amplitude(complex_number, number_of_fft_values) for complex_number in fft_sublist) / len(fft_sublist)
 
-def _get_fft_amplitude(fft_value:complex, number_of_fft_values:int) -> float:
+
+def _get_fft_amplitude(fft_value: complex, number_of_fft_values: int) -> float:
     """
     Args:
         fft_value (complex): An fft value.
@@ -80,9 +81,10 @@ def _get_fft_amplitude(fft_value:complex, number_of_fft_values:int) -> float:
 
     if (hypotenuse == 0):
         return 0
-    return 20*math.log10(hypotenuse/number_of_fft_values)
+    return 20 * math.log10(hypotenuse / number_of_fft_values)
 
-def _fft_index_to_frequency(fft_index:int, sampling_rate:int, chunk_size:int)->float:
+
+def _fft_index_to_frequency(fft_index: int, sampling_rate: int, chunk_size: int) -> float:
     """
         Args:
             `fft_index (int)`: An FFT index.
@@ -91,9 +93,10 @@ def _fft_index_to_frequency(fft_index:int, sampling_rate:int, chunk_size:int)->f
         Returns:
             `int`: The frequency at the given FFT fft_index.
     """
-    return fft_index*(sampling_rate/chunk_size)
+    return fft_index * (sampling_rate / chunk_size)
 
-def _get_frequency_to_fft_index(frequency:Union[int,float], sampling_rate:int, chunk_size:int)->int:
+
+def _get_frequency_to_fft_index(frequency: Union[int, float], sampling_rate: int, chunk_size: int) -> int:
     """
         Args:
             `frequency (Union[int,float])`: A frequency >= 0 in Hz.
@@ -102,7 +105,8 @@ def _get_frequency_to_fft_index(frequency:Union[int,float], sampling_rate:int, c
         Returns:
             `int`: The nearest FFT index of the given frequency.
     """
-    return round(frequency / (sampling_rate/chunk_size))
+    return round(frequency / (sampling_rate / chunk_size))
+
 
 class FrequencyVisualizer(Visualizer):
     """
@@ -110,8 +114,9 @@ class FrequencyVisualizer(Visualizer):
         divides an audio sample into frequency groups & associates each frequency group
         with said group's average amplitude.
     """
-    def __init__(self, frequency_range:Tuple[Union[int,float], Union[int,float]], amplitude_to_rgb:List[Tuple[int,int,int]],
-                 grouped_led_strips:List[GroupedLedStrip]=[]):
+
+    def __init__(self, frequency_range: Tuple[Union[int, float], Union[int, float]], amplitude_to_rgb: List[Tuple[int, int, int]],
+                 grouped_led_strips: List[GroupedLedStrip] = []):
         """
             Args:
                 `frequency_range (Tuple[Union[int,float], Union[int,float]])`: The range of frequencies this visualizer will attempt to
@@ -145,28 +150,28 @@ class FrequencyVisualizer(Visualizer):
         if (frequency_range[0] >= frequency_range[1]):
             raise ValueError("frequency_range[0] must be < frequency_range[1].")
 
-        self.__number_of_groups_to_led_strips:Dict[int, List[GroupedLedStrip]] = self.__get_number_of_groups_to_led_strips(grouped_led_strips)
+        self.__number_of_groups_to_led_strips: Dict[int, List[GroupedLedStrip]] = self.__get_number_of_groups_to_led_strips(grouped_led_strips)
         """
             This makes the algorithm more efficient by calculating led_strip color changes once for all GroupedLedStrips with the same number of groups.
         """
-        self.__amplitude_to_rgb:List[Tuple[int,int,int]] = amplitude_to_rgb
+        self.__amplitude_to_rgb: List[Tuple[int, int, int]] = amplitude_to_rgb
         """
             Indices represent amplitude values and their associated values is the RGB color used to represent said amplitude.
                 Example : If __amplitude_to_rgb[10] == (200, 0, 0), then an amplitude of 10dB should be represented by the RGB color (200, 0, 0)
         """
-        self.__frequency_range:Tuple[int,int] = frequency_range
+        self.__frequency_range: Tuple[int, int] = frequency_range
         """
             __frequency_range[0] is the minimum frequency this visualizer should calculate.
             __frequency_range[1] is the maximum frequency.
         """
 
-    def __get_number_of_groups_to_led_strips(self, led_strips:List[GroupedLedStrip])->Dict[int, List[GroupedLedStrip]]:
+    def __get_number_of_groups_to_led_strips(self, led_strips: List[GroupedLedStrip]) -> Dict[int, List[GroupedLedStrip]]:
         """
             Returns:
                 `Dict[int, List[GroupedLedStrip]]`: Goes through led_strips and maps the number of groups (GroupedLedStrip.get_number_of_groups)
                 to the GroupedLedStrips that have that many groups.
         """
-        number_of_groups_to_led_strips:Dict[int, List[GroupedLedStrip]] = dict()
+        number_of_groups_to_led_strips: Dict[int, List[GroupedLedStrip]] = dict()
         for led_strip in led_strips:
             if (led_strip.get_number_of_groups() in number_of_groups_to_led_strips):
                 number_of_groups_to_led_strips[led_strip.get_number_of_groups()].append(led_strip)
@@ -179,7 +184,7 @@ class FrequencyVisualizer(Visualizer):
             for led_strip in led_strips:
                 del led_strip
 
-    def update_led_strips(self, audio_data:bytes, sampling_rate:int, chunk_size:int):
+    def update_led_strips(self, audio_data: bytes, sampling_rate: int, chunk_size: int):
         """
             Args:
                 `sampling_rate (int)`: The number of samples per second. Typically, 1 sample = 1 byte, so this
@@ -189,25 +194,25 @@ class FrequencyVisualizer(Visualizer):
         super().update_led_strips(audio_data, sampling_rate, chunk_size)
 
     def _turn_off_leds(self):
-        BLACK_RGB = (0,0,0)
+        BLACK_RGB = (0, 0, 0)
         for number_of_groups in self.__number_of_groups_to_led_strips:
             self.__set_group_range_color(number_of_groups, 0, number_of_groups, BLACK_RGB)
             self.__show_led_strips(number_of_groups)
 
-    def _turn_on_leds(self, audio_data:bytes, sampling_rate:int, chunk_size:int):
+    def _turn_on_leds(self, audio_data: bytes, sampling_rate: int, chunk_size: int):
         for number_of_groups in self.__number_of_groups_to_led_strips:
             self.__set_led_strip_color(number_of_groups, audio_data, sampling_rate, chunk_size)
             self.__show_led_strips(number_of_groups)
 
-    def __set_led_strip_color(self, number_of_groups:int, audio_data:bytes, sampling_rate:int, chunk_size:int):
-        fft:numpy.ndarray = _get_fft(audio_data)
+    def __set_led_strip_color(self, number_of_groups: int, audio_data: bytes, sampling_rate: int, chunk_size: int):
+        fft: numpy.ndarray = _get_fft(audio_data)
 
-        fft_start_index_based_on_the_minimum_frequency:int = min(len(fft) - 1, _get_frequency_to_fft_index(self.__get_minimum_frequency(), sampling_rate, chunk_size)) # inclusive
-        fft_end_index_based_on_the_maximum_frequency:int = min(len(fft) - 1, _get_frequency_to_fft_index(self.__get_maximum_frequency(), sampling_rate, chunk_size)) + 1 # exclusive
+        fft_start_index_based_on_the_minimum_frequency: int = min(len(fft) - 1, _get_frequency_to_fft_index(self.__get_minimum_frequency(), sampling_rate, chunk_size))  # inclusive
+        fft_end_index_based_on_the_maximum_frequency: int = min(len(fft) - 1, _get_frequency_to_fft_index(self.__get_maximum_frequency(), sampling_rate, chunk_size)) + 1  # exclusive
 
-        number_of_fft_values_per_led_strip_group:int = max(1, (fft_end_index_based_on_the_maximum_frequency - fft_start_index_based_on_the_minimum_frequency)//number_of_groups)
+        number_of_fft_values_per_led_strip_group: int = max(1, (fft_end_index_based_on_the_maximum_frequency - fft_start_index_based_on_the_minimum_frequency) // number_of_groups)
 
-        reference_led_strip:GroupedLedStrip = self.__number_of_groups_to_led_strips[number_of_groups][0]
+        reference_led_strip: GroupedLedStrip = self.__number_of_groups_to_led_strips[number_of_groups][0]
 
         # Calculate the average amplitude for each frequency group, then convert this average amplitude to
         # an RGB color. Each frequency group maps to a led_strip_group_index. If the led strip group
@@ -216,33 +221,33 @@ class FrequencyVisualizer(Visualizer):
         # we reach the end of the frequency groups OR the end of the led_strip_group_index.
         for fft_sublist_start_index, led_strip_group_index in zip(range(fft_start_index_based_on_the_minimum_frequency, fft_end_index_based_on_the_maximum_frequency, number_of_fft_values_per_led_strip_group),
                                                                   range(number_of_groups)):
-            fft_sublist_end_index:int = min(fft_sublist_start_index + number_of_fft_values_per_led_strip_group, fft_end_index_based_on_the_maximum_frequency)
-            fft_sublist_average_amplitude:float = _get_fft_sublist_average_amplitude(fft[fft_sublist_start_index:fft_sublist_end_index], len(fft))
-            led_strip_group_color:Tuple[int,int,int] = self.__get_amplitude_to_rgb(fft_sublist_average_amplitude)
+            fft_sublist_end_index: int = min(fft_sublist_start_index + number_of_fft_values_per_led_strip_group, fft_end_index_based_on_the_maximum_frequency)
+            fft_sublist_average_amplitude: float = _get_fft_sublist_average_amplitude(fft[fft_sublist_start_index:fft_sublist_end_index], len(fft))
+            led_strip_group_color: Tuple[int, int, int] = self.__get_amplitude_to_rgb(fft_sublist_average_amplitude)
 
             if (not reference_led_strip.group_is_color(led_strip_group_index, led_strip_group_color)):
                 self.__set_group_color(number_of_groups, group_index=led_strip_group_index, rgb=led_strip_group_color)
 
-    def __get_minimum_frequency(self)->int:
+    def __get_minimum_frequency(self) -> int:
         return self.__frequency_range[MIN_FREQUENCY_INDEX]
 
-    def __get_maximum_frequency(self)->int:
+    def __get_maximum_frequency(self) -> int:
         return self.__frequency_range[MAX_FREQUENCY_INDEX]
 
-    def __set_group_color(self, number_of_groups:int, group_index:int, rgb:Tuple[int,int,int]):
+    def __set_group_color(self, number_of_groups: int, group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
             led_strip.set_group_color(group_index, rgb)
 
-    def __set_group_range_color(self, number_of_groups:int, start_group_index:int, end_group_index:int, rgb:Tuple[int,int,int]):
+    def __set_group_range_color(self, number_of_groups: int, start_group_index: int, end_group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
             for group_index in range(start_group_index, end_group_index):
                 led_strip.set_group_color(group_index, rgb)
 
-    def __show_led_strips(self, number_of_groups:int):
+    def __show_led_strips(self, number_of_groups: int):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
             led_strip.show()
 
-    def __get_amplitude_to_rgb(self, amplitude:Union[int,float])->Tuple[int,int,int]:
-        amplitude = max(0,amplitude)
+    def __get_amplitude_to_rgb(self, amplitude: Union[int, float]) -> Tuple[int, int, int]:
+        amplitude = max(0, amplitude)
         amplitude = min(amplitude, len(self.__amplitude_to_rgb) - 1)
         return self.__amplitude_to_rgb[round(amplitude)]

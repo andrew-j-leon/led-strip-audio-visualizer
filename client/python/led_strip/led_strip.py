@@ -4,8 +4,9 @@ from typing import Callable, Tuple
 _START_INDEX = 0
 _END_INDEX = 1
 
+
 class LedStrip:
-    def __init__(self, led_index_range:Tuple[int,int]): # start_index inclusive ; end_index exclusive
+    def __init__(self, led_index_range: Tuple[int, int]):  # start_index inclusive ; end_index exclusive
         """
             Args:
                 `led_index_range (Tuple[int,int])`: Specifies the range of led indicies this LedStrip represents. Index 0
@@ -23,11 +24,11 @@ class LedStrip:
         if (led_index_range[0] < 0):
             raise ValueError("led_index_range[0] must be >= 0.")
 
-        self.__led_index_range:Tuple[int,int] = led_index_range
+        self.__led_index_range: Tuple[int, int] = led_index_range
 
-        self.__queued_color_changes:list = []
+        self.__queued_color_changes: list = []
 
-    def get_number_of_leds(self)->int:
+    def get_number_of_leds(self) -> int:
         return self._get_end_index() - self._get_start_index() + 1
 
     def show(self):
@@ -37,18 +38,19 @@ class LedStrip:
     def _show(self):
         pass
 
-    def _get_start_index(self)->int:
+    def _get_start_index(self) -> int:
         return self.__led_index_range[_START_INDEX]
-    def _get_end_index(self)->int:
+
+    def _get_end_index(self) -> int:
         return self.__led_index_range[_END_INDEX] - 1
 
-    def _shift_led_index_up_by_start_index(self, index:int)->int:
+    def _shift_led_index_up_by_start_index(self, index: int) -> int:
         return index + self._get_start_index()
 
     def _clear_queue(self):
         self.__queued_color_changes.clear()
 
-    def _enqueue_color_change_by_range_of_indices(self, start_index:int, end_index:int, *args):
+    def _enqueue_color_change_by_range_of_indices(self, start_index: int, end_index: int, *args):
         """
             Raises:
                 `ValueError`: If start_index >= end_index.
@@ -58,12 +60,12 @@ class LedStrip:
 
         self.__queued_color_changes.append((start_index, end_index, *args))
 
-    def _enqueue_color_change_by_index(self, index:int, *args):
+    def _enqueue_color_change_by_index(self, index: int, *args):
         self.__queued_color_changes.append((index, *args))
 
-    def _get_number_of_queued_color_changes(self)->int:
+    def _get_number_of_queued_color_changes(self) -> int:
         return len(self.__queued_color_changes)
 
-    def _for_each_queued_color_change(self, callable:Callable):
+    def _for_each_queued_color_change(self, callable: Callable):
         for queued_color_change in self.__queued_color_changes:
             callable(*queued_color_change)

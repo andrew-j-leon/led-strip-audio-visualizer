@@ -3,8 +3,9 @@ from serial import Serial
 
 import python.led_strip.led_strip as led_strip
 
+
 class SerialLedStrip(led_strip.LedStrip):
-    def __init__(self, led_index_range:Tuple[int,int], serial_connection:Serial, brightness:int):
+    def __init__(self, led_index_range: Tuple[int, int], serial_connection: Serial, brightness: int):
         """
             Args:
                 `brightness (int)`: A value within the range [0,255]. 0 is the dimmest; 255 is the brightest.
@@ -27,8 +28,8 @@ class SerialLedStrip(led_strip.LedStrip):
 
         led_strip.LedStrip.__init__(self, led_index_range)
 
-        self.__serial_connection:Serial = serial_connection
-        self.__brightness:int = brightness
+        self.__serial_connection: Serial = serial_connection
+        self.__brightness: int = brightness
 
         # Wait for arduino to state it's connected
         while (not self.__serial_connection.in_waiting):
@@ -52,7 +53,7 @@ class SerialLedStrip(led_strip.LedStrip):
         if (self.__serial_connection):
             self.__serial_connection.close()
 
-    def _send_bytes(self, bytes_:bytes):
+    def _send_bytes(self, bytes_: bytes):
         """
             Sends the bytes_ over the serial_connection one byte at a time. Continually resends
             the data if an acknowledgement is not received within serial_connection's read timeout.
@@ -60,7 +61,7 @@ class SerialLedStrip(led_strip.LedStrip):
         for byte_ in bytes_:
             self.__send_byte_lossless(byte_)
 
-    def __send_byte_lossless(self, byte_:int):
+    def __send_byte_lossless(self, byte_: int):
         """
             Send a byte of data over serial_connection. If an acknowledgement is
             not recieved within serial_connection's read timeout, the byte is sent again. This continues
@@ -69,7 +70,7 @@ class SerialLedStrip(led_strip.LedStrip):
         echo = bytes()
         while (echo == bytes()):
             self.__serial_connection.write(byte_.to_bytes(length=1, byteorder="big"))
-            echo = self.__serial_connection.read(size=1) # Make sure to set a read timeout on Serial's constructor. If timeout expired, assume the message wasn't received
+            echo = self.__serial_connection.read(size=1)  # Make sure to set a read timeout on Serial's constructor. If timeout expired, assume the message wasn't received
 
     def _send_config_data_to_arduino(self):
         self.__send_brightness()

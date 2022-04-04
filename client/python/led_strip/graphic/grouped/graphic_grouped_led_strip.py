@@ -6,11 +6,11 @@ import python.util.util as util
 
 
 class GraphicGroupedLedStrip(GroupedLedStrip, GraphicLedStrip):
-    def __init__(self, led_index_range:Tuple[int,int], group_index_to_led_range:List[Tuple[int,int]], **kwargs):
+    def __init__(self, led_index_range: Tuple[int, int], group_index_to_led_range: List[Tuple[int, int]], **kwargs):
         GroupedLedStrip.__init__(self, led_index_range, group_index_to_led_range)
         GraphicLedStrip.__init__(self, led_index_range, **kwargs)
 
-    def _recolor_leds(self, group_index:int, rgb:Tuple[int,int,int]):
+    def _recolor_leds(self, group_index: int, rgb: Tuple[int, int, int]):
         for led_index in range(*(self._group_index_to_led_range[group_index])):
             self._get_canvas().TKCanvas.itemconfig(self._get_tkinter_id(led_index), fill=util.rgb_to_hex(*rgb))
 
