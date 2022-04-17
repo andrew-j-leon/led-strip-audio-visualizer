@@ -124,7 +124,7 @@ class SerialGroupedLedStrip:
     def get_number_of_groups(self) -> int:
         return len(self._group_index_to_led_range)
 
-    def set_group_color(self, group_index: int, rgb: Tuple[int, int, int]):
+    def enqueue_group_color(self, group_index: int, rgb: Tuple[int, int, int]):
         self._enqueue_color_change_by_index(group_index, rgb)
 
     def group_is_color(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:

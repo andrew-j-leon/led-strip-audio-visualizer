@@ -18,34 +18,41 @@ class NonNegativeIntegerRange:
                 `start (NonNegativeInteger)`: Inclusive.
                 `end (NonNegativeInteger)`: Exclusive.
 
-            Example : IntRange(NonNegativeInteger(0), NonNegativeInteger(3)) includes the values
-                      [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(2)].
+            Example 1 : NonNegativeIntegerRange(0, 5) includes integers 0, 1, 2, 3, 4.
+
+            Example 2 : NonNegativeIntegerRange(0, 0) is an empty set.
         """
-        if (not isinstance(start, NonNegativeInteger)):
-            raise TypeError(f"start ({start}) was of type '{type(start).__name__}', but should be of type '{NonNegativeInteger.__name__}'.")
+        start_non_negative_integer = NonNegativeInteger(start)
+        end_non_negative_integer = NonNegativeInteger(end)
 
-        if (not isinstance(end, NonNegativeInteger)):
-            raise TypeError(f"end ({end}) was of type '{type(end).__name__}', but should be of type '{NonNegativeInteger.__name__}'.")
-
-        if (start >= end):
+        if (start_non_negative_integer > end_non_negative_integer):
             raise ValueError(f'start ({start}) must be < end ({end}).')
 
-        self.__start = start
-        self.__end = end
+        self.__start = start_non_negative_integer
+        self.__end = end_non_negative_integer
 
     @property
-    def start(self) -> NonNegativeInteger:
-        return self.__start
+    def start(self) -> int:
+        return int(self.__start)
 
     @property
-    def end(self) -> NonNegativeInteger:
-        return self.__end
+    def end(self) -> int:
+        return int(self.__end)
 
     def __repr__(self) -> str:
-        return f'NonNegativeIntegerRange({repr(self.start)}, {repr(self.end)})'
+        return f'NonNegativeIntegerRange({int(self.start)}, {int(self.end)})'
 
     def __contains__(self, value):
-        return value >= self.start and value < self.end
+        if (self.start == self.end):
+            return False
+
+        if (isinstance(value, NonNegativeIntegerRange)):
+            if (value.start == value.end):
+                return True
+
+            return (value.start in self) and (value.end - 1 in self)
+
+        return (value >= self.start) and (value <= self.end - 1)
 
 
 @total_ordering

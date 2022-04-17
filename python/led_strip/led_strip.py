@@ -1,5 +1,4 @@
 from typing import Callable, Tuple
-import abc
 
 
 _START_INDEX = 0

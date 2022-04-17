@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 import numpy
 import math
 
@@ -172,10 +172,10 @@ class FrequencyVisualizer(Visualizer):
         """
         number_of_groups_to_led_strips = dict()
         for led_strip in led_strips:
-            if (led_strip.get_number_of_groups() in number_of_groups_to_led_strips):
-                number_of_groups_to_led_strips[led_strip.get_number_of_groups()].append(led_strip)
+            if (led_strip.number_of_groups in number_of_groups_to_led_strips):
+                number_of_groups_to_led_strips[led_strip.number_of_groups].append(led_strip)
             else:
-                number_of_groups_to_led_strips[led_strip.get_number_of_groups()] = [led_strip]
+                number_of_groups_to_led_strips[led_strip.number_of_groups] = [led_strip]
         return number_of_groups_to_led_strips
 
     def _do_stuff_on_del(self):
@@ -235,16 +235,16 @@ class FrequencyVisualizer(Visualizer):
 
     def __set_group_color(self, number_of_groups: int, group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-            led_strip.set_group_color(group_index, rgb)
+            led_strip.enqueue_group_color(group_index, rgb)
 
     def __set_group_range_color(self, number_of_groups: int, start_group_index: int, end_group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
             for group_index in range(start_group_index, end_group_index):
-                led_strip.set_group_color(group_index, rgb)
+                led_strip.enqueue_group_color(group_index, rgb)
 
     def __show_led_strips(self, number_of_groups: int):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-            led_strip.show()
+            led_strip.show_colors()
 
     def __get_amplitude_to_rgb(self, amplitude: Union[int, float]) -> Tuple[int, int, int]:
         amplitude = max(0, amplitude)

@@ -1,37 +1,40 @@
-from typing import List, Tuple
 from util import NonNegativeIntegerRange, NonNegativeInteger
 import unittest
 
 
 class TestConstructor(unittest.TestCase):
     def test_valid_arguments(self):
-        VALID_ARGUMENTS = [(NonNegativeInteger(0), NonNegativeInteger(1)),
+        VALID_ARGUMENTS = [(NonNegativeInteger(0), NonNegativeInteger(0)),
+                           (0, 0), (0.0, 0.0),
+
+                           (NonNegativeInteger(0), NonNegativeInteger(1)),
+                           (0, 1), (0.0, 1.0),
+
                            (NonNegativeInteger(0), NonNegativeInteger(2)),
-                           (NonNegativeInteger(4), NonNegativeInteger(472))]
+                           (0, 2), (0.0, 2.0),
 
-        self.check_valid_arguments(VALID_ARGUMENTS)
+                           (NonNegativeInteger(4), NonNegativeInteger(472)),
+                           (4, 472), (4.0, 472.0)]
 
-    def test_invalid_types(self):
-        INVALID_TYPES = [0, 3.5, True, tuple(), list(), str(), dict()]
+        for start, end in VALID_ARGUMENTS:
+            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
 
-        self.check_start_arguments_raise_type_error(INVALID_TYPES)
-        self.check_end_arguments_raise_type_error(INVALID_TYPES)
+                non_negative_integer_range = NonNegativeIntegerRange(start, end)
 
-    def test_start_greater_than_or_equal_to_end(self):
-        START_GREATER_THAN_OR_EQUAL_TO_END_PAIRS = [(NonNegativeInteger(0), NonNegativeInteger(0)),
-                                                    (NonNegativeInteger(1), NonNegativeInteger(0)),
-                                                    (NonNegativeInteger(43), NonNegativeInteger(43)),
-                                                    (NonNegativeInteger(546), NonNegativeInteger(4))]
+                self.assertEqual(non_negative_integer_range.start, start)
+                self.assertEqual(non_negative_integer_range.end, end)
 
-        self.check_start_greater_than_or_equal_to_end_raises_value_error(START_GREATER_THAN_OR_EQUAL_TO_END_PAIRS)
+    def test_start_greater_than_end(self):
+        START_GREATER_THAN_END_ARGUMENTS = [(NonNegativeInteger(1), NonNegativeInteger(0)),
+                                            (1, 0), (1.0, 0.0),
 
-    def check_start_greater_than_or_equal_to_end_raises_value_error(self, arguments: List[Tuple[NonNegativeInteger, NonNegativeInteger]]):
-        for start, end in arguments:
+                                            (NonNegativeInteger(546), NonNegativeInteger(4)),
+                                            (546, 4), (546.0, 4.0)]
 
-            with self.subTest(f'NonNegativeIntegerRange({start, end}'):
+        for start, end in START_GREATER_THAN_END_ARGUMENTS:
+            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
 
                 with self.assertRaises(ValueError) as error:
-
                     NonNegativeIntegerRange(start, end)
 
                 actual_error_message = str(error.exception)
@@ -39,61 +42,24 @@ class TestConstructor(unittest.TestCase):
 
                 self.assertEqual(actual_error_message, expected_error_message)
 
-    def check_valid_arguments(self, arguments: List[Tuple[NonNegativeInteger, NonNegativeInteger]]):
-        for start, end in arguments:
-            with self.subTest(f'NonNegativeIntegerRange({start, end}'):
-
-                non_negative_integer_range = NonNegativeIntegerRange(start, end)
-
-                self.assertEqual(non_negative_integer_range.start, start)
-                self.assertEqual(non_negative_integer_range.end, end)
-
-    def check_start_arguments_raise_type_error(self, start_arguments: list):
-        for start in start_arguments:
-            non_negative_integer = NonNegativeInteger(10)
-
-            with self.subTest(f'NonNegativeIntegerRange({start}, {non_negative_integer})'):
-
-                with self.assertRaises(TypeError) as error:
-                    NonNegativeIntegerRange(start, non_negative_integer)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f"start ({start}) was of type '{type(start).__name__}', but should be of type '{NonNegativeInteger.__name__}'."
-
-                self.assertEqual(actual_error_message, expected_error_message)
-
-    def check_end_arguments_raise_type_error(self, end_arguments: list):
-        for end in end_arguments:
-            non_negative_integer = NonNegativeInteger(10)
-
-            with self.subTest(f'NonNegativeIntegerRange({end}, {non_negative_integer})'):
-
-                with self.assertRaises(TypeError) as error:
-                    NonNegativeIntegerRange(non_negative_integer, end)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f"end ({end}) was of type '{type(end).__name__}', but should be of type '{NonNegativeInteger.__name__}'."
-
-                self.assertEqual(actual_error_message, expected_error_message)
-
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
-        START = NonNegativeInteger(0)
-        END = NonNegativeInteger(10)
+        START = 0
+        END = 10
 
         non_negative_integer_range = NonNegativeIntegerRange(START, END)
 
         actual = repr(non_negative_integer_range)
-        EXPECTED = f'NonNegativeIntegerRange({repr(START)}, {repr(END)})'
+        EXPECTED = f'NonNegativeIntegerRange({START}, {END})'
 
         self.assertEqual(actual, EXPECTED)
 
 
 class TestContains(unittest.TestCase):
-    def test_true(self):
-        START = NonNegativeInteger(0)
-        END = NonNegativeInteger(10)
+    def test_int(self):
+        START = 0
+        END = 10
 
         non_negative_integer_range = NonNegativeIntegerRange(START, END)
 
@@ -103,13 +69,54 @@ class TestContains(unittest.TestCase):
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
                 self.assertTrue(value in non_negative_integer_range)
 
-    def test_false(self):
-        START = NonNegativeInteger(0)
-        END = NonNegativeInteger(10)
+        OUT_OF_BOUNDS_VALUES = [-1, -2, -5, 10, 11, 100]
+
+        for value in OUT_OF_BOUNDS_VALUES:
+            with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
+                self.assertFalse(value in non_negative_integer_range)
+
+    def test_float(self):
+        START = 0
+        END = 10
 
         non_negative_integer_range = NonNegativeIntegerRange(START, END)
 
-        OUT_OF_BOUNDS_VALUES = [-1, -2, -5, 10, 11, 100]
+        IN_BOUNDS_VALUES = [0.0, 1.0, 0.5, 1.5, 5.7, 9.0, 8.9]
+
+        for value in IN_BOUNDS_VALUES:
+            with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
+                self.assertTrue(value in non_negative_integer_range)
+
+        OUT_OF_BOUNDS_VALUES = [-1.0, -2.0, -5.5, 10.0, 11.0, 9.1, 20.5]
+
+        for value in OUT_OF_BOUNDS_VALUES:
+            with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
+                self.assertFalse(value in non_negative_integer_range)
+
+    def test_non_negative_integer_range(self):
+        START = 1
+        END = 10
+
+        non_negative_integer_range = NonNegativeIntegerRange(START, END)
+
+        IN_BOUNDS_VALUES = [NonNegativeIntegerRange(1, 10),
+                            NonNegativeIntegerRange(1, 5),
+                            NonNegativeIntegerRange(5, 10),
+                            NonNegativeIntegerRange(2, 9),
+                            NonNegativeIntegerRange(0, 0),
+                            NonNegativeIntegerRange(10, 10),
+                            NonNegativeIntegerRange(11, 11),
+                            NonNegativeIntegerRange(20, 20)]
+
+        for value in IN_BOUNDS_VALUES:
+            with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
+                self.assertTrue(value in non_negative_integer_range)
+
+        OUT_OF_BOUNDS_VALUES = [NonNegativeIntegerRange(0, 10),
+                                NonNegativeIntegerRange(0, 1),
+                                NonNegativeIntegerRange(10, 11),
+                                NonNegativeIntegerRange(9, 11),
+                                NonNegativeIntegerRange(20, 100)]
 
         for value in OUT_OF_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
