@@ -2,9 +2,6 @@ from typing import List, Tuple, Union
 import numpy
 import math
 
-from visualizer.visualizer import Visualizer
-
-
 # ================================================================== Some useful formulas ==================================================================
 #
 # The smaller (sampling_rate / chunk_size) is, the more frequencies within the given frequency_range will be calculated.
@@ -107,7 +104,7 @@ def _get_frequency_to_fft_index(frequency: Union[int, float], sampling_rate: int
     return round(frequency / (sampling_rate / chunk_size))
 
 
-class FrequencyVisualizer(Visualizer):
+class FrequencyVisualizer:
     """
         Uses an LED_Strip as an audio spectrum analyzer. An audio spectrum analyzer
         divides an audio sample into frequency groups & associates each frequency group
@@ -178,7 +175,9 @@ class FrequencyVisualizer(Visualizer):
                 number_of_groups_to_led_strips[led_strip.number_of_groups] = [led_strip]
         return number_of_groups_to_led_strips
 
-    def _do_stuff_on_del(self):
+    def __del__(self):
+        self._turn_off_leds()
+
         for led_strips in self.__number_of_groups_to_led_strips.values():
             for led_strip in led_strips:
                 del led_strip
@@ -190,17 +189,17 @@ class FrequencyVisualizer(Visualizer):
                 can also be considered the number of bytes (of audio data) per second.
                 `chunk_size (int)`: The number of bytes per audio_data.
         """
-        super().update_led_strips(audio_data, sampling_rate, chunk_size)
+        if (len(audio_data) == 0):
+            self._turn_off_leds()
+        else:
+            for number_of_groups in self.__number_of_groups_to_led_strips:
+                self.__set_led_strip_color(number_of_groups, audio_data, sampling_rate, chunk_size)
+                self.__show_led_strips(number_of_groups)
 
     def _turn_off_leds(self):
         BLACK_RGB = (0, 0, 0)
         for number_of_groups in self.__number_of_groups_to_led_strips:
             self.__set_group_range_color(number_of_groups, 0, number_of_groups, BLACK_RGB)
-            self.__show_led_strips(number_of_groups)
-
-    def _turn_on_leds(self, audio_data: bytes, sampling_rate: int, chunk_size: int):
-        for number_of_groups in self.__number_of_groups_to_led_strips:
-            self.__set_led_strip_color(number_of_groups, audio_data, sampling_rate, chunk_size)
             self.__show_led_strips(number_of_groups)
 
     def __set_led_strip_color(self, number_of_groups: int, audio_data: bytes, sampling_rate: int, chunk_size: int):

@@ -60,6 +60,8 @@ class PySimpleGui(Gui):
                                        margins=(0, 0), titlebar_background_color="#000917", titlebar_text_color="#8a8a8a",
                                        disable_close=True, disable_minimize=False)
 
+        self.__window.read(timeout=0)
+
     @property
     def dimensions(self) -> Rectangle:
         width, height = self.__window["canvas"].get_size()

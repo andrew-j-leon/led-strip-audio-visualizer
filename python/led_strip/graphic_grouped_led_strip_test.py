@@ -13,9 +13,6 @@ class FakeGui(Gui):
 
         self.elements: Dict[int, Element] = dict()
 
-        # self.ovals: Dict[int, Oval] = dict()
-        # self.texts: Dict[int, Text] = dict()
-
     @property
     def dimensions(self) -> Rectangle:
         WIDTH = 1920

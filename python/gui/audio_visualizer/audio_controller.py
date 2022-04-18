@@ -7,8 +7,7 @@ import gui.audio_visualizer.audio_model as audio_model
 from led_strip.graphic_grouped_led_strip import GraphicGroupedLedStrip
 from led_strip.serial_grouped_led_strip import SerialGroupedLedStrip
 from libraries.gui import PySimpleGui
-from visualizer.visualizer import Visualizer
-from visualizer.frequency.frequency_visualizer import FrequencyVisualizer
+from visualizer.frequency_visualizer import FrequencyVisualizer
 
 from serial import Serial
 import serial.serialutil as serialutil
