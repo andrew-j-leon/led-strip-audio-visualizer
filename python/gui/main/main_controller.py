@@ -1,9 +1,8 @@
-import gui.main.main_view as main_view
-import gui.controller as controller
-
 import gui.audio_visualizer.audio_controller as audio_controller
 import gui.audio_visualizer.audio_in.audio_in_controller as audio_in_controller
 import gui.audio_visualizer.audio_out.audio_out_controller as audio_out_controller
+import gui.controller as controller
+import gui.main.main_view as main_view
 
 
 class MainController(controller.Controller):

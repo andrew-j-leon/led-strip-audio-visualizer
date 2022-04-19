@@ -1,5 +1,6 @@
-from util import NonNegativeIntegerRange, NonNegativeInteger
 import unittest
+
+from util import NonNegativeInteger, NonNegativeIntegerRange
 
 
 class TestConstructor(unittest.TestCase):

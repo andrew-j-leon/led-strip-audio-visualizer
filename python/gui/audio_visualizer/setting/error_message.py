@@ -1,7 +1,7 @@
 from typing import List
 
-import util
 import serial
+import util
 
 
 def get_amplitude_to_rgb_error_message(amplitude_to_rgb: str) -> str:

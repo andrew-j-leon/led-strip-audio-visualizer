@@ -5,4 +5,4 @@ arduino_secrets.h
 tones/
 .vscode/
 *.odg
-.venv/
+.venv_3_10/

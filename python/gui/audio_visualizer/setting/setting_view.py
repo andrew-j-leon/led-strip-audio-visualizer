@@ -1,13 +1,12 @@
 import os
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-import PySimpleGUI as sg
-
-import util
-import gui.view as view
 import gui.styling as styling
-from gui.window import Window
+import gui.view as view
+import PySimpleGUI as sg
+import util
 from gui.audio_visualizer.setting.error_message import *
+from gui.window import Window
 
 
 def _create_default_amplitude_to_rgb() -> List[Tuple[int, int, int]]:

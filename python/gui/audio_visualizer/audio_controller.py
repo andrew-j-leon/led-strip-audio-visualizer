@@ -1,17 +1,14 @@
 from typing import Any, Dict, List, Tuple
 
-
-import gui.controller as controller
-import gui.audio_visualizer.audio_view as audio_view
 import gui.audio_visualizer.audio_model as audio_model
-from led_strip.graphic_grouped_led_strip import GraphicGroupedLedStrip
-from led_strip.serial_grouped_led_strip import SerialGroupedLedStrip
-from libraries.gui import PySimpleGui
-from visualizer.frequency_visualizer import FrequencyVisualizer
-
-from serial import Serial
+import gui.audio_visualizer.audio_view as audio_view
+import gui.controller as controller
 import serial.serialutil as serialutil
-
+from led_strip.graphic_led_strip import GraphicLedStrip
+from led_strip.serial_led_strip import SerialLedStrip
+from libraries.gui import PySimpleGui
+from serial import Serial
+from visualizer.frequency_visualizer import FrequencyVisualizer
 
 _START_LED_INDEX = 0
 _END_LED_INDEX = 1
@@ -34,15 +31,15 @@ class AudioController(controller.Controller):
     def __get_grouped_led_strips(self):
         led_strips = []
         if (self._view.get_serial_led_strip_checkbox_value()):
-            led_strips.append(SerialGroupedLedStrip(led_range=self._view.get_led_index_range(),
-                                                    serial_connection=Serial(**self.__get_serial_parameters()),
-                                                    brightness=self._view.get_brightness(),
-                                                    group_led_ranges=self.__get_group_index_to_led_range()))
+            led_strips.append(SerialLedStrip(led_range=self._view.get_led_index_range(),
+                                             serial_connection=Serial(**self.__get_serial_parameters()),
+                                             brightness=self._view.get_brightness(),
+                                             group_led_ranges=self.__get_group_index_to_led_range()))
 
         if (self._view.get_graphic_led_strip_checkbox_value()):
-            led_strips.append(GraphicGroupedLedStrip(led_range=self._view.get_led_index_range(),
-                                                     group_led_ranges=self.__get_group_index_to_led_range(),
-                                                     gui=PySimpleGui()))
+            led_strips.append(GraphicLedStrip(led_range=self._view.get_led_index_range(),
+                                              group_led_ranges=self.__get_group_index_to_led_range(),
+                                              gui=PySimpleGui()))
 
         return led_strips
 

@@ -1,6 +1,7 @@
-from typing import List, Tuple, Union
-import numpy
 import math
+from typing import List, Tuple, Union
+
+import numpy
 
 # ================================================================== Some useful formulas ==================================================================
 #

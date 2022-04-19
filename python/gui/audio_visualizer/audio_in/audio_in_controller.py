@@ -1,5 +1,4 @@
 import gui.audio_visualizer.audio_controller as audio_controller
-
 import gui.audio_visualizer.audio_in.audio_in_model as audio_in_model
 import gui.audio_visualizer.audio_in.audio_in_view as audio_in_view
 

@@ -5,12 +5,11 @@ from pathlib import Path
 from typing import List, Union
 from wave import Wave_read
 
+import gui.audio_visualizer.audio_model as audio_model
 import pyaudio
+import util
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError, CouldntEncodeError
-
-import util
-import gui.audio_visualizer.audio_model as audio_model
 
 
 class NoValidAudioFilesFoundException(Exception):

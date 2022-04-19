@@ -1,6 +1,5 @@
-import PySimpleGUI as sg
-
 import gui.view as view
+import PySimpleGUI as sg
 from gui.window import Window
 
 

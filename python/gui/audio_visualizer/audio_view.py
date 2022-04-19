@@ -1,12 +1,11 @@
 from typing import List, Tuple
 
-import PySimpleGUI as sg
-
-import util
-import gui.view as view
-from gui.window import Window
-import gui.styling as styling
 import gui.audio_visualizer.setting.setting_view as setting_view
+import gui.styling as styling
+import gui.view as view
+import PySimpleGUI as sg
+import util
+from gui.window import Window
 
 
 class VisualizerType:

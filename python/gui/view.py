@@ -1,10 +1,9 @@
 from typing import Any, Callable, Dict, List, Tuple
 
 import PySimpleGUI as sg
-from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
-
-from gui.window import Window
 import util
+from gui.window import Window
+from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 
 
 class Element:

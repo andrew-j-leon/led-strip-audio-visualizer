@@ -1,9 +1,9 @@
 import abc
-from typing import Dict
 import unittest
+from typing import Dict
 
-from libraries.gui import Gui, Rectangle, Font
-from led_strip.graphic_grouped_led_strip import GraphicGroupedLedStrip
+from led_strip.graphic_led_strip import GraphicLedStrip
+from libraries.gui import Font, Gui, Rectangle
 
 
 class FakeGui(Gui):
@@ -101,7 +101,7 @@ class TestConstructor(unittest.TestCase):
         for VALID_LED_RANGE in VALID_LED_RANGES:
             with self.subTest(f'led_range={VALID_LED_RANGE}'):
 
-                GraphicGroupedLedStrip(VALID_LED_RANGE, GROUP_INDEX_TO_LED_RANGE, GUI)
+                GraphicLedStrip(VALID_LED_RANGE, GROUP_INDEX_TO_LED_RANGE, GUI)
 
         INVALID_LED_RANGES = [(-1, 0), (-2, -1), (-10, -1), (-1, -1),
                               (1, 0), (2, 0), (10, 0)]
@@ -111,7 +111,7 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(f'led_range={INVALID_LED_RANGE}'):
 
                 with self.assertRaises(ValueError):
-                    GraphicGroupedLedStrip(INVALID_LED_RANGE, GROUP_INDEX_TO_LED_RANGE, GUI)
+                    GraphicLedStrip(INVALID_LED_RANGE, GROUP_INDEX_TO_LED_RANGE, GUI)
 
     def test_group_index_to_led_range(self):
         LED_RANGE = (10, 150)
@@ -135,7 +135,7 @@ class TestConstructor(unittest.TestCase):
 
             with self.subTest(f'group_led_ranges={GROUP_LED_RANGE}'):
 
-                GraphicGroupedLedStrip(LED_RANGE, GROUP_LED_RANGE, GUI)
+                GraphicLedStrip(LED_RANGE, GROUP_LED_RANGE, GUI)
 
         INVALID_GROUP_LED_RANGES = [
             [(9, 10)], [(0, 10)],
@@ -149,7 +149,7 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(f'group_led_ranges={GROUP_LED_RANGE}'):
 
                 with self.assertRaises(ValueError):
-                    GraphicGroupedLedStrip(LED_RANGE, GROUP_LED_RANGE, GUI)
+                    GraphicLedStrip(LED_RANGE, GROUP_LED_RANGE, GUI)
 
 
 class TestNumberOfGroups(unittest.TestCase):
@@ -159,7 +159,7 @@ class TestNumberOfGroups(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = []
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_groups
         expected = 0
@@ -171,7 +171,7 @@ class TestNumberOfGroups(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = [(10, 20)]
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_groups
         expected = 1
@@ -184,7 +184,7 @@ class TestNumberOfGroups(unittest.TestCase):
                                    (50, 60), (60, 70), (70, 80), (80, 90), (90, 100)]
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_groups
         expected = len(GROUP_INDEX_TO_LED_RAGE)
@@ -198,7 +198,7 @@ class TestNumberOfLeds(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = []
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_leds
         expected = 0
@@ -210,7 +210,7 @@ class TestNumberOfLeds(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = []
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_leds
         expected = 1
@@ -222,7 +222,7 @@ class TestNumberOfLeds(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = []
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         actual = led_strip.number_of_leds
         expected = 150
@@ -237,7 +237,7 @@ class TestSetGroupColor(unittest.TestCase):
         GROUP_INDEX_TO_LED_RAGE = [(10, 20), (20, 30)]
         GUI = FakeGui()
 
-        led_strip = GraphicGroupedLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
+        led_strip = GraphicLedStrip(LED_RANGE, GROUP_INDEX_TO_LED_RAGE, GUI)
 
         GROUP = 0
         RGB = (10, 20, 30)

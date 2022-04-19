@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-
 import colorsys
-from functools import total_ordering
 import math
 import os
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 import re
+from functools import total_ordering
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
 import numpy
 

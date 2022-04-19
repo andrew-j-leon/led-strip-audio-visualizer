@@ -1,5 +1,5 @@
-from typing import Any, Callable, List, Tuple, Type
 import unittest
+from typing import Any, Callable, List, Tuple, Type
 
 from util import NonNegativeInteger
 

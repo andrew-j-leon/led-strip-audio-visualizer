@@ -1,8 +1,8 @@
 import math
 from typing import Dict, List, Tuple
 
-from util import NonNegativeInteger, NonNegativeIntegerRange, rgb_to_hex
 from libraries.gui import Font, Gui
+from util import NonNegativeInteger, NonNegativeIntegerRange, rgb_to_hex
 
 
 # Graphic
@@ -20,7 +20,7 @@ class Point:
         return self.__y
 
 
-class GraphicGroupedLedStrip:
+class GraphicLedStrip:
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]], gui: Gui):
         start = NonNegativeInteger(led_range[0])
         end = NonNegativeInteger(led_range[1])

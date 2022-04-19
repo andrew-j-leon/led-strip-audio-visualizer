@@ -1,8 +1,8 @@
 from typing import List
-import PySimpleGUI as sg
 
 import gui.audio_visualizer.audio_view as audio_view
 import gui.styling as styling
+import PySimpleGUI as sg
 
 
 class Element(audio_view.Element):
