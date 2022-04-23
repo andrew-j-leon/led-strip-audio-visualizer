@@ -225,7 +225,7 @@ class FrequencyVisualizer:
             led_strip_group_color: Tuple[int, int, int] = self.__get_amplitude_to_rgb(fft_sublist_average_amplitude)
 
             if (not reference_led_strip.group_is_color(led_strip_group_index, led_strip_group_color)):
-                self.__set_group_color(number_of_groups, group_index=led_strip_group_index, rgb=led_strip_group_color)
+                self.__set_group_color(number_of_groups, led_strip_group_index, led_strip_group_color)
 
     def __get_minimum_frequency(self) -> int:
         return self.__frequency_range[MIN_FREQUENCY_INDEX]
@@ -235,16 +235,16 @@ class FrequencyVisualizer:
 
     def __set_group_color(self, number_of_groups: int, group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-            led_strip.enqueue_group_color(group_index, rgb)
+            led_strip.enqueue_rgb(group_index, rgb)
 
     def __set_group_range_color(self, number_of_groups: int, start_group_index: int, end_group_index: int, rgb: Tuple[int, int, int]):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
             for group_index in range(start_group_index, end_group_index):
-                led_strip.enqueue_group_color(group_index, rgb)
+                led_strip.enqueue_rgb(group_index, rgb)
 
     def __show_led_strips(self, number_of_groups: int):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-            led_strip.show_colors()
+            led_strip.show_enqueued_colors()
 
     def __get_amplitude_to_rgb(self, amplitude: Union[int, float]) -> Tuple[int, int, int]:
         amplitude = max(0, amplitude)

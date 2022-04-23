@@ -3,11 +3,10 @@ from typing import Any, Dict, List, Tuple
 import gui.audio_visualizer.audio_model as audio_model
 import gui.audio_visualizer.audio_view as audio_view
 import gui.controller as controller
-import serial.serialutil as serialutil
 from led_strip.graphic_led_strip import GraphicLedStrip
 from led_strip.serial_led_strip import SerialLedStrip
 from libraries.gui import PySimpleGui
-from serial import Serial
+from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 from visualizer.frequency_visualizer import FrequencyVisualizer
 
 _START_LED_INDEX = 0
@@ -20,26 +19,29 @@ class AudioController(controller.Controller):
         self._audio_player: audio_model.AudioModel = audio_player
         self.__visualizer: Visualizer = None
 
-    def __get_serial_parameters(self) -> Dict[str, Any]:
-        return dict(port=self._view.get_serial_port(), baudrate=self._view.get_serial_baudrate(), timeout=1, write_timeout=None,
-                    parity=serialutil.PARITY_NONE, stopbits=serialutil.STOPBITS_ONE_POINT_FIVE, bytesize=serialutil.EIGHTBITS)
-
-    def __get_frequency_visualizer_parameters(self):
-        return dict(frequency_range=self._view.get_frequency_range(), amplitude_to_rgb=self._view.get_amplitude_to_rgb(),
-                    grouped_led_strips=self.__get_grouped_led_strips())
-
     def __get_grouped_led_strips(self):
         led_strips = []
         if (self._view.get_serial_led_strip_checkbox_value()):
-            led_strips.append(SerialLedStrip(led_range=self._view.get_led_index_range(),
-                                             serial_connection=Serial(**self.__get_serial_parameters()),
-                                             brightness=self._view.get_brightness(),
-                                             group_led_ranges=self.__get_group_index_to_led_range()))
+
+            PORT = self._view.get_serial_port()
+            BAUDRATE = self._view.get_serial_baudrate()
+            PARITY = PARITY_NONE
+            STOP_BITS = STOPBITS_ONE_POINT_FIVE
+            BYTE_SIZE = EIGHTBITS
+            READ_TIMEOUT = 1
+            WRITE_TIMEOUT = 0
+
+            serial = ProductionSerial(PORT, BAUDRATE, PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
+
+            led_strips.append(SerialLedStrip(self._view.get_led_index_range(),
+                                             self.__get_group_index_to_led_range(),
+                                             serial,
+                                             self._view.get_brightness()))
 
         if (self._view.get_graphic_led_strip_checkbox_value()):
-            led_strips.append(GraphicLedStrip(led_range=self._view.get_led_index_range(),
-                                              group_led_ranges=self.__get_group_index_to_led_range(),
-                                              gui=PySimpleGui()))
+            led_strips.append(GraphicLedStrip(self._view.get_led_index_range(),
+                                              self.__get_group_index_to_led_range(),
+                                              PySimpleGui()))
 
         return led_strips
 
@@ -122,4 +124,8 @@ class AudioController(controller.Controller):
     def _initialize_visualizer(self):
         self._delete_visualizer()
         if (self._view.get_visualizer_type_dropdown_value() == audio_view.VisualizerType.FREQUENCY):
-            self.__visualizer = FrequencyVisualizer(**self.__get_frequency_visualizer_parameters())
+            FREQUENCY_RANGE = self._view.get_frequency_range()
+            AMPLITUDE_TO_RGB = self._view.get_amplitude_to_rgb()
+            GROUPED_LED_STRIPS = self.__get_grouped_led_strips()
+
+            self.__visualizer = FrequencyVisualizer(FREQUENCY_RANGE, AMPLITUDE_TO_RGB, GROUPED_LED_STRIPS)

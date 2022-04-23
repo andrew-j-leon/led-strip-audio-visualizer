@@ -122,3 +122,19 @@ class TestContains(unittest.TestCase):
         for value in OUT_OF_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
                 self.assertFalse(value in non_negative_integer_range)
+
+
+class TestIter(unittest.TestCase):
+    def test_iter(self):
+        ARGS = [(0, 0), (0, 1), (0, 10)]
+
+        for start, end in ARGS:
+
+            non_negative_integer_range = NonNegativeIntegerRange(start, end)
+
+            with self.subTest(repr(non_negative_integer_range)):
+
+                actual_values = [i for i in non_negative_integer_range]
+                expected_values = [i for i in range(start, end)]
+
+                self.assertEqual(actual_values, expected_values)

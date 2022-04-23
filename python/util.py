@@ -5,7 +5,7 @@ import math
 import os
 import re
 from functools import total_ordering
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple, Type
 
 import numpy
 
@@ -52,6 +52,9 @@ class NonNegativeIntegerRange:
             return (value.start in self) and (value.end - 1 in self)
 
         return (value >= self.start) and (value <= self.end - 1)
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(range(self.__start, self.__end))
 
 
 @total_ordering
