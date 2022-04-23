@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+from led_strip.rgb import RGB
 from libraries.serial import Serial
 from util import NonNegativeInteger, NonNegativeIntegerRange
 
@@ -31,7 +32,7 @@ class SerialLedStrip:
 
             self._group_led_ranges.append(non_negative_integer_range)
 
-        self.__group_colors: List[Tuple[int, int, int]] = [(0, 0, 0)] * self.number_of_groups
+        self.__group_colors = [RGB(0, 0, 0)] * self.number_of_groups
 
         self.__serial = serial
         self.__brightness = brightness
@@ -46,8 +47,8 @@ class SerialLedStrip:
             raise ValueError(f"The serial connection stated that there are {self.__number_of_leds_from_serial} leds, but this LedStrip object is set for {self.number_of_leds} leds.")
 
         serial_end = self.__number_of_leds_from_serial
-        if (self.__led_range.end > serial_end):
-            raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial_end} (exclusive), but this LedStrip has an (exclusive) end index of {self.__led_range.end}.")
+        if (self.__led_range.end > serial_end and self.number_of_leds > 0):
+            raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial_end} (exclusive), but this LedStrip ranges from {self.__led_range.start} (inclusive) to {self.__led_range.end} (exclusive).")
 
         self.__configure_serial()
 
@@ -66,25 +67,28 @@ class SerialLedStrip:
     def number_of_leds(self) -> int:
         return self.__led_range.end - self.__led_range.start
 
-    def enqueue_rgb(self, group_index: int, rgb: Tuple[int, int, int]):
-        self.__color_queue.append((group_index, rgb))
+    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+        if (self.number_of_groups == 0):
+            raise IndexError(f'Cannot enqueue RGB when GraphicLedStrip has 0 groups.')
+
+        if (group < 0 or group >= self.number_of_groups):
+            raise IndexError(f'Tried to enqueue an RGB color into group {group}, but group indices range from 0 (inclusive) to {self.number_of_groups - 1} (inclusive).')
+
+        red, green, blue = rgb
+        self.__color_queue.append((group, RGB(red, green, blue)))
 
     def group_is_color(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:
         return self.__group_colors[group_index] == rgb
 
     def show_enqueued_colors(self):
-        # Serial
-        if (len(self.__color_queue) >= 1):
+        if (len(self.__color_queue) > 0):
             self.__send_bytes(len(self.__color_queue).to_bytes(length=1, byteorder="big"))  # Send expected number of packets
 
             for queued_color_change in self.__color_queue:
-                group_index, rgb = queued_color_change
-                self.__send_packet(group_index, rgb)
+                group, rgb = queued_color_change
 
-        # Grouped
-        for queued_color_change in self.__color_queue:
-            group_index, rgb = queued_color_change
-            self.__group_colors[group_index] = rgb
+                self.__send_packet(group, rgb)
+                self.__group_colors[group] = rgb
 
         self.__color_queue.clear()
 
@@ -99,11 +103,11 @@ class SerialLedStrip:
             packet: bytes = self.__get_group_index_packet(group_index)
             self.__send_bytes(packet)
 
-    def __send_packet(self, group_index: int, rgb: Tuple[int, int, int]):
+    def __send_packet(self, group_index: int, rgb: RGB):
         packet = group_index.to_bytes(length=1, byteorder="big")
-
-        for color in rgb:
-            packet += color.to_bytes(1, "big")
+        packet += rgb.red.to_bytes(1, "big")
+        packet += rgb.green.to_bytes(1, "big")
+        packet += rgb.blue.to_bytes(1, "big")
 
         self.__send_bytes(packet)
 

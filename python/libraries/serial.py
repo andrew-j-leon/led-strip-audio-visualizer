@@ -49,7 +49,7 @@ class ProductionSerial(Serial):
 
 class FakeSerial(Serial):
     def __init__(self, number_of_leds: int):
-        self.__number_of_leds = number_of_leds
+        self.__number_of_leds = int(number_of_leds)
 
     @property
     def number_of_bytes_in_buffer(self) -> int:

@@ -107,102 +107,39 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(repr(point), f'Point({X}, {Y})')
 
 
-class TestRGB(unittest.TestCase):
-    def test_constructor(self):
-        VALID_RGBS = [(0, 0, 0), (255, 255, 255), (1, 1, 1), (254, 254, 254),
-                      (100, 34, 213)]
-
-        for valid_rgb in VALID_RGBS:
-
-            with self.subTest(f'rgb={valid_rgb}'):
-                red, green, blue = valid_rgb
-
-                rgb = RGB(red, green, blue)
-
-                self.assertEqual(rgb.red, red)
-                self.assertEqual(rgb.green, green)
-                self.assertEqual(rgb.blue, blue)
-
-        INVALID_RGBS = [(-1, 0, 0), (0, -1, 0), (0, 0, -1),
-                        (-5, 0, 0), (0, -5, 0), (0, 0, -5),
-                        (256, 0, 0), (0, 256, 0), (0, 0, 256),
-                        (300, 0, 0), (0, 300, 0), (0, 0, 300)]
-
-        for invalid_rgb in INVALID_RGBS:
-            with self.subTest(f'rgb={invalid_rgb}'):
-
-                with self.assertRaises(ValueError) as error:
-                    red, green, blue = invalid_rgb
-
-                    RGB(red, green, blue)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'rgb values must be between 0 (inclusive) & 255 (inclusive), (red, green, blue) was {invalid_rgb}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
-
-    def test_repr(self):
-        RED = 1
-        GREEN = 2
-        BLUE = 3
-
-        rgb = RGB(RED, GREEN, BLUE)
-
-        self.assertEqual(repr(rgb), f'RGB({RED}, {GREEN}, {BLUE})')
-
-    def test_eq_rgb(self):
-        RED_1 = 1
-        RED_2 = 2
-
-        GREEN = 2
-        BLUE = 3
-
-        rgb = RGB(RED_1, GREEN, BLUE)
-
-        self.assertEqual(rgb, RGB(RED_1, GREEN, BLUE))
-        self.assertNotEqual(rgb, RGB(RED_2, GREEN, BLUE))
-
-    def test_eq_tuple(self):
-        RED_1 = 1
-        RED_2 = 2
-
-        GREEN = 2
-        BLUE = 3
-
-        rgb = RGB(RED_1, GREEN, BLUE)
-
-        self.assertEqual(rgb, (RED_1, GREEN, BLUE))
-        self.assertNotEqual(rgb, (RED_2, GREEN, BLUE))
-
-
 class TestConstructor(unittest.TestCase):
     def test_number_of_leds(self):
         VALID_NUMBER_OF_LEDS = [0, 1, 100,
                                 1.5, 100.5]
 
         for number_of_leds in VALID_NUMBER_OF_LEDS:
-            with self.subTest(f'led_range=(0, {int(number_of_leds)})'):
-                led_range = (0, number_of_leds)
+            led_range = (0, number_of_leds)
 
-                GraphicLedStrip(led_range, [], FakeGui())
+            with self.subTest(led_range=led_range):
+                group_led_ranges = []
+
+                GraphicLedStrip(led_range, group_led_ranges, FakeGui())
 
         INVALID_NUMBER_OF_LEDS = [-1, -100]
 
         for number_of_leds in INVALID_NUMBER_OF_LEDS:
-            with self.subTest(f'led_range=(0, {number_of_leds})'):
-                led_range = (0, number_of_leds)
+            led_range = (0, number_of_leds)
+
+            with self.subTest(led_range=led_range):
 
                 with self.assertRaises(ValueError):
+                    group_led_ranges = []
 
-                    GraphicLedStrip(led_range, [], FakeGui())
+                    GraphicLedStrip(led_range, group_led_ranges, FakeGui())
 
     def test_led_ranges(self):
         VALID_LED_RANGES = [(0, 0), (0, 1), (0, 150), (1, 1), (1, 150)]
 
         for valid_led_range in VALID_LED_RANGES:
-            with self.subTest(f'led_range={valid_led_range}'):
+            with self.subTest(led_range=valid_led_range):
+                group_led_ranges = []
 
-                GraphicLedStrip(valid_led_range, [], FakeGui())
+                GraphicLedStrip(valid_led_range, group_led_ranges, FakeGui())
 
         INVALID_LED_RANGES = [(-1, 0), (0, -1), (-1, -1),
                               (-10, 0), (0, -10),
@@ -210,13 +147,14 @@ class TestConstructor(unittest.TestCase):
                               (10, 9), (10, 5)]
 
         for invalid_led_range in INVALID_LED_RANGES:
-            with self.subTest(f'led_range={invalid_led_range}'):
+            with self.subTest(led_range=invalid_led_range):
 
                 with self.assertRaises(ValueError):
-                    GraphicLedStrip(invalid_led_range, [], FakeGui())
+                    group_led_ranges = []
+
+                    GraphicLedStrip(invalid_led_range, group_led_ranges, FakeGui())
 
     def test_group_led_ranges_with_led_range_starting_at_0(self):
-
         LED_RANGE_STARTING_AT_0 = (0, 150)
 
         VALID_GROUP_LED_RANGES = [[(0, 0)], [(0, 1)], [(0, 150)], [(1, 1)], [(1, 150)],
