@@ -1,6 +1,7 @@
 import math
 from typing import Dict, List, Tuple
 
+from led_strip.led_strip import LedStrip
 from led_strip.rgb import RGB
 from libraries.gui import Font, Gui
 from util import NonNegativeInteger, NonNegativeIntegerRange, rgb_to_hex
@@ -23,7 +24,7 @@ class Point:
         return f'Point({self.x}, {self.y})'
 
 
-class GraphicLedStrip:
+class GraphicLedStrip(LedStrip):
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]], gui: Gui):
         start = NonNegativeInteger(led_range[0])
         end = NonNegativeInteger(led_range[1])
@@ -31,11 +32,6 @@ class GraphicLedStrip:
         self.__led_range = NonNegativeIntegerRange(start, end)
 
         self.__color_queue: List[Tuple[int, RGB]] = []
-
-        self.__gui = gui
-
-        self.__led_element_ids: Dict[int, int] = dict()
-        self.__draw_and_store_leds()
 
         self.__group_led_ranges: List[NonNegativeIntegerRange] = []
 
@@ -50,6 +46,12 @@ class GraphicLedStrip:
             self.__group_led_ranges.append(non_negative_integer_range)
 
         self.__group_colors = [RGB(0, 0, 0)] * self.number_of_groups
+
+        # Gui logic
+        self.__gui = gui
+
+        self.__led_element_ids: Dict[int, int] = dict()
+        self.__draw_and_store_leds()
 
     def __del__(self):
         try:
@@ -66,6 +68,10 @@ class GraphicLedStrip:
     def number_of_leds(self) -> int:
         return self.__led_range.end - self.__led_range.start
 
+    @property
+    def number_of_queued_colors(self) -> int:
+        return len(self.__color_queue)
+
     def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
         if (self.number_of_groups == 0):
             raise IndexError(f'Cannot enqueue RGB when GraphicLedStrip has 0 groups.')
@@ -79,7 +85,7 @@ class GraphicLedStrip:
     def group_is_color(self, group: int, rgb: Tuple[int, int, int]) -> bool:
         return self.__group_colors[group] == rgb
 
-    def show_enqueued_colors(self):
+    def show_queued_colors(self):
         for queued_color_change in self.__color_queue:
             group, rgb = queued_color_change
 
@@ -88,6 +94,7 @@ class GraphicLedStrip:
 
         self.__gui.update()
 
+    def clear_queued_colors(self):
         self.__color_queue.clear()
 
     def __recolor_leds(self, group: int, rgb: RGB):

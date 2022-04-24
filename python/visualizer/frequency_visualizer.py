@@ -244,7 +244,8 @@ class FrequencyVisualizer:
 
     def __show_led_strips(self, number_of_groups: int):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-            led_strip.show_enqueued_colors()
+            led_strip.show_queued_colors()
+            led_strip.clear_queued_colors()
 
     def __get_amplitude_to_rgb(self, amplitude: Union[int, float]) -> Tuple[int, int, int]:
         amplitude = max(0, amplitude)

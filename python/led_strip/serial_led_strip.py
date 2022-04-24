@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+from led_strip.led_strip import LedStrip
 from led_strip.rgb import RGB
 from libraries.serial import Serial
 from util import NonNegativeInteger, NonNegativeIntegerRange
@@ -7,20 +8,17 @@ from util import NonNegativeInteger, NonNegativeIntegerRange
 GROUPED_STRIP_TYPE = 1
 
 
-class SerialLedStrip:
+class SerialLedStrip(LedStrip):
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]],
                  serial: Serial, brightness: int):
-        if (brightness < 0 or brightness > 255):
-            raise ValueError(f'brightness must be within the range [0,255], but was {brightness}.')
-
         start = NonNegativeInteger(led_range[0])
         end = NonNegativeInteger(led_range[1])
 
         self.__led_range = NonNegativeIntegerRange(start, end)
 
-        self.__color_queue: List[Tuple(int, int, int)] = []
+        self.__color_queue: List[List[Tuple[int, RGB]]] = []
 
-        self._group_led_ranges: List[NonNegativeIntegerRange] = []
+        self.__group_led_ranges: List[NonNegativeIntegerRange] = []
 
         for i in range(len(group_led_ranges)):
             start, end = group_led_ranges[i]
@@ -30,9 +28,13 @@ class SerialLedStrip:
             if (non_negative_integer_range not in self.__led_range):
                 raise ValueError(f'group_led_ranges[{i}]={(start, end)} is not within the bounds of led_range={led_range}.')
 
-            self._group_led_ranges.append(non_negative_integer_range)
+            self.__group_led_ranges.append(non_negative_integer_range)
 
         self.__group_colors = [RGB(0, 0, 0)] * self.number_of_groups
+
+        # Serial logic
+        if (brightness < 0 or brightness > 255):
+            raise ValueError(f'brightness must be within the range [0,255], but was {brightness}.')
 
         self.__serial = serial
         self.__brightness = brightness
@@ -61,11 +63,15 @@ class SerialLedStrip:
 
     @property
     def number_of_groups(self) -> int:
-        return len(self._group_led_ranges)
+        return len(self.__group_led_ranges)
 
     @property
     def number_of_leds(self) -> int:
         return self.__led_range.end - self.__led_range.start
+
+    @property
+    def number_of_queued_colors(self) -> int:
+        return len(self.__color_queue)
 
     def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
         if (self.number_of_groups == 0):
@@ -80,7 +86,7 @@ class SerialLedStrip:
     def group_is_color(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:
         return self.__group_colors[group_index] == rgb
 
-    def show_enqueued_colors(self):
+    def show_queued_colors(self):
         if (len(self.__color_queue) > 0):
             self.__send_bytes(len(self.__color_queue).to_bytes(length=1, byteorder="big"))  # Send expected number of packets
 
@@ -90,6 +96,7 @@ class SerialLedStrip:
                 self.__send_packet(group, rgb)
                 self.__group_colors[group] = rgb
 
+    def clear_queued_colors(self):
         self.__color_queue.clear()
 
     def __configure_serial(self):
@@ -99,7 +106,7 @@ class SerialLedStrip:
         self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder="big"))  # Send number of groups
 
         # send group led ranges
-        for group_index in range(len(self._group_led_ranges)):
+        for group_index in range(len(self.__group_led_ranges)):
             packet: bytes = self.__get_group_index_packet(group_index)
             self.__send_bytes(packet)
 
@@ -112,7 +119,7 @@ class SerialLedStrip:
         self.__send_bytes(packet)
 
     def __get_group_index_packet(self, group_index: int) -> bytes:
-        led_range = self._group_led_ranges[group_index]
+        led_range = self.__group_led_ranges[group_index]
         return (led_range.start.to_bytes(length=2, byteorder="big") + led_range.end.to_bytes(length=2, byteorder="big"))
 
     def __send_bytes(self, bytes_: bytes):

@@ -290,11 +290,14 @@ class TestEnqueueColor(unittest.TestCase):
 
         self.led_strip.enqueue_rgb(self.group_0, RGB)
 
+        self.assertEqual(self.led_strip.number_of_queued_colors, 1)
+
         self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB))
         self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB))
 
-        self.led_strip.show_enqueued_colors()
+        self.led_strip.show_queued_colors()
 
+        self.assertEqual(self.led_strip.number_of_queued_colors, 1)
         self.assertTrue(self.led_strip.group_is_color(self.group_0, RGB))
         self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB))
 
@@ -305,13 +308,17 @@ class TestEnqueueColor(unittest.TestCase):
         self.led_strip.enqueue_rgb(self.group_0, RGB_0)
         self.led_strip.enqueue_rgb(self.group_1, RGB_1)
 
+        self.assertEqual(self.led_strip.number_of_queued_colors, 2)
+
         self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_0))
         self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_1))
 
         self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB_0))
         self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB_1))
 
-        self.led_strip.show_enqueued_colors()
+        self.led_strip.show_queued_colors()
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
         self.assertTrue(self.led_strip.group_is_color(self.group_0, RGB_0))
         self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_1))
@@ -328,10 +335,14 @@ class TestEnqueueColor(unittest.TestCase):
         self.led_strip.enqueue_rgb(GROUP, RGB_0)
         self.led_strip.enqueue_rgb(GROUP, RGB_1)
 
+        self.assertEqual(self.led_strip.number_of_queued_colors, 2)
+
         self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_0))
         self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_1))
 
-        self.led_strip.show_enqueued_colors()
+        self.led_strip.show_queued_colors()
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
         self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_0))
         self.assertTrue(self.led_strip.group_is_color(GROUP, RGB_1))
@@ -385,3 +396,46 @@ class TestEnqueueColor(unittest.TestCase):
                 expected_error_message = f'Tried to enqueue an RGB color into group {invalid_group}, but group indices range from 0 (inclusive) to {len(group_led_ranges) - 1} (inclusive).'
 
                 self.assertEqual(actual_error_message, expected_error_message)
+
+
+class TestClearQueuedColors(unittest.TestCase):
+    def setUp(self) -> None:
+        LED_RANGE = (0, 100)
+        GROUP_LED_RANGES = [(0, 10), (10, 20)]
+
+        number_of_leds = LED_RANGE[1]
+        serial = FakeSerial(number_of_leds)
+
+        brightness = 10
+
+        self.led_strip = SerialLedStrip(LED_RANGE, GROUP_LED_RANGES, serial, brightness)
+
+        self.group_0 = 0
+        self.group_1 = 1
+
+    def test_clear_empty_queue(self):
+        self.assertEqual(self.led_strip.number_of_queued_colors, 0)
+
+        self.led_strip.clear_queued_colors()
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 0)
+
+    def test_clear_one_element_queue(self):
+        self.led_strip.enqueue_rgb(0, (1, 1, 1))
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 1)
+
+        self.led_strip.clear_queued_colors()
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 0)
+
+    def test_clear_multi_element_queue(self):
+        self.led_strip.enqueue_rgb(0, (1, 1, 1))
+        self.led_strip.enqueue_rgb(1, (1, 1, 1))
+        self.led_strip.enqueue_rgb(0, (1, 1, 1))
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 3)
+
+        self.led_strip.clear_queued_colors()
+
+        self.assertEqual(self.led_strip.number_of_queued_colors, 0)
