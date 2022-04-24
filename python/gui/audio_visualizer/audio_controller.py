@@ -5,7 +5,7 @@ import gui.audio_visualizer.audio_view as audio_view
 import gui.controller as controller
 from led_strip.graphic_led_strip import GraphicLedStrip
 from led_strip.serial_led_strip import SerialLedStrip
-from libraries.gui import PySimpleGui
+from libraries.gui import ProductionGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 from visualizer.frequency_visualizer import FrequencyVisualizer
 
@@ -39,9 +39,15 @@ class AudioController(controller.Controller):
                                              self._view.get_brightness()))
 
         if (self._view.get_graphic_led_strip_checkbox_value()):
+            WIDTH = 1350
+            HEIGHT = 600
+
+            gui = ProductionGui(WIDTH, HEIGHT)
+            gui.update()
+
             led_strips.append(GraphicLedStrip(self._view.get_led_index_range(),
                                               self.__get_group_index_to_led_range(),
-                                              PySimpleGui()))
+                                              gui))
 
         return led_strips
 

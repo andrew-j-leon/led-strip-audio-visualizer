@@ -28,9 +28,9 @@ class Serial(abc.ABC):
 
 
 class ProductionSerial(Serial):
-    def __init__(self, port: str, baudrate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
+    def __init__(self, port: str, baud_rate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
                  read_timeout: int, write_timeout: int):
-        self.__serial = serial.Serial(port=port, baudrate=baudrate, parity=parity, stopbits=stop_bits,
+        self.__serial = serial.Serial(port=port, baudrate=baud_rate, parity=parity, stopbits=stop_bits,
                                       bytesize=byte_size, timeout=read_timeout, write_timeout=write_timeout)
 
     @property
@@ -45,24 +45,3 @@ class ProductionSerial(Serial):
 
     def close(self):
         return self.__serial.close()
-
-
-class FakeSerial(Serial):
-    def __init__(self, number_of_leds: int):
-        self.__number_of_leds = int(number_of_leds)
-
-    @property
-    def number_of_bytes_in_buffer(self) -> int:
-        return 1
-
-    def read(self, number_of_bytes: int) -> Any:
-        LENGTH = 2
-        BYTE_ORDER = 'big'
-
-        return self.__number_of_leds.to_bytes(LENGTH, BYTE_ORDER)
-
-    def write(self, data: bytes):
-        pass
-
-    def close(self):
-        pass

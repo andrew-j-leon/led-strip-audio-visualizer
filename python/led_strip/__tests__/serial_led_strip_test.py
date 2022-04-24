@@ -1,7 +1,29 @@
 import unittest
+from typing import Any
 
 from led_strip.serial_led_strip import SerialLedStrip
-from libraries.serial import FakeSerial
+from libraries.serial import Serial
+
+
+class FakeSerial(Serial):
+    def __init__(self, number_of_leds: int):
+        self.__number_of_leds = int(number_of_leds)
+
+    @property
+    def number_of_bytes_in_buffer(self) -> int:
+        return 1
+
+    def read(self, number_of_bytes: int) -> Any:
+        LENGTH = 2
+        BYTE_ORDER = 'big'
+
+        return self.__number_of_leds.to_bytes(LENGTH, BYTE_ORDER)
+
+    def write(self, data: bytes):
+        pass
+
+    def close(self):
+        pass
 
 
 class TestConstructor(unittest.TestCase):

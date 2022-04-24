@@ -22,8 +22,8 @@ class FakeGui(Gui):
     def close(self):
         self.closed = True
 
-    def create_oval(self, left_most_x: int, top_most_y: int, right_most_x: int, bottom_most_y: int, fill_color: str):
-        element = Oval(left_most_x, top_most_y, right_most_x, bottom_most_y, fill_color)
+    def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str) -> int:
+        element = Oval(top_left_x, top_left_y, bottom_right_x, bottom_right_y, fill_color)
         element_id = id(element)
 
         self.elements[element_id] = element
