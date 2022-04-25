@@ -85,18 +85,6 @@ def get_serial_baudrate_error_message(baudrate: str, baudrates: List[str]) -> st
     return error_message
 
 
-def get_serial_port_error_message(serial_port: str) -> str:
-    error_message: str = ""
-
-    try:
-        serial_connection = serial.Serial(port=serial_port)
-        serial_connection.close()
-    except serial.SerialException as e:
-        error_message += (str(e) + "\n")
-
-    return error_message
-
-
 def get_milliseconds_per_audio_chunk_error_message(milliseconds_per_audio_chunk: str) -> str:
     error_message = ""
 

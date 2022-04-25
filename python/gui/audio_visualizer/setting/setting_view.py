@@ -262,7 +262,6 @@ class SettingView(view.View):
         error_messages: List[str] = [get_led_index_range_error_message(self._get_element_value(SettingElement.START_LED_INDEX_INPUT),
                                                                        self._get_element_value(SettingElement.END_LED_INDEX_INPUT)),
                                      get_milliseconds_per_audio_chunk_error_message(self._get_element_value(SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT)),
-                                     get_serial_port_error_message(self._get_element_value(SettingElement.SERIAL_PORT_INPUT)),
                                      get_serial_baudrate_error_message(self._get_element_value(SettingElement.SERIAL_BAUDRATE_DROPDOWN), _BAUDRATES),
                                      get_brightness_error_message(self._get_element_value(SettingElement.BRIGHTNESS_INPUT)),
                                      get_frequency_range_error_message(self._get_element_value(SettingElement.MINIMUM_FREQUENCY_INPUT),
