@@ -224,7 +224,7 @@ class FrequencyVisualizer:
             fft_sublist_average_amplitude: float = _get_fft_sublist_average_amplitude(fft[fft_sublist_start_index:fft_sublist_end_index], len(fft))
             led_strip_group_color: Tuple[int, int, int] = self.__get_amplitude_to_rgb(fft_sublist_average_amplitude)
 
-            if (not reference_led_strip.group_is_color(led_strip_group_index, led_strip_group_color)):
+            if (not reference_led_strip.group_is_rgb(led_strip_group_index, led_strip_group_color)):
                 self.__set_group_color(number_of_groups, led_strip_group_index, led_strip_group_color)
 
     def __get_minimum_frequency(self) -> int:

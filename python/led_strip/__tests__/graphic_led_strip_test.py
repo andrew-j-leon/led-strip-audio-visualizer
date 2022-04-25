@@ -3,6 +3,7 @@ import unittest
 from typing import Dict
 
 from led_strip.graphic_led_strip import GraphicLedStrip, Point
+from led_strip.led_strip import GroupedLeds
 from libraries.gui import Font, Gui, Rectangle
 
 
@@ -107,105 +108,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(repr(point), f'Point({X}, {Y})')
 
 
-class TestConstructor(unittest.TestCase):
-    def test_number_of_leds(self):
-        VALID_NUMBER_OF_LEDS = [0, 1, 100,
-                                1.5, 100.5]
-
-        for number_of_leds in VALID_NUMBER_OF_LEDS:
-            led_range = (0, number_of_leds)
-
-            with self.subTest(led_range=led_range):
-                group_led_ranges = []
-
-                GraphicLedStrip(led_range, group_led_ranges, FakeGui())
-
-        INVALID_NUMBER_OF_LEDS = [-1, -100]
-
-        for number_of_leds in INVALID_NUMBER_OF_LEDS:
-            led_range = (0, number_of_leds)
-
-            with self.subTest(led_range=led_range):
-
-                with self.assertRaises(ValueError):
-                    group_led_ranges = []
-
-                    GraphicLedStrip(led_range, group_led_ranges, FakeGui())
-
-    def test_led_ranges(self):
-        VALID_LED_RANGES = [(0, 0), (0, 1), (0, 150), (1, 1), (1, 150)]
-
-        for valid_led_range in VALID_LED_RANGES:
-            with self.subTest(led_range=valid_led_range):
-                group_led_ranges = []
-
-                GraphicLedStrip(valid_led_range, group_led_ranges, FakeGui())
-
-        INVALID_LED_RANGES = [(-1, 0), (0, -1), (-1, -1),
-                              (-10, 0), (0, -10),
-                              (1, 0), (10, 0),
-                              (10, 9), (10, 5)]
-
-        for invalid_led_range in INVALID_LED_RANGES:
-            with self.subTest(led_range=invalid_led_range):
-
-                with self.assertRaises(ValueError):
-                    group_led_ranges = []
-
-                    GraphicLedStrip(invalid_led_range, group_led_ranges, FakeGui())
-
-    def test_group_led_ranges_with_led_range_starting_at_0(self):
-        LED_RANGE_STARTING_AT_0 = (0, 150)
-
-        VALID_GROUP_LED_RANGES = [[(0, 0)], [(0, 1)], [(0, 150)], [(1, 1)], [(1, 150)],
-                                  [(150, 150), (151, 151), (300, 300)]]
-
-        INVALID_GROUP_LED_RANGES = [[(-1, 0)], [(0, -1)], [(-1, -1)],
-                                    [(-10, 0)], [(0, -10)],
-                                    [(1, 0)], [(10, 0)],
-                                    [(10, 9)], [(10, 5)]]
-
-        self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_0, VALID_GROUP_LED_RANGES)
-        self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_0, INVALID_GROUP_LED_RANGES)
-
-    def test_group_led_ranges_with_led_range_starting_at_10(self):
-
-        LED_RANGE_STARTING_AT_10 = (10, 150)
-
-        VALID_GROUP_LED_RANGES = [
-            [(10, 10)], [(10, 11)], [(10, 150)],
-            [(149, 150)], [(150, 150)],
-            [(10, 90), (90, 150)]
-        ]
-
-        INVALID_GROUP_LED_RANGES = [
-            [(0, 1)], [(0, 10)], [(0, 150)], [(0, 151)], [(0, 300)],
-            [(9, 10)], [(9, 11)], [(9, 150)], [(9, 300)],
-            [(10, 151)], [(10, 300)],
-            [(50, 151)], [(50, 300)],
-            [(150, 151)], [(150, 300)],
-            [(151, 152)], [(152, 300)]
-        ]
-
-        self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_10, VALID_GROUP_LED_RANGES)
-        self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_10, INVALID_GROUP_LED_RANGES)
-
-    def check_valid_group_led_ranges(self, led_range, valid_group_led_ranges):
-        for group_led_ranges in valid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
-
-                GraphicLedStrip(led_range, group_led_ranges, FakeGui())
-
-    def check_invalid_group_led_ranges(self, led_range, invalid_group_led_ranges):
-        for group_led_ranges in invalid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
-
-                with self.assertRaises(ValueError):
-                    GraphicLedStrip(led_range, group_led_ranges, FakeGui())
-
-
 class TestNumberOfGroups(unittest.TestCase):
-
     def test_number_of_groups(self):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = [[],
@@ -216,111 +119,102 @@ class TestNumberOfGroups(unittest.TestCase):
                              (50, 60), (60, 70), (70, 80), (80, 90), (90, 100)]]
 
         for group_led_ranges in GROUP_LED_RANGES:
+            with self.subTest(number_of_groups=len(group_led_ranges)):
 
-            with self.subTest(f'number_of_groups={len(group_led_ranges)}'):
+                leds = GroupedLeds(LED_RANGE, group_led_ranges)
 
-                led_strip = GraphicLedStrip(LED_RANGE, group_led_ranges, FakeGui())
+                led_strip = GraphicLedStrip(leds, FakeGui())
 
                 self.assertEqual(led_strip.number_of_groups, len(group_led_ranges))
 
 
-class TestNumberOfLeds(unittest.TestCase):
-    def test_number_of_leds(self):
-        NUMBER_OF_LEDS = [0, 1, 15, 300]
-
-        for number_of_leds in NUMBER_OF_LEDS:
-            with self.subTest(f'number_of_leds={number_of_leds}'):
-
-                led_range = (0, number_of_leds)
-
-                led_strip = GraphicLedStrip(led_range, [], FakeGui())
-
-                self.assertEqual(number_of_leds, led_strip.number_of_leds)
-
-
 class TestEnqueueColor(unittest.TestCase):
+    LED_RANGE = (0, 100)
+    GROUP_LED_RANGES = [(0, 10), (10, 20)]
 
-    def setUp(self) -> None:
-        LED_RANGE = (0, 100)
-        GROUP_LED_RANGES = [(0, 10), (10, 20)]
+    GROUP_0 = 0
+    GROUP_1 = 1
+    GROUP_2 = 2
 
-        self.led_strip = GraphicLedStrip(LED_RANGE, GROUP_LED_RANGES, FakeGui())
+    def setUp(self):
+        leds = GroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES)
 
-        self.group_0 = 0
-        self.group_1 = 1
+        self.led_strip = GraphicLedStrip(leds, FakeGui())
 
     def test_enqueue_one_group_color(self):
         RGB = (10, 20, 30)
 
-        self.led_strip.enqueue_rgb(self.group_0, RGB)
+        self.led_strip.enqueue_rgb(self.GROUP_0, RGB)
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 1)
 
-        self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB))
-        self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_0, RGB))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_1, RGB))
 
         self.led_strip.show_queued_colors()
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 1)
 
-        self.assertTrue(self.led_strip.group_is_color(self.group_0, RGB))
-        self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB))
+        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_0, RGB))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_1, RGB))
 
-    def test_enqueue_two_group_colors(self):
+    def test_enqueue_multiple_group_colors(self):
         RGB_0 = (10, 20, 30)
         RGB_1 = (100, 150, 200)
 
-        self.led_strip.enqueue_rgb(self.group_0, RGB_0)
-        self.led_strip.enqueue_rgb(self.group_1, RGB_1)
+        self.led_strip.enqueue_rgb(self.GROUP_0, RGB_0)
+        self.led_strip.enqueue_rgb(self.GROUP_1, RGB_1)
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
-        self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_0))
-        self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_1))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_0, RGB_0))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_0, RGB_1))
 
-        self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB_0))
-        self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB_1))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_1, RGB_0))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_1, RGB_1))
 
         self.led_strip.show_queued_colors()
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
-        self.assertTrue(self.led_strip.group_is_color(self.group_0, RGB_0))
-        self.assertFalse(self.led_strip.group_is_color(self.group_0, RGB_1))
+        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_0, RGB_0))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_0, RGB_1))
 
-        self.assertFalse(self.led_strip.group_is_color(self.group_1, RGB_0))
-        self.assertTrue(self.led_strip.group_is_color(self.group_1, RGB_1))
+        self.assertFalse(self.led_strip.group_is_rgb(self.GROUP_1, RGB_0))
+        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_1, RGB_1))
 
     def test_overwrite_group_color(self):
         RGB_0 = (10, 20, 30)
         RGB_1 = (40, 50, 60)
 
-        GROUP = self.group_0
+        GROUP = self.GROUP_0
 
         self.led_strip.enqueue_rgb(GROUP, RGB_0)
         self.led_strip.enqueue_rgb(GROUP, RGB_1)
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
-        self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_0))
-        self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_1))
+        self.assertFalse(self.led_strip.group_is_rgb(GROUP, RGB_0))
+        self.assertFalse(self.led_strip.group_is_rgb(GROUP, RGB_1))
 
         self.led_strip.show_queued_colors()
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 2)
 
-        self.assertFalse(self.led_strip.group_is_color(GROUP, RGB_0))
-        self.assertTrue(self.led_strip.group_is_color(GROUP, RGB_1))
+        self.assertFalse(self.led_strip.group_is_rgb(GROUP, RGB_0))
+        self.assertTrue(self.led_strip.group_is_rgb(GROUP, RGB_1))
 
     def test_no_groups(self):
         GROUPS = [0, 1, 100]
 
         for group in GROUPS:
-            with self.subTest(f'group={group}'):
+            with self.subTest(group=group):
+                led_range = (0, 100)
+                group_led_ranges = []
 
-                LED_RANGE = (0, 100)
-                GROUP_LED_RANGES = []
-                led_strip = GraphicLedStrip(LED_RANGE, GROUP_LED_RANGES, FakeGui())
+                leds = GroupedLeds(led_range, group_led_ranges)
+
+                led_strip = GraphicLedStrip(leds, FakeGui())
 
                 with self.assertRaises(IndexError) as error:
                     rbg = (1, 2, 3)
@@ -336,12 +230,14 @@ class TestEnqueueColor(unittest.TestCase):
         INVALID_GROUPS = [-6, -1, 1, 10]
 
         for invalid_group in INVALID_GROUPS:
-            with self.subTest(f'group={invalid_group}'):
+            with self.subTest(group=invalid_group):
 
-                LED_RANGE = (0, 100)
-                GROUP_LED_RANGES = [(0, 50)]
+                led_range = (0, 100)
+                group_led_ranges = [(0, 50)]
 
-                led_strip = GraphicLedStrip(LED_RANGE, GROUP_LED_RANGES, FakeGui())
+                leds = GroupedLeds(led_range, group_led_ranges)
+
+                led_strip = GraphicLedStrip(leds, FakeGui())
 
                 with self.assertRaises(IndexError) as error:
                     rgb = (1, 2, 3)
@@ -349,20 +245,23 @@ class TestEnqueueColor(unittest.TestCase):
                     led_strip.enqueue_rgb(invalid_group, rgb)
 
                 actual_error_message = str(error.exception)
-                expected_error_message = f'Tried to enqueue an RGB color into group {invalid_group}, but group indices range from 0 (inclusive) to {len(GROUP_LED_RANGES) - 1} (inclusive).'
+                expected_error_message = f'Tried to enqueue an RGB color into group {invalid_group}, but group indices range from 0 (inclusive) to {len(group_led_ranges) - 1} (inclusive).'
 
                 self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestClearQueuedColors(unittest.TestCase):
-    def setUp(self) -> None:
-        LED_RANGE = (0, 100)
-        GROUP_LED_RANGES = [(0, 10), (10, 20)]
+    LED_RANGE = (0, 100)
+    GROUP_LED_RANGES = [(0, 10), (10, 20)]
 
-        self.led_strip = GraphicLedStrip(LED_RANGE, GROUP_LED_RANGES, FakeGui())
+    GROUP_0 = 0
+    GROUP_1 = 1
+    GROUP_2 = 2
 
-        self.group_0 = 0
-        self.group_1 = 1
+    def setUp(self):
+        leds = GroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES)
+
+        self.led_strip = GraphicLedStrip(leds, FakeGui())
 
     def test_clear_empty_queue(self):
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
@@ -372,7 +271,7 @@ class TestClearQueuedColors(unittest.TestCase):
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
     def test_clear_one_element_queue(self):
-        self.led_strip.enqueue_rgb(0, (1, 1, 1))
+        self.led_strip.enqueue_rgb(self.GROUP_0, (1, 1, 1))
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 1)
 
@@ -381,9 +280,9 @@ class TestClearQueuedColors(unittest.TestCase):
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
     def test_clear_multi_element_queue(self):
-        self.led_strip.enqueue_rgb(0, (1, 1, 1))
-        self.led_strip.enqueue_rgb(1, (1, 1, 1))
-        self.led_strip.enqueue_rgb(0, (1, 1, 1))
+        self.led_strip.enqueue_rgb(self.GROUP_0, (1, 1, 1))
+        self.led_strip.enqueue_rgb(self.GROUP_1, (1, 1, 1))
+        self.led_strip.enqueue_rgb(self.GROUP_0, (1, 1, 1))
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 3)
 

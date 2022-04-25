@@ -1,10 +1,10 @@
 import math
 from typing import Dict, List, Tuple
 
-from led_strip.led_strip import LedStrip
+from led_strip.led_strip import GroupedLeds, LedStrip
 from led_strip.rgb import RGB
 from libraries.gui import Font, Gui
-from util import NonNegativeInteger, NonNegativeIntegerRange, rgb_to_hex
+from util import rgb_to_hex
 
 
 class Point:
@@ -25,29 +25,11 @@ class Point:
 
 
 class GraphicLedStrip(LedStrip):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]], gui: Gui):
-        start = NonNegativeInteger(led_range[0])
-        end = NonNegativeInteger(led_range[1])
-
-        self.__led_range = NonNegativeIntegerRange(start, end)
+    def __init__(self, grouped_leds: GroupedLeds, gui: Gui):
+        self.__grouped_leds = grouped_leds
 
         self.__color_queue: List[Tuple[int, RGB]] = []
 
-        self.__group_led_ranges: List[NonNegativeIntegerRange] = []
-
-        for i in range(len(group_led_ranges)):
-            start, end = group_led_ranges[i]
-
-            non_negative_integer_range = NonNegativeIntegerRange(start, end)
-
-            if (non_negative_integer_range not in self.__led_range):
-                raise ValueError(f'group_led_ranges[{i}]={(start, end)} is not within the bounds of led_range={led_range}.')
-
-            self.__group_led_ranges.append(non_negative_integer_range)
-
-        self.__group_colors = [RGB(0, 0, 0)] * self.number_of_groups
-
-        # Gui logic
         self.__gui = gui
 
         self.__led_element_ids: Dict[int, int] = dict()
@@ -62,11 +44,7 @@ class GraphicLedStrip(LedStrip):
 
     @property
     def number_of_groups(self) -> int:
-        return len(self.__group_led_ranges)
-
-    @property
-    def number_of_leds(self) -> int:
-        return self.__led_range.end - self.__led_range.start
+        return self.__grouped_leds.number_of_groups
 
     @property
     def number_of_queued_colors(self) -> int:
@@ -82,15 +60,15 @@ class GraphicLedStrip(LedStrip):
         red, green, blue = rgb
         self.__color_queue.append((group, RGB(red, green, blue)))
 
-    def group_is_color(self, group: int, rgb: Tuple[int, int, int]) -> bool:
-        return self.__group_colors[group] == rgb
+    def group_is_rgb(self, group: int, rgb: Tuple[int, int, int]) -> bool:
+        return self.__grouped_leds.get_group_rgb(group) == rgb
 
     def show_queued_colors(self):
         for queued_color_change in self.__color_queue:
             group, rgb = queued_color_change
 
             self.__recolor_leds(group, rgb)
-            self.__group_colors[group] = rgb
+            self.__grouped_leds.set_group_rgb(group, rgb)
 
         self.__gui.update()
 
@@ -98,7 +76,7 @@ class GraphicLedStrip(LedStrip):
         self.__color_queue.clear()
 
     def __recolor_leds(self, group: int, rgb: RGB):
-        int_range = self.__group_led_ranges[group]
+        int_range = self.__grouped_leds.get_group_led_range(group)
 
         for i in int_range:
             element_id = self.__led_element_ids[i]
@@ -115,7 +93,7 @@ class GraphicLedStrip(LedStrip):
         WHITE_HEX = "#ffffff"
 
         # Draw the LEDs on the TKinter Canvas
-        for i in range(self.__led_range.start, self.__led_range.end):
+        for i in range(self.__grouped_leds.start_led, self.__grouped_leds.end_led):
             # center coordinates of the LED
             led_center_point = Point(x=LED_RADIUS + led_diameter * (i % LEDS_PER_ROW), y=LED_RADIUS + led_diameter * (i // LEDS_PER_ROW),)
 
@@ -128,10 +106,10 @@ class GraphicLedStrip(LedStrip):
 
             # This font size ensures that the longest index values are as large as possible while still fitting inside
             # their LEDs
-            font_size_pixels = (led_diameter + 5) / len(str(self.number_of_leds))
+            font_size_pixels = (led_diameter + 5) / len(str(self.__grouped_leds.number_of_leds))
 
             # Draw the index numbers in each led
-            font_size_pixels = (led_diameter + 5) / len(str(self.number_of_leds))
+            font_size_pixels = (led_diameter + 5) / len(str(self.__grouped_leds.number_of_leds))
             font = Font(size=int(-1 * font_size_pixels), style='bold', color=WHITE_HEX)
             self.__gui.create_text(led_center_point.x, led_center_point.y, text=str(i), font=font)
 
