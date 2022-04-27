@@ -1,6 +1,6 @@
 import gui.audio_visualizer.audio_model as audio_model
 import pyaudio
-import util
+import util.util as util
 
 
 class NoDefaultInputDeviceDetectedError(Exception):

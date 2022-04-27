@@ -1,7 +1,7 @@
 import unittest
 from typing import Any, Callable, List, Tuple, Type
 
-from util import NonNegativeInteger
+from util.util import NonNegativeInteger
 
 
 def get_error_message(callable: Callable) -> str:

@@ -2,9 +2,9 @@ import math
 from typing import Dict, List, Tuple
 
 from led_strip.led_strip import GroupedLeds, LedStrip
-from led_strip.rgb import RGB
+from util.rgb import RGB
 from libraries.gui import Font, Gui
-from util import rgb_to_hex
+from util.util import rgb_to_hex
 
 
 class Point:
@@ -57,8 +57,7 @@ class GraphicLedStrip(LedStrip):
         if (group < 0 or group >= self.number_of_groups):
             raise IndexError(f'Tried to enqueue an RGB color into group {group}, but group indices range from 0 (inclusive) to {self.number_of_groups - 1} (inclusive).')
 
-        red, green, blue = rgb
-        self.__color_queue.append((group, RGB(red, green, blue)))
+        self.__color_queue.append((group, RGB(*rgb)))
 
     def group_is_rgb(self, group: int, rgb: Tuple[int, int, int]) -> bool:
         return self.__grouped_leds.get_group_rgb(group) == rgb

@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple
 
 import PySimpleGUI as sg
-import util
+import util.util as util
 from gui.window import Window
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 

@@ -22,6 +22,11 @@ class RGB:
     def blue(self) -> int:
         return self.__blue
 
+    def __iter__(self):
+        yield self.red
+        yield self.green
+        yield self.blue
+
     def __repr__(self) -> str:
         return f'RGB({self.red}, {self.green}, {self.blue})'
 

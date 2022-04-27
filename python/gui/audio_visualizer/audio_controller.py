@@ -8,7 +8,7 @@ from led_strip.led_strip import GroupedLeds
 from led_strip.serial_led_strip import SerialLedStrip
 from libraries.gui import ProductionGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
-from visualizer.frequency_visualizer import FrequencyVisualizer
+from visualizer.spectrogram import Spectrogram
 
 _START_LED_INDEX = 0
 _END_LED_INDEX = 1
@@ -105,9 +105,9 @@ class AudioController(controller.Controller):
 
     def _update_visualizer(self, audio_chunk: bytes):
         if (self.__visualizer):
-            if (isinstance(self.__visualizer, FrequencyVisualizer)):
-                self.__visualizer.update_led_strips(audio_chunk, self._audio_player.get_framerate(),
-                                                    self._audio_player.milliseconds_to_number_of_frames(self._view.get_milliseconds_per_audio_chunk()))
+            if (isinstance(self.__visualizer, Spectrogram)):
+                self.__visualizer.update_led_strips(audio_chunk, self._audio_player.milliseconds_to_number_of_frames(self._view.get_milliseconds_per_audio_chunk()),
+                                                    self._audio_player.get_framerate())
 
     # Methods that the child class can/should override
     def _ui_event_is_valid(self, event: str) -> bool:
@@ -134,4 +134,4 @@ class AudioController(controller.Controller):
             AMPLITUDE_TO_RGB = self._view.get_amplitude_to_rgb()
             GROUPED_LED_STRIPS = self.__get_grouped_led_strips()
 
-            self.__visualizer = FrequencyVisualizer(FREQUENCY_RANGE, AMPLITUDE_TO_RGB, GROUPED_LED_STRIPS)
+            self.__visualizer = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB, GROUPED_LED_STRIPS)

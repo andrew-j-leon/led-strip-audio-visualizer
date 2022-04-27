@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from led_strip.led_strip import GroupedLeds, LedStrip
-from led_strip.rgb import RGB
+from util.rgb import RGB
 from libraries.serial import Serial
 
 GROUPED_STRIP_TYPE = 1

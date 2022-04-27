@@ -1,6 +1,6 @@
 import unittest
 
-from led_strip.rgb import RGB
+from util.rgb import RGB
 
 
 class TestRGB(unittest.TestCase):
@@ -69,3 +69,9 @@ class TestRGB(unittest.TestCase):
 
         self.assertEqual(rgb, (RED_1, GREEN, BLUE))
         self.assertNotEqual(rgb, (RED_2, GREEN, BLUE))
+
+    def test_iter(self):
+        rgb_tuple = (10, 20, 30)
+        rgb = RGB(*rgb_tuple)
+
+        self.assertEqual(tuple(rgb), rgb_tuple)

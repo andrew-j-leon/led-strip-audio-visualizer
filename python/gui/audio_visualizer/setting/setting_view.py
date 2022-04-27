@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 import gui.styling as styling
 import gui.view as view
 import PySimpleGUI as sg
-import util
+import util.util as util
 from gui.audio_visualizer.setting.error_message import *
 from gui.window import Window
 
@@ -16,10 +16,10 @@ def _create_default_amplitude_to_rgb() -> List[Tuple[int, int, int]]:
     MINIMUM_AMPLITUDE = 0  # dB
     MAXIMUM_AMPLITUDE = 200  # dB
 
-    amplitude_to_rgb: List[Tuple[int, int, int]] = []
+    amplitude_rgbs: List[Tuple[int, int, int]] = []
     for amplitude in range(MINIMUM_AMPLITUDE, MAXIMUM_AMPLITUDE + 1):
-        amplitude_to_rgb.append(util.hsl_to_rgb(__get_hue(amplitude), SATURATION, LIGHTNESS))
-    return amplitude_to_rgb
+        amplitude_rgbs.append(util.hsl_to_rgb(__get_hue(amplitude), SATURATION, LIGHTNESS))
+    return amplitude_rgbs
 
 
 def __get_hue(amplitude: Union[int, float]) -> int:
@@ -184,10 +184,10 @@ class SettingView(view.View):
             return _create_default_amplitude_to_rgb()
 
         else:
-            amplitude_to_rgb: List[str] = self.__settings[_Element.AMPLITUDE_TO_RGB_INPUT].split("\n")
-            for amplitude in range(len(amplitude_to_rgb)):
-                amplitude_to_rgb[amplitude] = tuple(map(lambda rgb_str: int(rgb_str), amplitude_to_rgb[amplitude].split(",")))
-            return amplitude_to_rgb
+            amplitude_rgbs: List[str] = self.__settings[_Element.AMPLITUDE_TO_RGB_INPUT].split("\n")
+            for amplitude in range(len(amplitude_rgbs)):
+                amplitude_rgbs[amplitude] = tuple(map(lambda rgb_str: int(rgb_str), amplitude_rgbs[amplitude].split(",")))
+            return amplitude_rgbs
 
     def __reset(self):
         sg.user_settings_filename(filename=_get_default_setting_file_name(), path=_get_setting_directory_path())
@@ -289,7 +289,7 @@ def _is_valid_user_setting_file_name(file_name: str) -> bool:
 
 
 def _get_setting_directory_path() -> str:
-    return (util.get_absolute_path_from_relative_path(__file__, "../../.settings"))
+    return (util.join_paths(__file__, "../../.settings"))
 
 
 def _get_default_setting_file_name() -> str:

@@ -306,7 +306,7 @@ def get_nested_value(d: dict, path: str) -> Any:
     return value
 
 
-def get_absolute_path_from_relative_path(parent_path: str, relative_path: str) -> str:
+def join_paths(parent_path: str, relative_path: str) -> str:
     """
         Returns:
             `str`: The normalized path formed by parent_path + relative_path.

@@ -1,8 +1,8 @@
 import abc
 from typing import List, Tuple
 
-from led_strip.rgb import RGB
-from util import NonNegativeInteger, NonNegativeIntegerRange
+from util.rgb import RGB
+from util.util import NonNegativeInteger, NonNegativeIntegerRange
 
 
 class GroupedLeds:
@@ -95,3 +95,34 @@ class LedStrip(abc.ABC):
     @abc.abstractmethod
     def clear_queued_colors(self):
         pass
+
+
+class FakeLedStrip(LedStrip):
+    def __init__(self, number_of_groups: int = 1):
+        self.__number_of_groups = number_of_groups
+
+        self.__color_queue: List[Tuple[int, Tuple[int, int, int]]] = []
+        self.group_colors: List[Tuple[int, int, int]] = [(0, 0, 0)] * number_of_groups
+
+    @property
+    def number_of_groups(self) -> int:
+        return self.__number_of_groups
+
+    @property
+    def number_of_queued_colors(self) -> int:
+        return len(self.__color_queue)
+
+    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+        self.__color_queue.append((group, rgb))
+
+    def group_is_rgb(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:
+        return self.group_colors[group_index] == rgb
+
+    def show_queued_colors(self):
+        for queued_color in self.__color_queue:
+            group, rgb = queued_color
+
+            self.group_colors[group] = rgb
+
+    def clear_queued_colors(self):
+        self.__color_queue.clear()

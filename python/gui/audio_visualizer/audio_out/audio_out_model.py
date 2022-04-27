@@ -7,7 +7,7 @@ from wave import Wave_read
 
 import gui.audio_visualizer.audio_model as audio_model
 import pyaudio
-import util
+import util.util as util
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError, CouldntEncodeError
 

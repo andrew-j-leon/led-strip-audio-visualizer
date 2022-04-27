@@ -4,7 +4,7 @@ import gui.audio_visualizer.setting.setting_view as setting_view
 import gui.styling as styling
 import gui.view as view
 import PySimpleGUI as sg
-import util
+import util.util as util
 from gui.window import Window
 
 

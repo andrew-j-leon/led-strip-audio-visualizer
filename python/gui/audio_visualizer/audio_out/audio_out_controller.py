@@ -3,7 +3,7 @@ import os
 import gui.audio_visualizer.audio_controller as audio_controller
 import gui.audio_visualizer.audio_out.audio_out_model as audio_out_model
 import gui.audio_visualizer.audio_out.audio_out_view as audio_out_view
-import util
+import util.util as util
 
 
 class AudioOutController(audio_controller.AudioController):

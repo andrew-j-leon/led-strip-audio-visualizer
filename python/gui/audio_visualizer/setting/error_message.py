@@ -1,19 +1,19 @@
 from typing import List
 
 import serial
-import util
+import util.util as util
 
 
-def get_amplitude_to_rgb_error_message(amplitude_to_rgb: str) -> str:
+def get_amplitude_to_rgb_error_message(amplitude_rgbs: str) -> str:
     error_message: str = ""
 
-    if (amplitude_to_rgb != ""):
-        amplitude_to_rgb: List[str] = amplitude_to_rgb.split("\n")
-        for amplitude in range(len(amplitude_to_rgb)):
-            rgb: List[str] = amplitude_to_rgb[amplitude].split(",")
+    if (amplitude_rgbs != ""):
+        amplitude_rgbs: List[str] = amplitude_rgbs.split("\n")
+        for amplitude in range(len(amplitude_rgbs)):
+            rgb: List[str] = amplitude_rgbs[amplitude].split(",")
 
             if (len(rgb) != 3):
-                error_message += ("Line {} of amplitude_to_rgb ({}) must have three comma separated integer values.\n").format(amplitude, amplitude_to_rgb[amplitude])
+                error_message += ("Line {} of amplitude_rgbs ({}) must have three comma separated integer values.\n").format(amplitude, amplitude_rgbs[amplitude])
 
             else:
                 for color_value in rgb:
