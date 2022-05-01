@@ -1,5 +1,5 @@
 import abc
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from util.rgb import RGB
 from util.util import NonNegativeInteger, NonNegativeIntegerRange
@@ -81,11 +81,11 @@ class LedStrip(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
         pass
 
     @abc.abstractmethod
-    def group_is_rgb(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:
+    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
         pass
 
     @abc.abstractmethod
@@ -112,11 +112,11 @@ class FakeLedStrip(LedStrip):
     def number_of_queued_colors(self) -> int:
         return len(self.__color_queue)
 
-    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
         self.__color_queue.append((group, rgb))
 
-    def group_is_rgb(self, group_index: int, rgb: Tuple[int, int, int]) -> bool:
-        return self.group_colors[group_index] == rgb
+    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
+        return self.group_colors[group] == rgb
 
     def show_queued_colors(self):
         for queued_color in self.__color_queue:

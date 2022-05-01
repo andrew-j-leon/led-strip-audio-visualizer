@@ -23,8 +23,6 @@ class AudioInModel(audio_model.AudioModel):
         if (util.is_empty(default_input_device_info)):
             raise NoDefaultInputDeviceDetectedError("There is no default input device set on this machine.")
 
-        print(default_input_device_info)
-
         self._initialize_audio_player(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
                                       rate=int(default_input_device_info["defaultSampleRate"]), input=True)
 

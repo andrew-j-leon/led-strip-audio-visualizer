@@ -1,7 +1,9 @@
 import unittest
+
+import numpy
+import util.util as util
 from led_strip.led_strip import FakeLedStrip
 from visualizer.spectrogram import Spectrogram
-import util.util as util
 
 
 class TestConstructor(unittest.TestCase):
@@ -28,7 +30,7 @@ class TestConstructor(unittest.TestCase):
                           + [(165, 165, 13)] * 5
                           + [(165, 13, 13)] * 143)
 
-        LED_STRIPS = [[], [FakeLedStrip()], [FakeLedStrip for i in range(100)]]
+        LED_STRIPS = [[], [FakeLedStrip()], [FakeLedStrip()] * 100]
 
         for led_strips in LED_STRIPS:
             with self.subTest(number_of_leds_strips=len(led_strips)):
@@ -79,13 +81,8 @@ class TestConstructor(unittest.TestCase):
                 amplitude_rgbs = []
                 led_strips = [FakeLedStrip()]
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     Spectrogram(frequency_range, amplitude_rgbs, led_strips)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'frequency_range[0] ({frequency_range[0]}) must be <= frequency_range[1] ({frequency_range[1]}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_start_frequency_less_than_0(self):
         FREQUENCY_RANGES = [(-1, 10), (-100, 10)]
@@ -95,13 +92,8 @@ class TestConstructor(unittest.TestCase):
                 amplitude_rgbs = []
                 led_strips = [FakeLedStrip()]
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     Spectrogram(frequency_range, amplitude_rgbs, led_strips)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'frequency_range[0] ({frequency_range[0]}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_end_frequency_less_than_0(self):
         FREQUENCY_RANGES = [(0, -1), (0, -10)]
@@ -111,13 +103,8 @@ class TestConstructor(unittest.TestCase):
                 amplitude_rgbs = []
                 led_strips = [FakeLedStrip()]
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     Spectrogram(frequency_range, amplitude_rgbs, led_strips)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'frequency_range[1] ({frequency_range[1]}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestUpdateLedStrips(unittest.TestCase):
@@ -139,24 +126,52 @@ class TestUpdateLedStrips(unittest.TestCase):
 
     def test_empty_audio_data(self):
         audio_data = b''
-        chunk_size = 2205  # bytes (50ms of audio data for a sampling rate of 44100 bytes/second)
-        sampling_rate = 44100  # 44100 bytes/second
+        number_of_frames = 2205
+        sampling_rate = 44100
+        format = numpy.int16
 
-        self.spectrogram.update_led_strips(audio_data, chunk_size, sampling_rate)
+        with self.assertRaises(ValueError) as error:
 
-        self.assertEqual(self.led_strip.number_of_queued_colors, 0)
+            self.spectrogram.update_led_strips(audio_data, number_of_frames, sampling_rate, format)
 
-        for group in range(self.led_strip.number_of_groups):
-            with self.subTest(led_strip_group=group, actual_group_color=self.led_strip.group_colors[group]):
+        actual_error_message = str(error.exception)
+        expected_error_message = 'Invalid number of FFT data points (0) specified.'
 
-                self.assertTrue(self.led_strip.group_is_rgb(group, (0, 0, 0)))
+        self.assertEqual(actual_error_message, expected_error_message)
+
+    def test_audio_data_length(self):
+        number_of_frames = 2205
+        sampling_rate = 44100
+        format = numpy.int16
+
+        for valid_length in range(2, 1000, 2):
+
+            audio_data = b'0' * valid_length
+
+            with self.subTest(f'len(audio_data) = {len(audio_data)}'):
+                self.spectrogram.update_led_strips(audio_data, number_of_frames, sampling_rate, format)
+
+        for invalid_length in range(1, 1001, 2):
+
+            audio_data = b'0' * invalid_length
+
+            with self.subTest(f'len(audio_data) = {len(audio_data)}'):
+
+                with self.assertRaises(ValueError) as error:
+                    self.spectrogram.update_led_strips(audio_data, number_of_frames, sampling_rate, format)
+
+                actual_error_message = str(error.exception)
+                expected_error_message = 'buffer size must be a multiple of element size'
+
+                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_silent_audio_data(self):
         audio_data = b'\x00' * 141120
-        chunk_size = 2205
+        number_of_frames = 2205
         sampling_rate = 44100
+        format = numpy.int16
 
-        self.spectrogram.update_led_strips(audio_data, chunk_size, sampling_rate)
+        self.spectrogram.update_led_strips(audio_data, number_of_frames, sampling_rate, format)
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
@@ -171,9 +186,11 @@ class TestUpdateLedStrips(unittest.TestCase):
         with open(audio_file_path, 'rb') as audio_file:
             audio_data: bytes = audio_file.read()
 
-            chunk_size = 2205
+            number_of_frames = 2205
             sampling_rate = 44100
-            self.spectrogram.update_led_strips(audio_data, chunk_size, sampling_rate)
+            format = numpy.int16
+
+            self.spectrogram.update_led_strips(audio_data, number_of_frames, sampling_rate, format)
 
             self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 

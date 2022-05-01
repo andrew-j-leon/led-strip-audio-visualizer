@@ -1,8 +1,8 @@
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from led_strip.led_strip import GroupedLeds, LedStrip
-from util.rgb import RGB
 from libraries.serial import Serial
+from util.rgb import RGB
 
 GROUPED_STRIP_TYPE = 1
 
@@ -51,7 +51,7 @@ class SerialLedStrip(LedStrip):
     def number_of_queued_colors(self) -> int:
         return len(self.__color_queue)
 
-    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
         if (self.number_of_groups == 0):
             raise IndexError(f'Cannot enqueue RGB when GraphicLedStrip has 0 groups.')
 
@@ -61,7 +61,7 @@ class SerialLedStrip(LedStrip):
         red, green, blue = rgb
         self.__color_queue.append((group, RGB(red, green, blue)))
 
-    def group_is_rgb(self, group: int, rgb: Tuple[int, int, int]) -> bool:
+    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
         return self.__grouped_leds.get_group_rgb(group) == rgb
 
     def show_queued_colors(self):

@@ -31,7 +31,4 @@ class RGB:
         return f'RGB({self.red}, {self.green}, {self.blue})'
 
     def __eq__(self, right_value) -> bool:
-        if (isinstance(right_value, RGB)):
-            return (self.red, self.green, self.blue) == (right_value.red, right_value.green, right_value.blue)
-
-        return (self.red, self.green, self.blue) == right_value
+        return tuple(self) == tuple(right_value)

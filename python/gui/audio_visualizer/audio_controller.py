@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Tuple
 import gui.audio_visualizer.audio_model as audio_model
 import gui.audio_visualizer.audio_view as audio_view
 import gui.controller as controller
+import numpy
 from led_strip.graphic_led_strip import GraphicLedStrip
 from led_strip.led_strip import GroupedLeds
 from led_strip.serial_led_strip import SerialLedStrip
@@ -106,8 +107,10 @@ class AudioController(controller.Controller):
     def _update_visualizer(self, audio_chunk: bytes):
         if (self.__visualizer):
             if (isinstance(self.__visualizer, Spectrogram)):
-                self.__visualizer.update_led_strips(audio_chunk, self._audio_player.milliseconds_to_number_of_frames(self._view.get_milliseconds_per_audio_chunk()),
-                                                    self._audio_player.get_framerate())
+
+                number_of_frames = self._audio_player.milliseconds_to_number_of_frames(self._view.get_milliseconds_per_audio_chunk())
+                self.__visualizer.update_led_strips(audio_chunk, number_of_frames, self._audio_player.get_framerate(),
+                                                    numpy.int16)  # TODO : This should equal the format in audio_in_model
 
     # Methods that the child class can/should override
     def _ui_event_is_valid(self, event: str) -> bool:

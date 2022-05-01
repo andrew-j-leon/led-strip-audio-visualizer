@@ -46,29 +46,29 @@ class TestRGB(unittest.TestCase):
 
         self.assertEqual(repr(rgb), f'RGB({RED}, {GREEN}, {BLUE})')
 
-    def test_eq_rgb(self):
-        RED_1 = 1
-        RED_2 = 2
+    def test_eq(self):
+        RED = 10
+        GREEN = 20
+        BLUE = 30
+        rgb = RGB(RED, GREEN, BLUE)
 
-        GREEN = 2
-        BLUE = 3
+        EQUALS_RGB = (RGB(RED, GREEN, BLUE), (RED, GREEN, BLUE), [RED, GREEN, BLUE])
 
-        rgb = RGB(RED_1, GREEN, BLUE)
+        for equals_rgb in EQUALS_RGB:
+            with self.subTest(rgb=rgb, equals_rgb=equals_rgb):
+                self.assertEqual(rgb, equals_rgb)
 
-        self.assertEqual(rgb, RGB(RED_1, GREEN, BLUE))
-        self.assertNotEqual(rgb, RGB(RED_2, GREEN, BLUE))
+        DOES_NOT_EQUAL_RGB = [RGB(RED - 1, GREEN - 1, BLUE - 1), RGB(RED - 10, GREEN - 10, BLUE - 10),
+                              (RED - 1, GREEN - 1, BLUE - 1), (RED - 10, GREEN - 10, BLUE - 10),
+                              [RED - 1, GREEN - 1, BLUE - 1], [RED - 10, GREEN - 10, BLUE - 10],
 
-    def test_eq_tuple(self):
-        RED_1 = 1
-        RED_2 = 2
+                              RGB(RED + 1, GREEN + 1, BLUE + 1), RGB(RED + 10, GREEN + 10, BLUE + 10),
+                              (RED + 1, GREEN + 1, BLUE + 1), (RED + 10, GREEN + 10, BLUE + 10),
+                              [RED + 1, GREEN + 1, BLUE + 1], [RED + 10, GREEN + 10, BLUE + 10]]
 
-        GREEN = 2
-        BLUE = 3
-
-        rgb = RGB(RED_1, GREEN, BLUE)
-
-        self.assertEqual(rgb, (RED_1, GREEN, BLUE))
-        self.assertNotEqual(rgb, (RED_2, GREEN, BLUE))
+        for does_not_equal_rgb in DOES_NOT_EQUAL_RGB:
+            with self.subTest(rgb=rgb, does_not_equal_rgb=does_not_equal_rgb):
+                self.assertNotEqual(rgb, does_not_equal_rgb)
 
     def test_iter(self):
         rgb_tuple = (10, 20, 30)

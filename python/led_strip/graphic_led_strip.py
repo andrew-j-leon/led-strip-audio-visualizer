@@ -1,9 +1,9 @@
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 from led_strip.led_strip import GroupedLeds, LedStrip
-from util.rgb import RGB
 from libraries.gui import Font, Gui
+from util.rgb import RGB
 from util.util import rgb_to_hex
 
 
@@ -50,7 +50,7 @@ class GraphicLedStrip(LedStrip):
     def number_of_queued_colors(self) -> int:
         return len(self.__color_queue)
 
-    def enqueue_rgb(self, group: int, rgb: Tuple[int, int, int]):
+    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
         if (self.number_of_groups == 0):
             raise IndexError(f'Cannot enqueue RGB when GraphicLedStrip has 0 groups.')
 
@@ -59,7 +59,7 @@ class GraphicLedStrip(LedStrip):
 
         self.__color_queue.append((group, RGB(*rgb)))
 
-    def group_is_rgb(self, group: int, rgb: Tuple[int, int, int]) -> bool:
+    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
         return self.__grouped_leds.get_group_rgb(group) == rgb
 
     def show_queued_colors(self):

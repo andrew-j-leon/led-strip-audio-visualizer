@@ -10,8 +10,31 @@ from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple, Type
 import numpy
 
 
+class NonNegativeRange:
+    def __init__(self, start, end):
+        if (start < 0):
+            raise ValueError(f'start ({start}) must be >= 0.')
+
+        if (end < 0):
+            raise ValueError(f'end ({end}) must be >= 0.')
+
+        if (start > end):
+            raise ValueError(f'start ({start}) must be <= end ({end}).')
+
+        self.__start = start
+        self.__end = end
+
+    @property
+    def start(self) -> Any:
+        return self.__start
+
+    @property
+    def end(self) -> Any:
+        return self.__end
+
+
 class NonNegativeIntegerRange:
-    def __init__(self, start: NonNegativeInteger, end: NonNegativeInteger):
+    def __init__(self, start, end):
         """
             Args:
                 `start (NonNegativeInteger)`: Inclusive.
