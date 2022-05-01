@@ -1,9 +1,41 @@
 import unittest
+from typing import Iterable, List, Tuple
 
 import numpy
 import util.util as util
-from led_strip.led_strip import FakeLedStrip
+from led_strip.led_strip import LedStrip
 from visualizer.spectrogram import Spectrogram
+
+
+class FakeLedStrip(LedStrip):
+    def __init__(self, number_of_groups: int = 1):
+        self.__number_of_groups = number_of_groups
+
+        self.__color_queue: List[Tuple[int, Tuple[int, int, int]]] = []
+        self.group_colors: List[Tuple[int, int, int]] = [(0, 0, 0)] * number_of_groups
+
+    @property
+    def number_of_groups(self) -> int:
+        return self.__number_of_groups
+
+    @property
+    def number_of_queued_colors(self) -> int:
+        return len(self.__color_queue)
+
+    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
+        self.__color_queue.append((group, rgb))
+
+    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
+        return self.group_colors[group] == rgb
+
+    def show_queued_colors(self):
+        for queued_color in self.__color_queue:
+            group, rgb = queued_color
+
+            self.group_colors[group] = rgb
+
+    def clear_queued_colors(self):
+        self.__color_queue.clear()
 
 
 class TestConstructor(unittest.TestCase):

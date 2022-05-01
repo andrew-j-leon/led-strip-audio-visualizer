@@ -29,14 +29,14 @@ class View:
         self.__close_main_window()
 
     def display_confirmation_modal(self, title: str, error_message: str):
-        """
+        '''
             Display a modal that blocks input from all other windows until said modal's
             "Ok" button or upper-right "X" button is clicked.
 
             Args:
                 `title (str)`: The title of the modal.
                 `error_message (str)`: The modal's message to the user.
-        """
+        '''
         LAYOUT = [[sg.Text(text=error_message)], [sg.Button(button_text="Ok")]]
 
         modal: Window = Window(title=title, layout=LAYOUT, modal=True)
@@ -48,10 +48,10 @@ class View:
                 break
 
     def run_concurrent(self, on_event: Callable[[str], None] = lambda event: None):
-        """
+        '''
             Args:
                 `on_event (Callable[[str], None], optional)`: Called with the name of the event whenever an event occurs.
-        """
+        '''
         self.__main_window: Window = self._create_main_window()
         self.__main_window.read(timeout=0)
 

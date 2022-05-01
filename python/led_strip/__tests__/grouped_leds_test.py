@@ -1,7 +1,7 @@
 import unittest
 from typing import List, Tuple
 
-from led_strip.led_strip import GroupedLeds
+from led_strip.grouped_leds import GroupedLeds
 
 
 class TestConstructor(unittest.TestCase):

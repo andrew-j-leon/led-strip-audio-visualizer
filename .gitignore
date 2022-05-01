@@ -6,3 +6,5 @@ tones/
 .vscode/
 *.odg
 .venv_3_10/
+.idea/
+venv/

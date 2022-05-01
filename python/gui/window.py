@@ -6,7 +6,7 @@ class Window(sg.Window):
         super().__init__(*args, **kwargs)
 
     def read(self, *args, **kwargs) -> str:
-        """
+        '''
         THE biggest deal method in the Window class! This is how you get all of your data from your Window.
             Pass in a timeout (in milliseconds) to wait for a maximum of timeout milliseconds. Will return timeout_key
             if no other GUI events happen first.
@@ -19,6 +19,6 @@ class Window(sg.Window):
         :type close:        (bool)
         :return:            event
         :rtype:             Tuple[(Any), Dict[Any, Any], List[Any], None]
-        """
+        '''
         EVENT = 0
         return super().read(*args, **kwargs)[EVENT]

@@ -1,4 +1,5 @@
 import math
+from statistics import mean
 from typing import Dict, List, Tuple, Union
 
 import numpy
@@ -35,47 +36,17 @@ from util.util import NonNegativeRange
 # ============================================================================================================================================================
 
 
-def _get_fft_sublist_average_amplitude(fft_sublist: List[complex], number_of_fft_values: int) -> float:
-    """
-        Args:
-            fft_sublist (List[complex]): A sub-list of fft values.
-            number_of_fft_values (int): The number of fft values in the list from which fft_sublist came from.
-
-                Example: If the original fft list has 100 values and fft_sublist represents 10 values from the
-                original, then number_of_fft_values = 100.
-        Returns:
-            float: The average amplitude of the frequencies described by fft_sublist.
-    """
-    return sum(_get_fft_amplitude(complex_number, number_of_fft_values) for complex_number in fft_sublist) / len(fft_sublist)
-
-
 def _get_fft_amplitude(fft_value: complex, number_of_fft_values: int) -> float:
-    """
-    Args:
-        fft_value (complex): An fft value.
-        number_of_fft_values (int): The number of fft values in the list from which fft_sublist came from.
-
-            Example: If the original fft list has 100 values and fft_sublist represents 10 values from the
-            original, then number_of_fft_values = 100.
-    Returns:
-        float: The amplitude of the frequency described by fft_value.
-    """
     hypotenuse = math.sqrt(fft_value.real**2 + fft_value.imag**2).real
 
-    if (hypotenuse == 0):
+    try:
+        return 20 * math.log10(hypotenuse / number_of_fft_values)
+
+    except ValueError:
         return 0
-    return 20 * math.log10(hypotenuse / number_of_fft_values)
 
 
-def _get_frequency_to_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_frames: int) -> int:
-    """
-        Args:
-            `frequency (Union[int,float])`: A frequency >= 0 in Hz.
-            `sampling_rate (int)`: The number of samples / second.
-            `number_of_frames (int)`: The number of samples per chunk of audio.
-        Returns:
-            `int`: The nearest FFT index of the given frequency.
-    """
+def _get_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_frames: int) -> int:
     return round(frequency / (sampling_rate / number_of_frames))
 
 
@@ -105,22 +76,22 @@ class Spectrogram:
         self.__number_of_groups_to_led_strips = _get_number_of_groups_to_led_strips(led_strips)
 
         self.__amplitude_rgbs = [RGB(red, green, blue) for red, green, blue in amplitude_rgbs]
-        """
+        '''
             Indices represent amplitudes (in decibels). The value at an index is the RGB color for that amplitude.
                 Example : If __amplitude_rgbs[10] == (200, 0, 0), then an amplitude of 10dB will be represented by the RGB color (200, 0, 0).
-        """
+        '''
 
         start_frequency, end_frequency = frequency_range
         self.__frequency_range = NonNegativeRange(start_frequency, end_frequency)
 
     def update_led_strips(self, audio_data: bytes, number_of_frames: int, sampling_rate: int, format: numpy.signedinteger):
-        """
+        '''
             Args:
                 `audio_data (bytes)`: WAV audio data.
                 `number_of_frames (int)`: The number of frames `audio_data` represents.
                 `sampling_rate (int)`: The number of samples per second.
                 `format (numpy.signedinteger)`: The format of the audio (i.e. 16 bit, 32 bit, etc.).
-        """
+        '''
         for number_of_groups in self.__number_of_groups_to_led_strips:
             self.__set_led_strip_color(number_of_groups, audio_data, sampling_rate, number_of_frames, format)
             self.__show_led_strips(number_of_groups)
@@ -131,22 +102,29 @@ class Spectrogram:
 
         fft_length = math.ceil(len(fft) / 2)  # the first half of the fft is a mirror copy of the 2nd half; we can ignore the 2nd half
 
-        fft_start_index_based_on_the_minimum_frequency: int = min(fft_length - 1, _get_frequency_to_fft_index(self.__frequency_range.start, sampling_rate, number_of_frames))  # inclusive
-        fft_end_index_based_on_the_maximum_frequency: int = min(fft_length - 1, _get_frequency_to_fft_index(self.__frequency_range.end, sampling_rate, number_of_frames)) + 1  # exclusive
+        fft_start_at_min_freq: int = min(fft_length - 1,
+                                         _get_fft_index(self.__frequency_range.start, sampling_rate, number_of_frames))
 
-        number_of_fft_values_per_led_strip_group: int = max(1, (fft_end_index_based_on_the_maximum_frequency - fft_start_index_based_on_the_minimum_frequency) // number_of_groups)
+        fft_end_at_max_freq: int = min(fft_length - 1,
+                                       _get_fft_index(self.__frequency_range.end, sampling_rate, number_of_frames)) + 1
 
-        reference_led_strip: LedStrip = self.__number_of_groups_to_led_strips[number_of_groups][0]
+        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // number_of_groups)
 
-        for fft_sublist_start_index, group in zip(range(fft_start_index_based_on_the_minimum_frequency, fft_end_index_based_on_the_maximum_frequency, number_of_fft_values_per_led_strip_group),
-                                                  range(number_of_groups)):
-            fft_sublist_end_index: int = min(fft_sublist_start_index + number_of_fft_values_per_led_strip_group, fft_end_index_based_on_the_maximum_frequency)
-            fft_sublist_average_amplitude: float = _get_fft_sublist_average_amplitude(fft[fft_sublist_start_index:fft_sublist_end_index], fft_length)
+        led_strip: LedStrip = self.__number_of_groups_to_led_strips[number_of_groups][0]
+
+        for fft_sublist_start, led_strip_group in zip(range(fft_start_at_min_freq, fft_end_at_max_freq, fft_sublist_length),
+                                                      range(number_of_groups)):
+
+            fft_sublist_end: int = min(fft_sublist_start + fft_sublist_length, fft_end_at_max_freq)
+
+            fft_sublist_average_amplitude = mean(_get_fft_amplitude(fft[i], fft_length)
+                                                 for i in range(fft_sublist_start, fft_sublist_end))
+
             rgb = self.__get_rgb(fft_sublist_average_amplitude)
 
-            if (not reference_led_strip.group_is_rgb(group, rgb)):
+            if (not led_strip.group_is_rgb(led_strip_group, rgb)):
                 for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:
-                    led_strip.enqueue_rgb(group, rgb)
+                    led_strip.enqueue_rgb(led_strip_group, rgb)
 
     def __show_led_strips(self, number_of_groups: int):
         for led_strip in self.__number_of_groups_to_led_strips[number_of_groups]:

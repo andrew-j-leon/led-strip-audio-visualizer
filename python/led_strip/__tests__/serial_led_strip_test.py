@@ -1,8 +1,8 @@
 import unittest
 from typing import Any
 
-from led_strip.led_strip import GroupedLeds
-from led_strip.serial_led_strip import SerialLedStrip
+from led_strip.grouped_leds import GroupedLeds
+from led_strip.led_strip import SerialLedStrip
 from libraries.serial import Serial
 from util.rgb import RGB
 

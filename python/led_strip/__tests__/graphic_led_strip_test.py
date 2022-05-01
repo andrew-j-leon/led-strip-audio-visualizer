@@ -2,8 +2,8 @@ import abc
 import unittest
 from typing import Dict
 
-from led_strip.graphic_led_strip import GraphicLedStrip, Point
-from led_strip.led_strip import GroupedLeds
+from led_strip.grouped_leds import GroupedLeds
+from led_strip.led_strip import GraphicLedStrip, Point
 from libraries.gui import Font, Gui, Rectangle
 from util.rgb import RGB
 
