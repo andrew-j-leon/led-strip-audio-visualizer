@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.gui import Font, ProductionGui, Rectangle
+from libraries.gui import Font, ProductionGui
 
 
 class TestFont(unittest.TestCase):
@@ -36,92 +36,101 @@ class TestFont(unittest.TestCase):
 
         self.assertEqual(repr(font), f'Font(name={NAME}, size={SIZE}, style={STYLE}, color={COLOR})')
 
+    def test_eq(self):
+        NAME_1 = 'Times New Roman'
+        SIZE_1 = 20
+        STYLE_1 = 'bold'
+        COLOR_1 = '#121212'
 
-class TestRectangle(unittest.TestCase):
-    def test_valid_constructor(self):
-        ARGS = [(0, 0), (0, 1), (1, 0), (1, 1), (1920, 1080)]
+        NAME_2 = 'Arial'
+        SIZE_2 = 12
+        STYLE_2 = 'normal'
+        COLOR_2 = '#424210'
 
-        for width, height in ARGS:
-            with self.subTest(width=width, height=height):
+        font_1a = Font(NAME_1, SIZE_1, STYLE_1, COLOR_1)
+        font_1b = Font(NAME_1, SIZE_1, STYLE_1, COLOR_1)
 
-                rectangle = Rectangle(width, height)
+        font_2 = Font(NAME_2, SIZE_2, STYLE_2, COLOR_2)
 
-                self.assertEqual(rectangle.width, width)
-                self.assertEqual(rectangle.height, height)
+        self.assertEqual(font_1a, font_1b)
 
-    def test_invalid_constructor(self):
-        WIDTHS = [-100, -1]
+        self.assertNotEqual(font_1a, font_2)
 
-        for width in WIDTHS:
-            with self.subTest(width=width):
+        self.assertNotEqual(font_1a, 'not a font')
 
-                with self.assertRaises(ValueError) as error:
-                    height = 100
+    def test_hash(self):
+        NAME_1 = 'Times New Roman'
+        SIZE_1 = 20
+        STYLE_1 = 'bold'
+        COLOR_1 = '#121212'
 
-                    Rectangle(width, height)
+        NAME_2 = 'Arial'
+        SIZE_2 = 12
+        STYLE_2 = 'normal'
+        COLOR_2 = '#424210'
 
-                actual_error_message = str(error.exception)
-                expected_error_message = f'width must be >= 0, but was {width}.'
+        hash_1a = hash(Font(NAME_1, SIZE_1, STYLE_1, COLOR_1))
+        hash_1b = hash(Font(NAME_1, SIZE_1, STYLE_1, COLOR_1))
 
-                self.assertEqual(actual_error_message, expected_error_message)
+        hash_2 = hash(Font(NAME_2, SIZE_2, STYLE_2, COLOR_2))
 
-        HEIGHTS = [-100, -1]
+        self.assertTrue(isinstance(hash_1a, int))
 
-        for height in HEIGHTS:
-            with self.subTest(height=height):
-
-                with self.assertRaises(ValueError) as error:
-                    width = 100
-
-                    Rectangle(width, height)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'height must be >= 0, but was {height}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
-
-    def test_repr(self):
-        WIDTH = 100
-        HEIGHT = 200
-
-        rectangle = Rectangle(WIDTH, HEIGHT)
-
-        self.assertEqual(repr(rectangle), f'Rectangle({WIDTH}, {HEIGHT})')
+        self.assertEqual(hash_1a, hash_1b)
+        self.assertNotEqual(hash_1a, hash_2)
 
 
-@patch('libraries.gui.Canvas')
-@patch('libraries.gui.Window')
 class TestConstructor(unittest.TestCase):
-    def test_valid(self, window_mock: MagicMock, canvas_mock: MagicMock):
+    def setUp(self):
+        self.__canvas_patch = patch('libraries.gui.Canvas')
+        self.__window_patch = patch('libraries.gui.Window')
+
+        self.canvas_mock = self.__canvas_patch.start()
+        self.window_mock = self.__window_patch.start()
+
+        self.addCleanup(self.__canvas_patch.stop)
+        self.addCleanup(self.__window_patch.stop)
+
+    def test_valid(self):
         WIDTH = 1350
         HEIGHT = 600
 
         ProductionGui(WIDTH, HEIGHT)
 
-        window_mock.assert_called_once()
-        canvas_mock.assert_called_once()
+        self.window_mock.assert_called_once()
+        self.canvas_mock.assert_called_once()
 
-    def test_invalid_width(self, window_mock: MagicMock, canvas_mock: MagicMock):
+    def test_invalid_width(self,):
         WIDTHS = [-100, -1]
 
         for width in WIDTHS:
             with self.subTest(width=width):
 
-                with self.assertRaises(ValueError):
+                with self.assertRaises(ValueError) as error:
                     height = 600
 
                     ProductionGui(width, height)
 
-    def test_invalid_height(self, window_mock: MagicMock, canvas_mock: MagicMock):
+                error_message = str(error.exception)
+                expected_error_message = f'width must be >= 0, but was {width}.'
+
+                self.assertEqual(error_message, expected_error_message)
+
+    def test_invalid_height(self):
         HEIGHTS = [-100, -1]
 
         for height in HEIGHTS:
             with self.subTest(height=height):
 
-                with self.assertRaises(ValueError):
+                with self.assertRaises(ValueError) as error:
                     width = 600
 
                     ProductionGui(width, height)
+
+                error_message = str(error.exception)
+                expected_error_message = f'height must be >= 0, but was {height}.'
+
+                self.assertEqual(error_message, expected_error_message)
 
 
 class TestMethod(unittest.TestCase):
@@ -142,17 +151,14 @@ class TestMethod(unittest.TestCase):
         self.gui = ProductionGui(WIDTH, HEIGHT)
 
 
-class TestDimensions(TestMethod):
-    def test_dimensions(self):
+class TestWidth(TestMethod):
+    def test_width(self):
         WIDTH = 1350
         HEIGHT = 600
 
         gui = ProductionGui(WIDTH, HEIGHT)
 
-        dimensions = gui.dimensions
-
-        self.assertEqual(dimensions.width, WIDTH)
-        self.assertEqual(dimensions.height, HEIGHT)
+        self.assertEqual(gui.width, WIDTH)
 
 
 class TestUpdate(TestMethod):

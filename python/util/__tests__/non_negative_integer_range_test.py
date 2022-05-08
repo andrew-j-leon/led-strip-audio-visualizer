@@ -5,17 +5,7 @@ from util.util import NonNegativeInteger, NonNegativeIntegerRange
 
 class TestConstructor(unittest.TestCase):
     def test_valid_arguments(self):
-        VALID_ARGUMENTS = [(NonNegativeInteger(0), NonNegativeInteger(0)),
-                           (0, 0), (0.0, 0.0),
-
-                           (NonNegativeInteger(0), NonNegativeInteger(1)),
-                           (0, 1), (0.0, 1.0),
-
-                           (NonNegativeInteger(0), NonNegativeInteger(2)),
-                           (0, 2), (0.0, 2.0),
-
-                           (NonNegativeInteger(4), NonNegativeInteger(472)),
-                           (4, 472), (4.0, 472.0)]
+        VALID_ARGUMENTS = [(0, 0), (0, 1), (0, 2), (4, 472)]
 
         for start, end in VALID_ARGUMENTS:
             with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
@@ -25,12 +15,40 @@ class TestConstructor(unittest.TestCase):
                 self.assertEqual(non_negative_integer_range.start, start)
                 self.assertEqual(non_negative_integer_range.end, end)
 
-    def test_start_greater_than_end(self):
-        START_GREATER_THAN_END_ARGUMENTS = [(NonNegativeInteger(1), NonNegativeInteger(0)),
-                                            (1, 0), (1.0, 0.0),
+    def test_start_is_not_int(self):
+        INVALID_ARGUMENTS = [(NonNegativeInteger(0), 1),
+                             (0.0, 1)]
 
-                                            (NonNegativeInteger(546), NonNegativeInteger(4)),
-                                            (546, 4), (546.0, 4.0)]
+        for start, end in INVALID_ARGUMENTS:
+            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+
+                with self.assertRaises(TypeError) as error:
+
+                    NonNegativeIntegerRange(start, end)
+
+                error_message = str(error.exception)
+                expected_error_message = f'start ({start}) must be of type int, but was of type {type(start)}.'
+
+                self.assertEqual(error_message, expected_error_message)
+
+    def test_end_is_not_int(self):
+        INVALID_ARGUMENTS = [(0, NonNegativeInteger(0)),
+                             (0, 1.0)]
+
+        for start, end in INVALID_ARGUMENTS:
+            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+
+                with self.assertRaises(TypeError) as error:
+
+                    NonNegativeIntegerRange(start, end)
+
+                error_message = str(error.exception)
+                expected_error_message = f'end ({end}) must be of type int, but was of type {type(end)}.'
+
+                self.assertEqual(error_message, expected_error_message)
+
+    def test_start_greater_than_end(self):
+        START_GREATER_THAN_END_ARGUMENTS = [(1, 0), (546, 4)]
 
         for start, end in START_GREATER_THAN_END_ARGUMENTS:
             with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):

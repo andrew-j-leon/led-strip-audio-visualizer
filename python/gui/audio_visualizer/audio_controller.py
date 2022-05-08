@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 import gui.audio_visualizer.audio_model as audio_model
 import gui.audio_visualizer.audio_view as audio_view
 import gui.controller as controller
 import numpy
-from led_strip.grouped_leds import GroupedLeds
-from led_strip.led_strip import GraphicLedStrip, SerialLedStrip
+from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
+from led_strip.led_strip import ProductionLedStrip
 from libraries.gui import ProductionGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 from visualizer.spectrogram import Spectrogram
@@ -18,7 +18,7 @@ class AudioController(controller.Controller):
     def __init__(self, audio_view: audio_view.AudioView, audio_player: audio_model.AudioModel):
         controller.Controller.__init__(self, audio_view)
         self._audio_player: audio_model.AudioModel = audio_player
-        self.__visualizer: Visualizer = None
+        self.__visualizer: Spectrogram = None
 
     def __get_grouped_led_strips(self):
         led_strips = []
@@ -32,21 +32,25 @@ class AudioController(controller.Controller):
             READ_TIMEOUT = 1
             WRITE_TIMEOUT = 0
 
-            grouped_leds = GroupedLeds(self._view.get_led_index_range(), self.__get_group_index_to_led_range())
             serial = ProductionSerial(PORT, BAUDRATE, PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
 
-            led_strips.append(SerialLedStrip(grouped_leds, serial, self._view.get_brightness()))
+            serial_grouped_leds = SerialGroupedLeds(self._view.get_led_index_range(), self.__get_group_index_to_led_range(),
+                                                    serial, self._view.get_brightness())
+
+            led_strips.append(ProductionLedStrip(serial_grouped_leds))
 
         if (self._view.get_graphic_led_strip_checkbox_value()):
             WIDTH = 1350
             HEIGHT = 600
 
-            grouped_leds = GroupedLeds(self._view.get_led_index_range(), self.__get_group_index_to_led_range())
-
             gui = ProductionGui(WIDTH, HEIGHT)
             gui.update()
 
-            led_strips.append(GraphicLedStrip(grouped_leds, gui))
+            graphic_grouped_leds = GraphicGroupedLeds(self._view.get_led_index_range(),
+                                                      self.__get_group_index_to_led_range(),
+                                                      gui)
+
+            led_strips.append(ProductionLedStrip(graphic_grouped_leds))
 
         return led_strips
 

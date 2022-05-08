@@ -4,6 +4,9 @@ from util.rgb import RGB
 
 
 class TestRGB(unittest.TestCase):
+    def test_empty_constructor(self):
+        RGB()
+
     def test_constructor(self):
         VALID_RGBS = [(0, 0, 0), (255, 255, 255), (1, 1, 1), (254, 254, 254),
                       (100, 34, 213)]

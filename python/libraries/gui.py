@@ -1,5 +1,5 @@
-import abc
-from typing import List
+from abc import ABC, abstractmethod
+from typing import Any, List
 
 from PySimpleGUI import Canvas, Element, Window
 
@@ -30,53 +30,42 @@ class Font:
     def __repr__(self) -> str:
         return f'Font(name={self.name}, size={self.size}, style={self.style}, color={self.color})'
 
+    def __eq__(self, right_value: Any) -> bool:
+        if (isinstance(right_value, Font)):
+            return (self.name == right_value.name
+                    and self.size == right_value.size
+                    and self.style == right_value.style
+                    and self.color == right_value.color)
 
-class Rectangle:
-    def __init__(self, width: int, height: int):
-        if (width < 0):
-            raise ValueError(f'width must be >= 0, but was {width}.')
+        return False
 
-        if (height < 0):
-            raise ValueError(f'height must be >= 0, but was {height}.')
+    def __hash__(self) -> int:
+        return hash((self.name, self.size, self.style, self.color))
 
-        self.__width = width
-        self.__height = height
 
+class Gui(ABC):
     @property
+    @abstractmethod
     def width(self) -> int:
-        return self.__width
-
-    @property
-    def height(self) -> int:
-        return self.__height
-
-    def __repr__(self) -> str:
-        return f'Rectangle({self.width}, {self.height})'
-
-
-class Gui(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def dimensions(self) -> Rectangle:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def close(self):
         pass
 
-    @abc.abstractmethod
-    def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str) -> int:
+    @abstractmethod
+    def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str = '#000000') -> int:
         pass
 
-    @abc.abstractmethod
-    def create_text(self, center_x: int, center_y: int, text: str, font: Font) -> int:
+    @abstractmethod
+    def create_text(self, center_x: int, center_y: int, text: str, font: Font = Font()) -> int:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def update(self):
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_element_fill_color(self, element_id: int, color: str):
         pass
 
@@ -85,7 +74,13 @@ class ProductionGui(Gui):
     CANVAS_KEY = 'canvas'
 
     def __init__(self, width: int, height: int):
-        self.__dimensions = Rectangle(width, height)
+        if (width < 0):
+            raise ValueError(f'width must be >= 0, but was {width}.')
+
+        if (height < 0):
+            raise ValueError(f'height must be >= 0, but was {height}.')
+
+        self.__width = width
 
         canvas = Canvas(size=(width, height), background_color='#4a4a4a', key=ProductionGui.CANVAS_KEY)
 
@@ -96,8 +91,8 @@ class ProductionGui(Gui):
                                disable_close=True, disable_minimize=False)
 
     @property
-    def dimensions(self) -> Rectangle:
-        return self.__dimensions
+    def width(self) -> int:
+        return self.__width
 
     def update(self):
         self.__window.read(timeout=0)
@@ -105,7 +100,7 @@ class ProductionGui(Gui):
     def close(self):
         self.__window.close()
 
-    def create_text(self, center_x: int, center_y: int, text: str, font: Font) -> int:
+    def create_text(self, center_x: int, center_y: int, text: str, font: Font = Font()) -> int:
         try:
             FONT = (font.name, font.size, font.style)
             canvas_element: Element = self.__window.find_element(ProductionGui.CANVAS_KEY)
@@ -116,7 +111,7 @@ class ProductionGui(Gui):
         except AttributeError:
             raise ValueError('You must call self.update() before creating elements on a ProductionGui.')
 
-    def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str) -> int:
+    def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str = '#000000') -> int:
         try:
             canvas_element: Element = self.__window.find_element(ProductionGui.CANVAS_KEY)
 

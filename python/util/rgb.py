@@ -1,5 +1,5 @@
 class RGB:
-    def __init__(self, red: int, green: int, blue: int):
+    def __init__(self, red: int = 0, green: int = 0, blue: int = 0):
         rgb = (red, green, blue)
 
         for channel in rgb:

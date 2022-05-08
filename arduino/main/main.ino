@@ -1,8 +1,10 @@
 #include <Arduino.h>
-#include <Adafruit_NeoPixel.h>
+#include <CDC.h>
+#include <FastLED_NeoPixel.h>
 
 #define SERIAL_BAUD_RATE 115200
-#define NUMBER_OF_LEDS 400
+#define NUMBER_OF_LEDS 600
+#define PIN_NUMBER 7
 
 struct LedStripType {
   uint8_t id;
@@ -41,8 +43,6 @@ class Matrix_uint16 {
         }
 };
 
-uint16_t number_of_leds;
-uint8_t digital_pin_for_leds;
 uint8_t brightness;
 uint8_t led_strip_type_id;
 
@@ -55,7 +55,7 @@ int packet_index;
 uint8_t packets_expected_this_strip_state;
 uint8_t packets_received_this_strip_state;
 
-Adafruit_NeoPixel* led_strip = nullptr;
+FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip;
 
 
 void setup() {
@@ -66,7 +66,12 @@ void setup() {
 		;
 	}
 
-    Serial.write(1); // Tell the client the connection is set
+    uint16_t number_of_leds = (uint16_t)NUMBER_OF_LEDS;
+    uint8_t buff[2];
+    uint16_to_uint8(number_of_leds, buff);
+
+    Serial.write(buff[1]); // the right byte of the number_of_leds
+    Serial.write(buff[0]); // the left byte of the number_of_leds
 
 	initialize_variables();
 }
@@ -81,11 +86,6 @@ void deallocate_variables() {
 		delete[] packet;
 		packet = nullptr;
 	}
-
-    if (led_strip != nullptr) {
-        delete led_strip;
-        led_strip = nullptr;
-    }
 }
 
 void initialize_variables() {
@@ -116,24 +116,12 @@ void read_and_set_configuration_data_from_serial() {
 }
 
 void read_and_set_led_strip_from_serial() {
-    read_and_set_number_of_leds_from_serial();
-    read_and_set_pin_number_from_serial();
     read_and_set_led_strip_brightness_from_serial();
-    led_strip = new Adafruit_NeoPixel(NUMBER_OF_LEDS, digital_pin_for_leds, NEO_GRB + NEO_KHZ800);
-    led_strip->setBrightness(brightness);
-    led_strip->begin();
-	led_strip->show();
-}
 
-void read_and_set_number_of_leds_from_serial() {
-    uint8_t number_of_leds_left_byte = read_and_echo_serial_byte();
-    uint8_t number_of_leds_right_byte = read_and_echo_serial_byte();
+    led_strip.setBrightness(brightness);
 
-    number_of_leds = uint8_to_uint16(number_of_leds_left_byte, number_of_leds_right_byte);
-}
-
-void read_and_set_pin_number_from_serial() {
-    digital_pin_for_leds = read_and_echo_serial_byte();
+    led_strip.begin();
+	led_strip.show();
 }
 
 void read_and_set_led_strip_brightness_from_serial() {
@@ -143,7 +131,6 @@ void read_and_set_led_strip_brightness_from_serial() {
 void read_and_set_led_strip_type_from_serial() {
     led_strip_type_id = read_and_echo_serial_byte();
 }
-
 
 void read_and_set_group_indicies_to_led_ranges_from_serial() {
 	uint8_t number_of_groups = read_and_echo_serial_byte();
@@ -174,6 +161,11 @@ uint16_t uint8_to_uint16(uint8_t left_bits, uint8_t right_bits) {
 	return (uint16_t)(left_bits << 8 | right_bits);
 }
 
+void uint16_to_uint8(uint16_t value, uint8_t* buff) {
+    buff[0] = value & 0xff;
+    buff[1] = (value >> 8);
+}
+
 void loop() {
     if (Serial.available()) {
         handle_serial_byte();
@@ -187,7 +179,10 @@ void handle_serial_byte() {
     if (is_a_new_strip_state) {
         packets_expected_this_strip_state = serial_byte;
         packets_received_this_strip_state = 0;
-        is_a_new_strip_state = false;
+
+        if (packets_expected_this_strip_state > 0) {
+            is_a_new_strip_state = false;
+        }
     }
 
     else {
@@ -204,7 +199,7 @@ void handle_serial_byte() {
         }
 
         if (packets_received_this_strip_state == packets_expected_this_strip_state) {
-            led_strip->show();
+            led_strip.show();
             is_a_new_strip_state = true;
         }
     }
@@ -231,22 +226,22 @@ void set_led_colors_with_packet_data() {
 }
 
 void set_grouped_led_colors_with_packet_data() {
-    uint32_t rgb = led_strip->Color(packet[1], packet[2], packet[3]);
+    uint32_t rgb = led_strip.Color(packet[1], packet[2], packet[3]);
 
     uint8_t group_index = packet[0];
     uint16_t end_led_index = group_index_to_led_range->get(group_index, 1);
     for (uint16_t led_index = group_index_to_led_range->get(group_index, 0); led_index < end_led_index; led_index++) {
-        led_strip->setPixelColor(led_index, rgb);
+        led_strip.setPixelColor(led_index, rgb);
     }
 }
 
 void set_array_led_colors_with_packet_data() {
-    uint32_t rgb = led_strip->Color(packet[4], packet[5], packet[6]);
+    uint32_t rgb = led_strip.Color(packet[4], packet[5], packet[6]);
 
     uint16_t start_index = uint8_to_uint16(packet[0], packet[1]); // start_index (first 2 bytes [16 bits] represent the value of the start_index)
     uint16_t end_index = uint8_to_uint16(packet[2], packet[3]); // end_index (next 2 bytes represent the value of the end_index [exclusive])
 
     for (uint16_t i = start_index; i < end_index; i++) {
-        led_strip->setPixelColor(i, rgb);
+        led_strip.setPixelColor(i, rgb);
     }
 }

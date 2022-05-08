@@ -1,37 +1,12 @@
 import unittest
 from typing import List, Tuple
 
-from led_strip.grouped_leds import GroupedLeds
+from led_strip.grouped_leds import ProductionGroupedLeds
 
 
 class TestConstructor(unittest.TestCase):
-    def test_number_of_leds(self):
-        VALID_NUMBER_OF_LEDS = [0, 1, 100,
-                                1.5, 100.5]
 
-        for number_of_leds in VALID_NUMBER_OF_LEDS:
-
-            led_range = (0, number_of_leds)
-
-            with self.subTest(led_range=led_range):
-                group_led_ranges = []
-
-                GroupedLeds(led_range, group_led_ranges)
-
-        INVALID_NUMBER_OF_LEDS = [-1, -100]
-
-        for number_of_leds in INVALID_NUMBER_OF_LEDS:
-
-            led_range = (0, number_of_leds)
-
-            with self.subTest(led_range=led_range):
-
-                with self.assertRaises(ValueError):
-                    group_led_ranges = []
-
-                    GroupedLeds(led_range, group_led_ranges)
-
-    def test_led_ranges(self):
+    def test_valid_led_ranges(self):
         VALID_LED_RANGES = [(0, 0), (0, 1), (0, 150), (1, 1), (1, 150)]
 
         for valid_led_range in VALID_LED_RANGES:
@@ -39,8 +14,9 @@ class TestConstructor(unittest.TestCase):
 
                 group_led_ranges = []
 
-                GroupedLeds(valid_led_range, group_led_ranges)
+                ProductionGroupedLeds(valid_led_range, group_led_ranges)
 
+    def test_led_ranges_where_start_is_greater_than_end(self):
         INVALID_LED_RANGES = [(-1, 0), (0, -1), (-1, -1),
                               (-10, 0), (0, -10),
                               (1, 0), (10, 0),
@@ -52,7 +28,29 @@ class TestConstructor(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     group_led_ranges = []
 
-                    GroupedLeds(invalid_led_range, group_led_ranges)
+                    ProductionGroupedLeds(invalid_led_range, group_led_ranges)
+
+    def test_led_ranges_where_start_is_not_int(self):
+        INVALID_LED_RANGES = [(0.0, 1), (1.0, 10), (100.0, 200)]
+
+        for invalid_led_range in INVALID_LED_RANGES:
+            with self.subTest(led_range=invalid_led_range):
+
+                with self.assertRaises(TypeError):
+                    group_led_ranges = []
+
+                    ProductionGroupedLeds(invalid_led_range, group_led_ranges)
+
+    def test_led_ranges_where_end_is_float(self):
+        INVALID_LED_RANGES = [(0, 0.0), (0, 1.0), (0, 100.0)]
+
+        for invalid_led_range in INVALID_LED_RANGES:
+            with self.subTest(led_range=invalid_led_range):
+
+                with self.assertRaises(TypeError):
+                    group_led_ranges = []
+
+                    ProductionGroupedLeds(invalid_led_range, group_led_ranges)
 
     def test_group_led_ranges_with_led_range_starting_at_0(self):
         LED_RANGE_STARTING_AT_0 = (0, 150)
@@ -94,17 +92,18 @@ class TestConstructor(unittest.TestCase):
         for group_led_ranges in valid_group_led_ranges:
             with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
 
-                GroupedLeds(led_range, group_led_ranges)
+                ProductionGroupedLeds(led_range, group_led_ranges)
 
     def check_invalid_group_led_ranges(self, led_range: Tuple[int, int], invalid_group_led_ranges: List[Tuple[int, int]]):
         for group_led_ranges in invalid_group_led_ranges:
             with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
 
                 with self.assertRaises(ValueError):
-                    GroupedLeds(led_range, group_led_ranges)
+                    ProductionGroupedLeds(led_range, group_led_ranges)
 
 
-class TestNumberOfGroups(unittest.TestCase):
+class TestMethods(unittest.TestCase):
+
     def test_number_of_groups(self):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = [[],
@@ -117,12 +116,10 @@ class TestNumberOfGroups(unittest.TestCase):
         for group_led_ranges in GROUP_LED_RANGES:
             with self.subTest(number_of_groups=len(group_led_ranges)):
 
-                led_strip = GroupedLeds(LED_RANGE, group_led_ranges)
+                led_strip = ProductionGroupedLeds(LED_RANGE, group_led_ranges)
 
                 self.assertEqual(led_strip.number_of_groups, len(group_led_ranges))
 
-
-class TestNumberOfLeds(unittest.TestCase):
     def test_number_of_leds(self):
         NUMBER_OF_LEDS = [0, 1, 15, 300]
 
@@ -132,12 +129,10 @@ class TestNumberOfLeds(unittest.TestCase):
                 led_range = (0, number_of_leds)
                 group_led_ranges = []
 
-                led_strip = GroupedLeds(led_range, group_led_ranges)
+                led_strip = ProductionGroupedLeds(led_range, group_led_ranges)
 
                 self.assertEqual(number_of_leds, led_strip.number_of_leds)
 
-
-class TestStartLedAndEndLed(unittest.TestCase):
     def test_start_led_and_end_led(self):
         LED_RANGES = [(0, 0), (0, 1), (0, 100), (1, 100), (40, 1000)]
 
@@ -146,7 +141,7 @@ class TestStartLedAndEndLed(unittest.TestCase):
 
                 group_led_ranges = []
 
-                leds = GroupedLeds(led_range, group_led_ranges)
+                leds = ProductionGroupedLeds(led_range, group_led_ranges)
 
                 start, end = led_range
 
@@ -158,38 +153,44 @@ class GroupMethodsTestCase(unittest.TestCase):
     LED_RANGE = (0, 100)
     GROUP_LED_RANGES = [(0, 10), (10, 20), (20, 30)]
 
+    NUMBER_OF_GROUPS = len(GROUP_LED_RANGES)
+
+    BLACK_RGB = (0, 0, 0)
+
     GROUP_0 = 0
     GROUP_1 = 1
     GROUP_2 = 2
 
     def setUp(self):
-        self.leds = GroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES)
+        self.leds = ProductionGroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES)
 
 
 class TestGetGroupRGB(GroupMethodsTestCase):
     def test_after_setting_group_rgb(self):
         RGB = (10, 11, 12)
-        BLACK_RGB = (0, 0, 0)
 
-        self.leds.set_group_rgb(self.GROUP_0, RGB)
+        GROUP_RGBS = [(self.GROUP_0, RGB)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS)
 
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), BLACK_RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), BLACK_RGB)
+        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), self.BLACK_RGB)
+        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), self.BLACK_RGB)
 
     def test_no_group_rgbs_set(self):
-        BLACK_RGB = (0, 0, 0)
-
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), BLACK_RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), BLACK_RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), BLACK_RGB)
+        for group in range(self.NUMBER_OF_GROUPS):
+            with self.subTest(group=group):
+                self.assertEqual(self.leds.get_group_rgb(group), self.BLACK_RGB)
 
     def test_group_rgb_altered_twice(self):
         RGB_OLD = (10, 11, 12)
         RGB_NEW = (100, 110, 120)
 
-        self.leds.set_group_rgb(self.GROUP_0, RGB_OLD)
-        self.leds.set_group_rgb(self.GROUP_0, RGB_NEW)
+        GROUP_RGBS_OLD = [(self.GROUP_0, RGB_OLD)]
+        GROUP_RGBS_NEW = [(self.GROUP_0, RGB_NEW)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS_OLD)
+        self.leds.set_group_rgbs(GROUP_RGBS_NEW)
 
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_NEW)
 
@@ -197,7 +198,7 @@ class TestGetGroupRGB(GroupMethodsTestCase):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = []
 
-        leds = GroupedLeds(LED_RANGE, GROUP_LED_RANGES)
+        leds = ProductionGroupedLeds(LED_RANGE, GROUP_LED_RANGES)
 
         GROUPS = [0, 1, 100]
 
@@ -221,8 +222,8 @@ class TestGetGroupRGB(GroupMethodsTestCase):
 
                 self.assertEqual(actual_error_message, expected_error_message)
 
-    def test_index_error(self):
-        GROUPS = [3, 4, 100]
+    def test_group_exceeds_max_group(self):
+        GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
 
         for group in GROUPS:
             with self.subTest(group=group):
@@ -234,33 +235,60 @@ class TestGetGroupRGB(GroupMethodsTestCase):
 class TestSetGroupRGB(GroupMethodsTestCase):
     def test_set_one_group(self):
         RGB = (10, 11, 12)
-        BLACK_RGB = (0, 0, 0)
 
-        self.leds.set_group_rgb(self.GROUP_0, RGB)
+        GROUP_RGBS = [(self.GROUP_0, RGB)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS)
 
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), BLACK_RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), BLACK_RGB)
+        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), self.BLACK_RGB)
+        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), self.BLACK_RGB)
+
+    def test_set_no_group(self):
+        GROUP_RGBS = []
+
+        self.leds.set_group_rgbs(GROUP_RGBS)
+
+        for group in range(self.NUMBER_OF_GROUPS):
+            with self.subTest(group=group):
+                self.assertEqual(self.leds.get_group_rgb(group), self.BLACK_RGB)
 
     def test_set_multiple_groups(self):
         RGB_0 = (1, 2, 3)
         RGB_1 = (4, 5, 6)
         RGB_2 = (7, 8, 9)
 
-        self.leds.set_group_rgb(self.GROUP_0, RGB_0)
-        self.leds.set_group_rgb(self.GROUP_1, RGB_1)
-        self.leds.set_group_rgb(self.GROUP_2, RGB_2)
+        GROUP_RGBS_0 = [(self.GROUP_0, RGB_0)]
+        GROUP_RGBS_1 = [(self.GROUP_1, RGB_1)]
+        GROUP_RGBS_2 = [(self.GROUP_2, RGB_2)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS_0)
+        self.leds.set_group_rgbs(GROUP_RGBS_1)
+        self.leds.set_group_rgbs(GROUP_RGBS_2)
 
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_0)
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), RGB_1)
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), RGB_2)
 
-    def test_set_same_group_multiple_times(self):
+    def test_set_same_group_multiple_times_separate_calls(self):
         RGB_OLD = (10, 11, 12)
         RGB_NEW = (100, 110, 120)
 
-        self.leds.set_group_rgb(self.GROUP_0, RGB_OLD)
-        self.leds.set_group_rgb(self.GROUP_0, RGB_NEW)
+        GROUP_RGBS_OLD = [(self.GROUP_0, RGB_OLD)]
+        GROUP_RGBS_NEW = [(self.GROUP_0, RGB_NEW)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS_OLD)
+        self.leds.set_group_rgbs(GROUP_RGBS_NEW)
+
+        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_NEW)
+
+    def test_set_same_group_multiple_times_same_call(self):
+        RGB_OLD = (10, 11, 12)
+        RGB_NEW = (100, 110, 120)
+
+        GROUP_RGBS = [(self.GROUP_0, RGB_OLD), (self.GROUP_0, RGB_NEW)]
+
+        self.leds.set_group_rgbs(GROUP_RGBS)
 
         self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_NEW)
 
@@ -268,7 +296,7 @@ class TestSetGroupRGB(GroupMethodsTestCase):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = []
 
-        leds = GroupedLeds(LED_RANGE, GROUP_LED_RANGES)
+        leds = ProductionGroupedLeds(LED_RANGE, GROUP_LED_RANGES)
 
         GROUPS = [0, 1, 100]
 
@@ -277,7 +305,9 @@ class TestSetGroupRGB(GroupMethodsTestCase):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
-                    leds.set_group_rgb(group, rgb)
+                    group_rgbs = [(group, rgb)]
+
+                    leds.set_group_rgbs(group_rgbs)
 
     def test_group_less_than_0(self):
         GROUPS = [-1, -2, -100]
@@ -287,22 +317,28 @@ class TestSetGroupRGB(GroupMethodsTestCase):
 
                 with self.assertRaises(ValueError) as error:
                     rgb = (10, 20, 30)
-                    self.leds.set_group_rgb(group, rgb)
+
+                    group_rgbs = [(group, rgb)]
+
+                    self.leds.set_group_rgbs(group_rgbs)
 
                 actual_error_message = str(error.exception)
                 expected_error_message = f'group must be >= 0, but was {group}.'
 
                 self.assertEqual(actual_error_message, expected_error_message)
 
-    def test_index_error(self):
-        GROUPS = [3, 4, 100]
+    def test_group_exceeds_max_group(self):
+        GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
 
         for group in GROUPS:
             with self.subTest(group=group):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
-                    self.leds.set_group_rgb(group, rgb)
+
+                    group_rgbs = [(group, rgb)]
+
+                    self.leds.set_group_rgbs(group_rgbs)
 
 
 class TestGetGroupLedRange(GroupMethodsTestCase):
@@ -312,18 +348,18 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
             group_led_range = self.GROUP_LED_RANGES[group]
 
             with self.subTest(group=group, group_led_range=group_led_range):
-                led_range = self.leds.get_group_led_range(group)
+                start, end = self.leds.get_group_led_range(group)
 
                 start_led, end_led = group_led_range
 
-                self.assertEqual(led_range.start, start_led)
-                self.assertEqual(led_range.end, end_led)
+                self.assertEqual(start, start_led)
+                self.assertEqual(end, end_led)
 
     def test_no_groups(self):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = []
 
-        leds = GroupedLeds(LED_RANGE, GROUP_LED_RANGES)
+        leds = ProductionGroupedLeds(LED_RANGE, GROUP_LED_RANGES)
 
         GROUPS = [0, 1, 100]
 
@@ -349,8 +385,8 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
 
                 self.assertEqual(actual_error_message, expected_error_message)
 
-    def test_index_error(self):
-        GROUPS = [3, 4, 100]
+    def test_group_exceeds_max_group(self):
+        GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
 
         for group in GROUPS:
             with self.subTest(group=group):

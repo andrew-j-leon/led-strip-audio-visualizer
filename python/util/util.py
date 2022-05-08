@@ -34,7 +34,7 @@ class NonNegativeRange:
 
 
 class NonNegativeIntegerRange:
-    def __init__(self, start, end):
+    def __init__(self, start: int, end: int):
         '''
             Args:
                 `start (NonNegativeInteger)`: Inclusive.
@@ -44,6 +44,12 @@ class NonNegativeIntegerRange:
 
             Example 2 : NonNegativeIntegerRange(0, 0) is an empty set.
         '''
+        if (not isinstance(start, int)):
+            raise TypeError(f'start ({start}) must be of type int, but was of type {type(start)}.')
+
+        if (not isinstance(end, int)):
+            raise TypeError(f'end ({end}) must be of type int, but was of type {type(end)}.')
+
         start_non_negative_integer = NonNegativeInteger(start)
         end_non_negative_integer = NonNegativeInteger(end)
 
