@@ -7,7 +7,7 @@ import util.util as util
 from visualizer.spectrogram import Spectrogram
 from typing import List, Tuple
 
-import gui.audio_visualizer.audio_model as audio_model
+import gui.audio_visualizer.audio_out.audio_out_model as audio_model
 import gui.audio_visualizer.audio_view as audio_view
 import numpy
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
