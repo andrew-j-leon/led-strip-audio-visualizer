@@ -20,8 +20,7 @@ class AudioController(controller.Controller):
         self._audio_player: audio_model.AudioModel = audio_player
         self.__visualizer: Spectrogram = None
 
-    def __get_grouped_led_strips(self):
-        led_strips = []
+    def __get_led_strip(self):
         if (self._view.get_serial_led_strip_checkbox_value()):
 
             PORT = self._view.get_serial_port()
@@ -37,7 +36,7 @@ class AudioController(controller.Controller):
             serial_grouped_leds = SerialGroupedLeds(self._view.get_led_index_range(), self.__get_group_index_to_led_range(),
                                                     serial, self._view.get_brightness())
 
-            led_strips.append(ProductionLedStrip(serial_grouped_leds))
+            return ProductionLedStrip(serial_grouped_leds)
 
         if (self._view.get_graphic_led_strip_checkbox_value()):
             WIDTH = 1350
@@ -50,9 +49,7 @@ class AudioController(controller.Controller):
                                                       self.__get_group_index_to_led_range(),
                                                       gui)
 
-            led_strips.append(ProductionLedStrip(graphic_grouped_leds))
-
-        return led_strips
+            return ProductionLedStrip(graphic_grouped_leds)
 
     def __get_group_index_to_led_range(self) -> List[Tuple[int, int]]:
         number_of_leds_per_group = max(1, self.__get_number_of_leds() // self._view.get_number_of_groups())
@@ -83,6 +80,7 @@ class AudioController(controller.Controller):
 
     def __del__(self):
         self._delete_visualizer()
+        self._delete_led_strip()
         del self._view
         del self._audio_player
 
@@ -90,6 +88,20 @@ class AudioController(controller.Controller):
         if (self.__visualizer):
             del self.__visualizer
             self.__visualizer = None
+
+    def _delete_led_strip(self):
+        if (self.led_strip):
+            BLACK_RGB = (0, 0, 0)
+
+            self.led_strip.clear_queued_colors()
+
+            for group in range(self.led_strip.number_of_groups):
+                self.led_strip.enqueue_rgb(group, BLACK_RGB)
+
+            self.led_strip.show_queued_colors()
+
+            del self.led_strip
+            self.led_strip = None
 
     def start(self):
         self._view.run_concurrent(self.__on_gui_event)
@@ -111,8 +123,8 @@ class AudioController(controller.Controller):
             if (isinstance(self.__visualizer, Spectrogram)):
 
                 number_of_frames = self._audio_player.milliseconds_to_number_of_frames(self._view.get_milliseconds_per_audio_chunk())
-                self.__visualizer.update_led_strips(audio_chunk, number_of_frames, self._audio_player.get_framerate(),
-                                                    numpy.int16)  # TODO : This should equal the format in audio_in_model
+                self.__visualizer.update_led_strips(self.led_strip, audio_chunk, number_of_frames, self._audio_player.get_framerate(),
+                                                    numpy.int16)
 
     # Methods that the child class can/should override
     def _ui_event_is_valid(self, event: str) -> bool:
@@ -137,6 +149,6 @@ class AudioController(controller.Controller):
         if (self._view.get_visualizer_type_dropdown_value() == audio_view.VisualizerType.FREQUENCY):
             FREQUENCY_RANGE = self._view.get_frequency_range()
             AMPLITUDE_TO_RGB = self._view.get_amplitude_to_rgb()
-            GROUPED_LED_STRIPS = self.__get_grouped_led_strips()
+            self.led_strip = self.__get_led_strip()
 
-            self.__visualizer = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB, GROUPED_LED_STRIPS)
+            self.__visualizer = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB)
