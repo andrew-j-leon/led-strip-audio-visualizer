@@ -1,12 +1,16 @@
 import os
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-import gui.styling as styling
 import PySimpleGUI as sg
 import util.util as util
-from gui.audio_visualizer.setting.error_message import *
-from gui.window import Window
+from gui.setting.error_message import *
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
+
+BUTTON_FONT = ("Courier New", 14)
+INPUT_LABEL_FONT = ("Courier New", 14)
+DROPDOWN_INPUT_FONT = ("Courier New", 14)
+CHECKBOX_INPUT_FONT = ("Courier New", 14)
+H1 = ("Courier New", 18)
 
 
 class Element:
@@ -77,7 +81,7 @@ def __get_hue(amplitude: Union[int, float]) -> int:
 
 class SettingView:
     def __init__(self):
-        self.__main_window: Window = None
+        self.__main_window: sg.Window = None
 
         sg.user_settings_filename(filename=_get_current_setting_file_name(), path=_get_setting_directory_path())
 
@@ -117,7 +121,7 @@ class SettingView:
         '''
         LAYOUT = [[sg.Text(text=error_message)], [sg.Button(button_text="Ok")]]
 
-        modal: Window = Window(title=title, layout=LAYOUT, modal=True)
+        modal = sg.Window(title=title, layout=LAYOUT, modal=True)
 
         while True:
             event = modal.read(timeout=0)
@@ -130,7 +134,7 @@ class SettingView:
             Args:
                 `on_event (Callable[[str], None], optional)`: Called with the name of the event whenever an event occurs.
         '''
-        self.__main_window: Window = self._create_main_window()
+        self.__main_window = self._create_main_window()
         self.__main_window.read(timeout=0)
 
         while (self.__main_window):
@@ -165,45 +169,45 @@ class SettingView:
 
     # Methods the child class can/shold override
 
-    def _create_main_window(self):
+    def _create_main_window(self) -> sg.Window:
         LAYOUT = [[sg.Combo(values=_get_user_setting_file_names(),
                             default_value=("" if (_get_current_setting_file_name() == _get_default_setting_file_name())
                                            else _get_current_setting_file_name()),
                             key=SettingElement.SETTING_FILE_NAME_COMBO, size=(50, 1)),
-                   sg.Button(button_text="Load", key=Element.LOAD_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Save", key=Element.SAVE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Delete", key=Element.DELETE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Reset", key=Element.RESET_SETTING_BUTTON, font=styling.BUTTON_FONT)],
+                   sg.Button(button_text="Load", key=Element.LOAD_BUTTON, font=BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Save", key=Element.SAVE_BUTTON, font=BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Delete", key=Element.DELETE_BUTTON, font=BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Reset", key=Element.RESET_SETTING_BUTTON, font=BUTTON_FONT)],
 
-                  [sg.Text(text="General", font=styling.H1)],
-                  [sg.Text(text="Led Index Range:", font=styling.INPUT_LABEL_FONT),
-                   sg.Text(text="start_index (inclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.START_LED_INDEX_INPUT,
-                                                                                                     default_text=self.__settings[SettingElement.START_LED_INDEX_INPUT]),
-                   sg.Text(text="end_index (exclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.END_LED_INDEX_INPUT,
-                                                                                                   default_text=self.__settings[SettingElement.END_LED_INDEX_INPUT])],
-                  [sg.Text(text="Milliseconds per Audio Chunk:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT,
-                                                                                                          default_text=self.__settings[SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])],
+                  [sg.Text(text="General", font=H1)],
+                  [sg.Text(text="Led Index Range:", font=INPUT_LABEL_FONT),
+                   sg.Text(text="start_index (inclusive):", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.START_LED_INDEX_INPUT,
+                                                                                             default_text=self.__settings[SettingElement.START_LED_INDEX_INPUT]),
+                   sg.Text(text="end_index (exclusive):", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.END_LED_INDEX_INPUT,
+                                                                                           default_text=self.__settings[SettingElement.END_LED_INDEX_INPUT])],
+                  [sg.Text(text="Milliseconds per Audio Chunk:", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT,
+                                                                                                  default_text=self.__settings[SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])],
 
-                  [sg.Text(text="Serial", font=styling.H1)],
-                  [sg.Text(text="Port:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.SERIAL_PORT_INPUT, default_text=self.__settings[SettingElement.SERIAL_PORT_INPUT])],
-                  [sg.Text(text="Baudrate:", font=styling.INPUT_LABEL_FONT), sg.DropDown(key=SettingElement.SERIAL_BAUDRATE_DROPDOWN, values=_BAUDRATES, default_value=self.__settings[SettingElement.SERIAL_BAUDRATE_DROPDOWN])],
-                  [sg.Text(text="Brightness", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.BRIGHTNESS_INPUT, default_text=self.__settings[SettingElement.BRIGHTNESS_INPUT])],
+                  [sg.Text(text="Serial", font=H1)],
+                  [sg.Text(text="Port:", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.SERIAL_PORT_INPUT, default_text=self.__settings[SettingElement.SERIAL_PORT_INPUT])],
+                  [sg.Text(text="Baudrate:", font=INPUT_LABEL_FONT), sg.DropDown(key=SettingElement.SERIAL_BAUDRATE_DROPDOWN, values=_BAUDRATES, default_value=self.__settings[SettingElement.SERIAL_BAUDRATE_DROPDOWN])],
+                  [sg.Text(text="Brightness", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.BRIGHTNESS_INPUT, default_text=self.__settings[SettingElement.BRIGHTNESS_INPUT])],
 
-                  [sg.Text(text="Frequency Visualizer", font=styling.H1)],
-                  [sg.Text(text="Number of Groups:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.NUMBER_OF_GROUPS_INPUT, default_text=self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])],
+                  [sg.Text(text="Frequency Visualizer", font=H1)],
+                  [sg.Text(text="Number of Groups:", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.NUMBER_OF_GROUPS_INPUT, default_text=self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])],
 
-                  [sg.Text(text="Frequency Range:", font=styling.INPUT_LABEL_FONT),
-                   sg.Text("minimum:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MINIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MINIMUM_FREQUENCY_INPUT]),
-                   sg.Text("maximum", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MAXIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MAXIMUM_FREQUENCY_INPUT])],
+                  [sg.Text(text="Frequency Range:", font=INPUT_LABEL_FONT),
+                   sg.Text("minimum:", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.MINIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MINIMUM_FREQUENCY_INPUT]),
+                   sg.Text("maximum", font=INPUT_LABEL_FONT), sg.Input(key=SettingElement.MAXIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MAXIMUM_FREQUENCY_INPUT])],
 
-                  [sg.Checkbox(text="Should Reverse Led Indicies", key=SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, font=styling.CHECKBOX_INPUT_FONT)],
+                  [sg.Checkbox(text="Should Reverse Led Indicies", key=SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, font=CHECKBOX_INPUT_FONT)],
 
-                  [sg.Text(text="Amplitude to RGB", font=styling.INPUT_LABEL_FONT),
+                  [sg.Text(text="Amplitude to RGB", font=INPUT_LABEL_FONT),
                    sg.Multiline(key=SettingElement.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT])],
 
                   [sg.ColorChooserButton(button_text="Pick Color")]]
 
-        return Window(title="Settings", layout=LAYOUT, modal=True)
+        return sg.Window(title="Settings", layout=LAYOUT, modal=True)
 
     def _handle_event_before_client_on_event(self, event: str) -> str:
         if (event in self.__event_to_method):
