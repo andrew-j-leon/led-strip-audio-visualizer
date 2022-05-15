@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 
 import PySimpleGUI as sg
 import util.util as util
-from gui.setting.error_message import *
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 
 BUTTON_FONT = ("Courier New", 14)
@@ -89,26 +88,8 @@ class SettingView:
         self.__event_to_method: Dict[str, Callable[[], None]] = {Event.LOAD: self.__load, Event.SAVE: self.__save,
                                                                  Event.DELETE: self.__delete, Event.RESET: self.__reset}
 
-        self.__element_to_value_method: Dict[str, Callable[[], None]] = {SettingElement.START_LED_INDEX_INPUT: self.__get_start_led_index,
-                                                                         SettingElement.END_LED_INDEX_INPUT: self.__get_end_led_index,
-                                                                         SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT: self.__get_milliseconds_per_audio_chunk,
-                                                                         SettingElement.SERIAL_PORT_INPUT: self.__get_serial_port,
-                                                                         SettingElement.SERIAL_BAUDRATE_DROPDOWN: self.__get_serial_baudrate,
-                                                                         SettingElement.BRIGHTNESS_INPUT: self.__get_brightness,
-                                                                         SettingElement.NUMBER_OF_GROUPS_INPUT: self.__get_number_of_groups,
-                                                                         SettingElement.MINIMUM_FREQUENCY_INPUT: self.__get_minimum_frequency,
-                                                                         SettingElement.MAXIMUM_FREQUENCY_INPUT: self.__get_maximum_frequency,
-                                                                         SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX: self.__should_reverse_indicies,
-                                                                         SettingElement.AMPLITUDE_TO_RGB_INPUT: self.__get_amplitude_to_rgb}
-
     def __del__(self):
         self.__close_main_window()
-
-    def get_value(self, element: str) -> Any:
-        if (element not in self.__element_to_value_method):
-            raise ValueError("Element {} is not a value that can be retrieved. Valid elements are : {}".format(element, util.get_non_builtin_items(SettingElement)))
-
-        return self.__element_to_value_method[element]()
 
     def display_confirmation_modal(self, title: str, error_message: str):
         '''
@@ -138,7 +119,7 @@ class SettingView:
         self.__main_window.read(timeout=0)
 
         while (self.__main_window):
-            event: str = self.__main_window.read(timeout=0)
+            event: str = self.__main_window.read(timeout=0)[0]
             event: str = self._handle_event_before_client_on_event(event)
 
             on_event(event)
@@ -215,37 +196,37 @@ class SettingView:
         self.__handle_setting_file_name_combo_event()
         return event
 
-    def __get_start_led_index(self) -> int:
+    def get_start_led_index(self) -> int:
         return int(self.__settings[SettingElement.START_LED_INDEX_INPUT])
 
-    def __get_end_led_index(self) -> int:
+    def get_end_led_index(self) -> int:
         return int(self.__settings[SettingElement.END_LED_INDEX_INPUT])
 
-    def __get_milliseconds_per_audio_chunk(self) -> int:
+    def get_milliseconds_per_audio_chunk(self) -> int:
         return int(self.__settings[SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])
 
-    def __get_serial_port(self) -> str:
+    def get_serial_port(self) -> str:
         return self.__settings[SettingElement.SERIAL_PORT_INPUT]
 
-    def __get_serial_baudrate(self) -> int:
+    def get_serial_baudrate(self) -> int:
         return int(self.__settings[SettingElement.SERIAL_BAUDRATE_DROPDOWN])
 
-    def __get_brightness(self) -> int:
+    def get_brightness(self) -> int:
         return int(self.__settings[SettingElement.BRIGHTNESS_INPUT])
 
-    def __get_minimum_frequency(self) -> int:
+    def get_minimum_frequency(self) -> int:
         return int(self.__settings[SettingElement.MINIMUM_FREQUENCY_INPUT])
 
-    def __get_maximum_frequency(self) -> int:
+    def get_maximum_frequency(self) -> int:
         return int(self.__settings[SettingElement.MAXIMUM_FREQUENCY_INPUT])
 
-    def __should_reverse_indicies(self) -> bool:
+    def should_reverse_indicies(self) -> bool:
         return self.__settings[SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX]
 
-    def __get_number_of_groups(self) -> int:
+    def get_number_of_groups(self) -> int:
         return int(self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])
 
-    def __get_amplitude_to_rgb(self) -> List[Tuple[int, int, int]]:
+    def get_amplitude_to_rgb(self) -> List[Tuple[int, int, int]]:
         if (self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT] == ""):
             return _create_default_amplitude_to_rgb()
 
@@ -280,19 +261,13 @@ class SettingView:
 
     def __save(self):
         file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
+        sg.user_settings_save(file_name, _get_setting_directory_path())
+        sg.user_settings_filename(filename=file_name, path=_get_setting_directory_path())
+        sg.user_settings_write_new_dictionary(self.__get_input_settings())
+        self.__settings = sg.user_settings()
+        _save_current_setting_file_name(file_name)
 
-        if (not _is_valid_user_setting_file_name(file_name)):
-            self.display_confirmation_modal("Invalid file name", "The file name {} is invalid.")
-
-        else:
-            if (self.__check_settings()):
-                sg.user_settings_save(file_name, _get_setting_directory_path())
-                sg.user_settings_filename(filename=file_name, path=_get_setting_directory_path())
-                sg.user_settings_write_new_dictionary(self.__get_input_settings())
-                self.__settings = sg.user_settings()
-                _save_current_setting_file_name(file_name)
-
-                self._fill_input_fields(self.__settings)
+        self._fill_input_fields(self.__settings)
 
     def __load(self):
         file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
@@ -323,35 +298,6 @@ class SettingView:
             self._update_element(Element.LOAD_BUTTON, disabled=True)
             self._update_element(Element.SAVE_BUTTON, disabled=False)
             self._update_element(Element.DELETE_BUTTON, disabled=True)
-
-    def __check_settings(self) -> bool:
-        error_messages: List[str] = [get_led_index_range_error_message(self._get_element_value(SettingElement.START_LED_INDEX_INPUT),
-                                                                       self._get_element_value(SettingElement.END_LED_INDEX_INPUT)),
-                                     get_milliseconds_per_audio_chunk_error_message(self._get_element_value(SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT)),
-                                     get_serial_baudrate_error_message(self._get_element_value(SettingElement.SERIAL_BAUDRATE_DROPDOWN), _BAUDRATES),
-                                     get_brightness_error_message(self._get_element_value(SettingElement.BRIGHTNESS_INPUT)),
-                                     get_frequency_range_error_message(self._get_element_value(SettingElement.MINIMUM_FREQUENCY_INPUT),
-                                                                       self._get_element_value(SettingElement.MAXIMUM_FREQUENCY_INPUT)),
-                                     get_should_reverse_indicies_error_message(self._get_element_value(SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX)),
-                                     get_number_of_groups_error_message(self._get_element_value(SettingElement.NUMBER_OF_GROUPS_INPUT)),
-                                     get_amplitude_to_rgb_error_message(self._get_element_value(SettingElement.AMPLITUDE_TO_RGB_INPUT))]
-
-        message = ""
-        for error_message in error_messages:
-            message += error_message
-
-        if (message.strip() != ""):
-            self.display_confirmation_modal(title="Invalid Input(s)", error_message="The following settings were invalid:\n\n{}".format(message))
-            return False
-        return True
-
-
-def _is_valid_user_setting_file_name(file_name: str) -> bool:
-    for substring in [".", "/", "\\"]:
-        if substring in file_name:
-            return False
-
-    return not util.is_empty(file_name)
 
 
 def _get_setting_directory_path() -> str:

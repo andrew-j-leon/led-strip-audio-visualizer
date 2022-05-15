@@ -1,10 +1,10 @@
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, List, Tuple
 
-import gui.setting.setting_view as setting_view
 import numpy
 import pyaudio
 import PySimpleGUI as sg
 import util.util as util
+from gui.setting.setting_view import SettingView
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.gui import ProductionGui
@@ -12,12 +12,10 @@ from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Pr
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 from visualizer.spectrogram import Spectrogram
 
-# View
 BUTTON_FONT = ("Courier New", 14)
 INPUT_LABEL_FONT = ("Courier New", 14)
 DROPDOWN_INPUT_FONT = ("Courier New", 14)
 CHECKBOX_INPUT_FONT = ("Courier New", 14)
-
 H1 = ("Courier New", 18)
 
 
@@ -53,6 +51,16 @@ class VisualizerType:
     CENTER_AMPLITUDE = "Center_Amplitude"
 
 
+class State:
+    PLAYING = "playing"
+    PAUSED = "paused"
+
+
+class NoDefaultInputDeviceDetectedError(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
+
 def _gui_rows_are_valid(rows: List[List[sg.Element]]) -> bool:
     if (not isinstance(rows, list)):
         return False
@@ -71,108 +79,112 @@ def _gui_elements_are_valid(elements: List[sg.Element]) -> bool:
     return True
 
 
-class AudioInView:
+class AudioInController:
     def __init__(self):
-        self.__setting_view = setting_view.SettingView()
+        self.__setting_view = SettingView()
         self.__main_window: sg.Window = None
 
+        self._audio_player_maker = pyaudio.PyAudio()
+        self.__audio_player: pyaudio.Stream = None
+        self.__audio_chunk: bytes = b''
+        self.__set_default_input_device()
+
+        self.__spectrogram: Spectrogram = None
+        self.__led_strip: LedStrip = None
+
     def __del__(self):
+        self.__delete_spectrogram()
+
+        if (self.__led_strip is not None):
+            BLACK_RGB = (0, 0, 0)
+
+            self.__led_strip.clear_queued_colors()
+
+            for group in range(self.__led_strip.number_of_groups):
+                self.__led_strip.enqueue_rgb(group, BLACK_RGB)
+
+            self.__led_strip.show_queued_colors()
+
+            del self.__led_strip
+            self.__led_strip = None
+
         self.__close_main_window()
 
-    def display_confirmation_modal(self, title: str, error_message: str):
-        '''
-            Display a modal that blocks input from all other windows until said modal's
-            "Ok" button or upper-right "X" button is clicked.
+        self.__close_audio_player()
 
-            Args:
-                `title (str)`: The title of the modal.
-                `error_message (str)`: The modal's message to the user.
-        '''
-        LAYOUT = [[sg.Text(text=error_message)], [sg.Button(button_text="Ok")]]
+        if (self._audio_player_maker is not None):
+            self._audio_player_maker.terminate()
 
-        modal = sg.Window(title=title, layout=LAYOUT, modal=True)
+    def start(self):
+        def on_audio_player_update(audio_chunk: bytes):
+            if (self.__spectrogram):
+                if (isinstance(self.__spectrogram, Spectrogram)):
 
-        while True:
-            event = modal.read(timeout=0)[0]
-            if (event == Event.WINDOW_CLOSED, Event.CONFIRMATION_MODAL_OK):
-                modal.close()
-                break
+                    milleseconds_per_audio_chunk = self.__setting_view.get_milliseconds_per_audio_chunk()
+                    number_of_frames = self.milliseconds_to_number_of_frames(milleseconds_per_audio_chunk)
+                    self.__spectrogram.update_led_strips(self.__led_strip, audio_chunk, number_of_frames, self.__audio_player._rate, numpy.int16)
 
-    def run_concurrent(self, on_event: Callable[[str], None] = lambda event: None):
-        '''
-            Args:
-                `on_event (Callable[[str], None], optional)`: Called with the name of the event whenever an event occurs.
-        '''
-        self.__main_window = self._create_main_window()
+        self.__main_window = self.__create_main_window()
         self.__main_window.read(timeout=0)
 
         while (self.__main_window):
             event: str = self.__main_window.read(timeout=0)[0]
-            event: str = self._handle_event_before_client_on_event(event)
+            event: str = self.__handle_event_before_client_on_event(event)
 
-            on_event(event)
+            milleseconds_per_audio_chunk = self.__setting_view.get_milliseconds_per_audio_chunk()
+            self.update(milleseconds_per_audio_chunk, on_audio_player_update)
+
+            if (event != Event.TIMEOUT_EVENT):
+                if (self.__ui_event_is_valid(event)):
+                    self.__handle_valid_ui_event(event)
+                else:
+                    self.__handle_invalid_ui_event(event)
 
             if (event == Event.WINDOW_CLOSED):
                 self.__close_main_window()
 
-    def get_visualizer_type_dropdown_value(self) -> str:
-        return self._get_element_value(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
+    def update(self, milliseconds_of_audio_to_read: int, on_audio_read: Callable):
+        if (self.is_state(State.PLAYING)):
+            number_of_frames = self.milliseconds_to_number_of_frames(milliseconds_of_audio_to_read)
 
-    def get_serial_led_strip_checkbox_value(self):
-        return self._get_element_value(Element.SERIAL_LED_STRIP_CHECKBOX)
+            self.__audio_chunk: bytes = self.__audio_player.read(number_of_frames)
+            on_audio_read(self.__audio_chunk)
 
-    def get_graphic_led_strip_checkbox_value(self):
-        return self._get_element_value(Element.GRAPHIC_LED_STRIP_CHECKBOX)
+    def is_state(self, state: str) -> bool:
+        if (state == State.PLAYING):
+            return (isinstance(self.__audio_player, pyaudio.Stream) and self.__audio_player.is_active())
 
-    def get_led_index_range(self) -> Tuple[int, int]:
-        return (self.__setting_view.get_value(setting_view.SettingElement.START_LED_INDEX_INPUT),
-                self.__setting_view.get_value(setting_view.SettingElement.END_LED_INDEX_INPUT))
+        elif (state == State.PAUSED):
+            return (isinstance(self.__audio_player, pyaudio.Stream) and self.__audio_player.is_stopped())
 
-    def get_milliseconds_per_audio_chunk(self) -> int:
-        return self.__setting_view.get_value(setting_view.SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT)
+        return False
 
-    def get_serial_port(self) -> str:
-        return self.__setting_view.get_value(setting_view.SettingElement.SERIAL_PORT_INPUT)
+    def milliseconds_to_number_of_frames(self, milliseconds: int) -> int:
+        return int(self.__get_number_of_frames_per_millisecond() * milliseconds)
 
-    def get_serial_baudrate(self) -> int:
-        return self.__setting_view.get_value(setting_view.SettingElement.SERIAL_BAUDRATE_DROPDOWN)
+    def __get_number_of_frames_per_millisecond(self) -> int:
+        number_of_milliseconds_per_second = 1000
+        return self.__audio_player._rate / number_of_milliseconds_per_second
 
-    def get_brightness(self) -> int:
-        return self.__setting_view.get_value(setting_view.SettingElement.BRIGHTNESS_INPUT)
+    def __set_default_input_device(self):
+        def init_audio_player(*stream_args, **stream_kwargs):
+            self.__close_audio_player()
+            self.__audio_player = self._audio_player_maker.open(*stream_args, **stream_kwargs)
 
-    def get_frequency_range(self) -> Tuple[int, int]:
-        return (self.__setting_view.get_value(setting_view.SettingElement.MINIMUM_FREQUENCY_INPUT),
-                self.__setting_view.get_value(setting_view.SettingElement.MAXIMUM_FREQUENCY_INPUT))
+        default_input_device_info: dict = self._audio_player_maker.get_default_input_device_info()
 
-    def should_reverse_indicies(self) -> bool:
-        return self.__setting_view.get_value(setting_view.SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX)
+        if (util.is_empty(default_input_device_info)):
+            raise NoDefaultInputDeviceDetectedError("There is no default input device set on this machine.")
 
-    def get_number_of_groups(self) -> int:
-        return self.__setting_view.get_value(setting_view.SettingElement.NUMBER_OF_GROUPS_INPUT)
+        init_audio_player(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
+                          rate=int(default_input_device_info["defaultSampleRate"]), input=True)
 
-    def get_amplitude_to_rgb(self) -> List[Tuple[int, int, int]]:
-        return self.__setting_view.get_value(setting_view.SettingElement.AMPLITUDE_TO_RGB_INPUT)
+        self.__audio_player.stop_stream()
 
-    def set_current_input_source_message(self, message: str):
-        self.__update_element(Element.CURRENT_INPUT_SOURCE_MESSAGE, message)
-
-    def set_audio_paused_state(self):
-        self.__update_element(Element.SETTINGS_BUTTON, disabled=False)
-        self.__update_element(Element.PAUSE_AUDIO_BUTTON, disabled=True)
-        self.__update_element(Element.RESUME_AUDIO_BUTTON, disabled=False)
-
-        self.__update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=False)
-        self.__update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=False)
-        self.__update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=False)
-
-    def set_audio_playing_state(self):
-        self.__update_element(Element.SETTINGS_BUTTON, disabled=True)
-        self.__update_element(Element.PAUSE_AUDIO_BUTTON, disabled=False)
-        self.__update_element(Element.RESUME_AUDIO_BUTTON, disabled=True)
-
-        self.__update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=True)
-        self.__update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=True)
-        self.__update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=True)
+    def __close_audio_player(self):
+        if (self.__audio_player):
+            self.__audio_player.close()
+            self.__audio_player = None
 
     def __close_main_window(self):
         if (self.__main_window):
@@ -182,24 +194,15 @@ class AudioInView:
     def __update_element(self, element: str, *update_args, **update_kwargs):
         self.__main_window[element].update(*update_args, **update_kwargs)
 
-    def _create_gui_rows(self, *rows: Tuple[List[sg.Element]]) -> List[List[sg.Element]]:
+    def __create_gui_rows(self, *rows: Tuple[List[sg.Element]]) -> List[List[sg.Element]]:
         gui_rows: List[List[sg.Element]] = []
         util.foreach(rows, lambda row: gui_rows.append(row))
         return gui_rows
 
-    def _element_is_enabled(self, element: str) -> bool:
-        return not self.__main_window[element].Disabled
-
-    def _get_element_value(self, element: str) -> Any:
+    def __get_element_value(self, element: str) -> Any:
         return self.__main_window[element].get()
 
-    def _fill_input_fields(self, values: Dict[str, Any]):
-        self.__main_window.fill(values)
-
-    def _handle_event_before_client_on_event(self, event: str) -> str:
-        return event
-
-    def _create_main_window(self) -> sg.Window:
+    def __create_main_window(self) -> sg.Window:
         VISUALIZER_DROPDOWN_VALUES: List[str] = [VisualizerType.NONE, VisualizerType.FREQUENCY]
 
         row_with_settings_button = [sg.Button(button_text="Settings", key=Element.SETTINGS_BUTTON)]
@@ -239,8 +242,8 @@ class AudioInView:
     def __get_rows_above_default_visualizer_and_led_selection(self) -> List[List[sg.Element]]:
         CURRENT_INPUT_SOURCE_FONT = ("Courier New", 20)
 
-        return self._create_gui_rows([sg.Text(text="No audio currently playing.", key=Element.CURRENT_INPUT_SOURCE_MESSAGE, font=CURRENT_INPUT_SOURCE_FONT)],
-                                     [sg.Button(button_text="Pause (||)", disabled=True, key=Element.PAUSE_AUDIO_BUTTON, font=BUTTON_FONT),
+        return self.__create_gui_rows([sg.Text(text="No audio currently playing.", key=Element.CURRENT_INPUT_SOURCE_MESSAGE, font=CURRENT_INPUT_SOURCE_FONT)],
+                                      [sg.Button(button_text="Pause (||)", disabled=True, key=Element.PAUSE_AUDIO_BUTTON, font=BUTTON_FONT),
                                       sg.Button(button_text="Resume (>)", disabled=False, key=Element.RESUME_AUDIO_BUTTON, font=BUTTON_FONT)])
 
     def __get_rows_below_default_visualizer_and_led_selection(self) -> List[List[sg.Element]]:
@@ -250,193 +253,81 @@ class AudioInView:
             raise TypeError("rows are not valid PySimpleGui rows")
         return rows
 
-    def _handle_event_before_client_on_event(self, event: str) -> str:
+    def __handle_event_before_client_on_event(self, event: str) -> str:
         if (event == Event.OPEN_SETTINGS_MODAL):
             self.__setting_view.run_concurrent()
         return event
 
-
-# Model
-class State:
-    PLAYING = "playing"
-    PAUSED = "paused"
-
-
-class NoDefaultInputDeviceDetectedError(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-
-
-class AudioInModel:
-    def __init__(self):
-        self._audio_player_maker = pyaudio.PyAudio()
-        self._audio_player: pyaudio.Stream = None
-        self._audio_chunk: bytes = b''
-
-        self.__set_default_input_device()
-
-    def __del__(self):
-        self.__close_audio_player()
-
-        if (self._audio_player_maker is not None):
-            self._audio_player_maker.terminate()
-
-    def update(self, milliseconds_of_audio_to_read: int, on_audio_read: Callable):
-        if (self.is_state(State.PLAYING)):
-            number_of_frames = self.milliseconds_to_number_of_frames(milliseconds_of_audio_to_read)
-
-            self._audio_chunk: bytes = self._audio_player.read(number_of_frames)
-            on_audio_read(self._audio_chunk)
-
-    def is_state(self, state: str) -> bool:
-        if (state == State.PLAYING):
-            return (isinstance(self._audio_player, pyaudio.Stream) and self._audio_player.is_active())
-
-        elif (state == State.PAUSED):
-            return (isinstance(self._audio_player, pyaudio.Stream) and self._audio_player.is_stopped())
-
-        return False
-
-    def milliseconds_to_number_of_frames(self, milliseconds: int) -> int:
-        return int(self.__get_number_of_frames_per_millisecond() * milliseconds)
-
-    def pause(self):
-        if (self._audio_player):
-            self._audio_player.stop_stream()
-
-    def resume(self):
-        if (self._audio_player):
-            self._audio_player.start_stream()
-
-    def number_of_frames_to_milliseconds(self, number_of_frames: int) -> int:
-        return int((1 / self.__get_number_of_frames_per_millisecond()) * number_of_frames)
-
-    def get_framerate(self) -> int:
-        return self._audio_player._rate
-
-    def get_current_input_device_name(self) -> str:
-        return self._audio_player_maker.get_default_input_device_info()["name"]
-
-    def __get_number_of_frames_per_millisecond(self) -> int:
-        number_of_milliseconds_per_second = 1000
-        return self.get_framerate() / number_of_milliseconds_per_second
-
-    def __set_default_input_device(self):
-        def init_audio_player(*stream_args, **stream_kwargs):
-            self.__close_audio_player()
-            self._audio_player = self._audio_player_maker.open(*stream_args, **stream_kwargs)
-
-        default_input_device_info: dict = self._audio_player_maker.get_default_input_device_info()
-
-        if (util.is_empty(default_input_device_info)):
-            raise NoDefaultInputDeviceDetectedError("There is no default input device set on this machine.")
-
-        init_audio_player(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
-                          rate=int(default_input_device_info["defaultSampleRate"]), input=True)
-
-        self._audio_player.stop_stream()
-
-    def __close_audio_player(self):
-        if (self._audio_player):
-            self._audio_player.close()
-            self._audio_player = None
-
-
-# Controller
-_START_LED_INDEX = 0
-_END_LED_INDEX = 1
-
-
-class AudioInController:
-    def __init__(self):
-        self.view = AudioInView()
-        self.audio_player = AudioInModel()
-        self.spectrogram: Spectrogram = None
-        self.led_strip: LedStrip = None
-
-    def __del__(self):
-        self.__delete_spectrogram()
-
-        if (self.led_strip is not None):
-            BLACK_RGB = (0, 0, 0)
-
-            self.led_strip.clear_queued_colors()
-
-            for group in range(self.led_strip.number_of_groups):
-                self.led_strip.enqueue_rgb(group, BLACK_RGB)
-
-            self.led_strip.show_queued_colors()
-
-            del self.led_strip
-            self.led_strip = None
-
-        del self.view
-        del self.audio_player
-
-    def start(self):
-        def on_audio_player_update(audio_chunk: bytes):
-            if (self.spectrogram):
-                if (isinstance(self.spectrogram, Spectrogram)):
-
-                    number_of_frames = self.audio_player.milliseconds_to_number_of_frames(self.view.get_milliseconds_per_audio_chunk())
-                    self.spectrogram.update_led_strips(self.led_strip, audio_chunk, number_of_frames, self.audio_player.get_framerate(),
-                                                       numpy.int16)
-
-        def on_gui_event(event: str):
-            self.audio_player.update(self.view.get_milliseconds_per_audio_chunk(),
-                                     on_audio_player_update)
-
-            if (event != Event.TIMEOUT_EVENT):
-                if (self.__ui_event_is_valid(event)):
-                    self.__handle_valid_ui_event(event)
-                else:
-                    self.__handle_invalid_ui_event(event)
-
-        self.view.run_concurrent(on_gui_event)
-
     def __ui_event_is_valid(self, event: str) -> bool:
         if (event == Event.PAUSE_AUDIO):
-            return self.audio_player.is_state(State.PLAYING)
+            return self.is_state(State.PLAYING)
 
         elif (event == Event.RESUME_AUDIO):
-            return self.audio_player.is_state(State.PAUSED)
+            return self.is_state(State.PAUSED)
 
         return event in (Event.WINDOW_CLOSED, Event.TIMEOUT_EVENT, Event.OPEN_SETTINGS_MODAL)
 
     def __handle_valid_ui_event(self, event: str):
 
+        def set_audio_paused_state():
+            self.__update_element(Element.SETTINGS_BUTTON, disabled=False)
+            self.__update_element(Element.PAUSE_AUDIO_BUTTON, disabled=True)
+            self.__update_element(Element.RESUME_AUDIO_BUTTON, disabled=False)
+
+            self.__update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=False)
+            self.__update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=False)
+            self.__update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=False)
+
+        def set_audio_playing_state():
+            self.__update_element(Element.SETTINGS_BUTTON, disabled=True)
+            self.__update_element(Element.PAUSE_AUDIO_BUTTON, disabled=False)
+            self.__update_element(Element.RESUME_AUDIO_BUTTON, disabled=True)
+
+            self.__update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=True)
+            self.__update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=True)
+            self.__update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=True)
+
         def get_group_index_to_led_range() -> List[Tuple[int, int]]:
             def shift_index_up_by_start_index(index: int) -> int:
-                return index + get_start_led_index()
+                start_led = self.__setting_view.get_start_led_index()
+                return index + start_led
 
             def get_number_of_leds() -> int:
-                return get_end_led_index() - get_start_led_index()
+                start_led = self.__setting_view.get_start_led_index()
+                end_led = self.__setting_view.get_end_led_index()
 
-            def get_start_led_index() -> int:
-                return self.view.get_led_index_range()[_START_LED_INDEX]
+                return end_led - start_led
 
-            def get_end_led_index() -> int:
-                return self.view.get_led_index_range()[_END_LED_INDEX]
+            number_of_groups = self.__setting_view.get_number_of_groups()
 
-            number_of_leds_per_group = max(1, get_number_of_leds() // self.view.get_number_of_groups())
+            number_of_leds_per_group = max(1, get_number_of_leds() // number_of_groups)
             group_index_to_led_range = list()
 
-            for group_index in range(self.view.get_number_of_groups()):
+            for group_index in range(number_of_groups):
                 shifted_start_index = shift_index_up_by_start_index(group_index * number_of_leds_per_group)
                 shifted_end_index = shifted_start_index + number_of_leds_per_group
 
                 group_index_to_led_range.append((shifted_start_index, shifted_end_index))
 
-            if (self.view.should_reverse_indicies()):
+            should_reverse_frequencies = self.__setting_view.should_reverse_indicies()
+
+            if (should_reverse_frequencies):
                 group_index_to_led_range.reverse()
 
             return group_index_to_led_range
 
         def get_led_strip():
-            if (self.view.get_serial_led_strip_checkbox_value()):
+            use_serial_led_strip = self.__get_element_value(Element.SERIAL_LED_STRIP_CHECKBOX)
+            use_graphic_led_strip = self.__get_element_value(Element.GRAPHIC_LED_STRIP_CHECKBOX)
 
-                PORT = self.view.get_serial_port()
-                BAUDRATE = self.view.get_serial_baudrate()
+            start_led = self.__setting_view.get_start_led_index()
+            end_led = self.__setting_view.get_end_led_index()
+
+            led_range = (start_led, end_led)
+
+            if (use_serial_led_strip):
+                PORT = self.__setting_view.get_serial_port()
+                BAUDRATE = self.__setting_view.get_serial_baudrate()
                 PARITY = PARITY_NONE
                 STOP_BITS = STOPBITS_ONE_POINT_FIVE
                 BYTE_SIZE = EIGHTBITS
@@ -444,20 +335,21 @@ class AudioInController:
                 WRITE_TIMEOUT = 0
 
                 serial = ProductionSerial(PORT, BAUDRATE, PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
+                brightness = self.__setting_view.get_brightness()
 
-                serial_grouped_leds = SerialGroupedLeds(self.view.get_led_index_range(), get_group_index_to_led_range(),
-                                                        serial, self.view.get_brightness())
+                serial_grouped_leds = SerialGroupedLeds(led_range, get_group_index_to_led_range(),
+                                                        serial, brightness)
 
                 return ProductionLedStrip(serial_grouped_leds)
 
-            if (self.view.get_graphic_led_strip_checkbox_value()):
+            if (use_graphic_led_strip):
                 WIDTH = 1350
                 HEIGHT = 600
 
                 gui = ProductionGui(WIDTH, HEIGHT)
                 gui.update()
 
-                graphic_grouped_leds = GraphicGroupedLeds(self.view.get_led_index_range(),
+                graphic_grouped_leds = GraphicGroupedLeds(led_range,
                                                           get_group_index_to_led_range(),
                                                           gui)
 
@@ -465,31 +357,56 @@ class AudioInController:
 
         def init_spectrogram():
             self.__delete_spectrogram()
-            if (self.view.get_visualizer_type_dropdown_value() == VisualizerType.FREQUENCY):
-                FREQUENCY_RANGE = self.view.get_frequency_range()
-                AMPLITUDE_TO_RGB = self.view.get_amplitude_to_rgb()
-                self.led_strip = get_led_strip()
 
-                self.spectrogram = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB)
+            visualizer_dropdown_value = self.__get_element_value(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
+
+            if (visualizer_dropdown_value == VisualizerType.FREQUENCY):
+                start_frequency = self.__setting_view.get_minimum_frequency()
+                end_frequency = self.__setting_view.get_maximum_frequency()
+
+                FREQUENCY_RANGE = (start_frequency, end_frequency)
+                AMPLITUDE_TO_RGB = self.__setting_view.get_amplitude_to_rgb()
+                self.__led_strip = get_led_strip()
+
+                self.__spectrogram = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB)
+
+        def pause():
+            if (self.__audio_player):
+                self.__audio_player.stop_stream()
+
+        def resume():
+            if (self.__audio_player):
+                self.__audio_player.start_stream()
 
         if (event == Event.PAUSE_AUDIO):
-            self.audio_player.pause()
+            pause()
             self.__delete_spectrogram()
-            self.view.set_audio_paused_state()
+            set_audio_paused_state()
 
         elif (event == Event.RESUME_AUDIO):
-            current_input_source_message = f"Input Source : {self.audio_player.get_current_input_device_name()}"
-            self.view.set_current_input_source_message(current_input_source_message)
+            input_source = self._audio_player_maker.get_default_input_device_info()["name"]
+            current_input_source_message = f"Input Source : {input_source}"
+            self.__update_element(Element.CURRENT_INPUT_SOURCE_MESSAGE, current_input_source_message)
 
             init_spectrogram()
-            self.audio_player.resume()
-            self.view.set_audio_playing_state()
+            resume()
+            set_audio_playing_state()
 
     def __handle_invalid_ui_event(self, event: str):
         if (event not in (Event.PAUSE_AUDIO, Event.RESUME_AUDIO)):
-            self.view.display_confirmation_modal("Error", "Did not recognize the event {}.".format(event))
+            error_message = f"Did not recognize the event {event}."
+
+            LAYOUT = [[sg.Text(text=error_message)], [sg.Button(button_text="Ok")]]
+
+            modal = sg.Window(title='Error', layout=LAYOUT, modal=True)
+
+            while True:
+                event = modal.read(timeout=0)[0]
+                if (event == Event.WINDOW_CLOSED, Event.CONFIRMATION_MODAL_OK):
+                    modal.close()
+                    break
 
     def __delete_spectrogram(self):
-        if (self.spectrogram is not None):
-            del self.spectrogram
-            self.spectrogram = None
+        if (self.__spectrogram is not None):
+            del self.__spectrogram
+            self.__spectrogram = None
