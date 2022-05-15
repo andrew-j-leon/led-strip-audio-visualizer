@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple
 
 import PySimpleGUI as sg
 import util.util as util
@@ -50,32 +50,6 @@ class Event:
 
 
 _BAUDRATES = ["115200", "57600", "38400", "31250", "28800", "19200", "14400", "9600", "4800", "2400", "1200", "600", "300"]
-
-
-def _create_default_amplitude_to_rgb() -> List[Tuple[int, int, int]]:
-    SATURATION = 85
-    LIGHTNESS = 35
-
-    MINIMUM_AMPLITUDE = 0  # dB
-    MAXIMUM_AMPLITUDE = 200  # dB
-
-    amplitude_rgbs: List[Tuple[int, int, int]] = []
-    for amplitude in range(MINIMUM_AMPLITUDE, MAXIMUM_AMPLITUDE + 1):
-        amplitude_rgbs.append(util.hsl_to_rgb(__get_hue(amplitude), SATURATION, LIGHTNESS))
-    return amplitude_rgbs
-
-
-def __get_hue(amplitude: Union[int, float]) -> int:
-    if (amplitude < 41):
-        return 240
-
-    amp = min(57.5, max(0, amplitude))
-
-    step_strength = 5.5
-
-    # Try graphing this equation. The x-axis is the amplitude & the y-axis the hue.
-    hue = round(step_strength * (-120 / 11) * round((amp - 5.25) / step_strength) + 600)
-    return hue if (hue >= 0) else 0
 
 
 class SettingView:
@@ -183,8 +157,9 @@ class SettingView:
 
                   [sg.Checkbox(text="Should Reverse Led Indicies", key=SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, font=CHECKBOX_INPUT_FONT)],
 
-                  [sg.Text(text="Amplitude to RGB", font=INPUT_LABEL_FONT),
-                   sg.Multiline(key=SettingElement.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT])],
+                  [sg.Text(text="Amplitude RGBs", font=INPUT_LABEL_FONT),
+                   sg.Multiline(key=SettingElement.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT],
+                                size=(50, 7), autoscroll=True)],
 
                   [sg.ColorChooserButton(button_text="Pick Color")]]
 
@@ -227,14 +202,21 @@ class SettingView:
         return int(self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])
 
     def get_amplitude_to_rgb(self) -> List[Tuple[int, int, int]]:
-        if (self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT] == ""):
-            return _create_default_amplitude_to_rgb()
+        rgb_counts = self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT].strip().split('\n')
 
-        else:
-            amplitude_rgbs: List[str] = self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT].split("\n")
-            for amplitude in range(len(amplitude_rgbs)):
-                amplitude_rgbs[amplitude] = tuple(map(lambda rgb_str: int(rgb_str), amplitude_rgbs[amplitude].split(",")))
-            return amplitude_rgbs
+        amplitude_rgbs = list()
+
+        for rgb_count in rgb_counts:
+            try:
+                red, green, blue, count = (int(string) for string in rgb_count.split(','))
+
+                amplitude_rgbs += [(red, green, blue)] * count
+
+            except ValueError as error:
+                if (rgb_count != ''):
+                    raise error
+
+        return amplitude_rgbs
 
     def __reset(self):
         sg.user_settings_filename(filename=_get_default_setting_file_name(), path=_get_setting_directory_path())
