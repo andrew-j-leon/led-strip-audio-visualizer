@@ -1,8 +1,7 @@
-import PySimpleGUI as sg
-from gui.window import Window
+from typing import Callable
+
 import gui.audio_visualizer.audio_in.audio_in_controller as audio_in_controller
 import gui.audio_visualizer.audio_out.audio_out_controller as audio_out_controller
-from typing import Callable
 import PySimpleGUI as sg
 from gui.window import Window
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED

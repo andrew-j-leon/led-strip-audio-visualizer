@@ -1,11 +1,7 @@
-import gui.audio_visualizer.audio_in.audio_in_model as audio_in_model
-import gui.audio_visualizer.audio_in.audio_in_view as audio_in_view
-import gui.audio_visualizer.audio_view as audio_view
-
-from visualizer.spectrogram import Spectrogram
 from typing import List, Tuple
 
-import gui.audio_visualizer.audio_view as audio_view
+import gui.audio_visualizer.audio_in.audio_in_model as audio_in_model
+import gui.audio_visualizer.audio_in.audio_in_view as audio_in_view
 import numpy
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
@@ -56,7 +52,7 @@ class AudioInController:
             self.audio_player.update(self.view.get_milliseconds_per_audio_chunk(),
                                      on_audio_player_update)
 
-            if (event != audio_view.Event.TIMEOUT_EVENT):
+            if (event != audio_in_view.Event.TIMEOUT_EVENT):
                 if (self.__ui_event_is_valid(event)):
                     self.__handle_valid_ui_event(event)
                 else:
@@ -135,7 +131,7 @@ class AudioInController:
 
         def init_spectrogram():
             self.__delete_spectrogram()
-            if (self.view.get_visualizer_type_dropdown_value() == audio_view.VisualizerType.FREQUENCY):
+            if (self.view.get_visualizer_type_dropdown_value() == audio_in_view.VisualizerType.FREQUENCY):
                 FREQUENCY_RANGE = self.view.get_frequency_range()
                 AMPLITUDE_TO_RGB = self.view.get_amplitude_to_rgb()
                 self.led_strip = get_led_strip()

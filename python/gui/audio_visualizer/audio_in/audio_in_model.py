@@ -1,8 +1,7 @@
-import pyaudio
-import util.util as util
 from typing import Callable
 
 import pyaudio
+import util.util as util
 
 
 class State:

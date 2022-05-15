@@ -2,16 +2,13 @@ import os
 import random
 import shutil
 from pathlib import Path
-from typing import List, Union
+from typing import Callable, List, Union
 from wave import Wave_read
 
 import pyaudio
 import util.util as util
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError, CouldntEncodeError
-from typing import Callable
-
-import pyaudio
 
 
 class NoValidAudioFilesFoundException(Exception):

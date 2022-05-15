@@ -2,11 +2,51 @@ import os
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 import gui.styling as styling
-import gui.view as view
 import PySimpleGUI as sg
 import util.util as util
 from gui.audio_visualizer.setting.error_message import *
 from gui.window import Window
+from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
+
+
+class Element:
+    CONFIRMATION_MODAL_OK_BUTTON = "error_modal_ok_button"
+    LOAD_BUTTON = "load_setting_button"
+    SAVE_BUTTON = "save_settings_button"
+    DELETE_BUTTON = "delete_setting_button"
+    RESET_SETTING_BUTTON = "reset_setting_button"
+
+
+class SettingElement:
+    SETTING_FILE_NAME_COMBO = "setting_file_name_combo"
+
+    START_LED_INDEX_INPUT = "start_led_index_input"
+    END_LED_INDEX_INPUT = "end_led_index_input"
+    MILLISECONDS_PER_AUDIO_CHUNK_INPUT = "milliseconds_per_audio_chunk_input"
+
+    SERIAL_PORT_INPUT = "serial_port_input"
+    SERIAL_BAUDRATE_DROPDOWN = "serial_baudrate_dropdown"
+    BRIGHTNESS_INPUT = "brightness_input"
+
+    NUMBER_OF_GROUPS_INPUT = "number_of_groups_input"
+    MINIMUM_FREQUENCY_INPUT = "minimum_frequency_input"
+    MAXIMUM_FREQUENCY_INPUT = "maximum_frequency_input"
+    SHOULD_REVERSE_LED_INDICIES_CHECKBOX = "should_reverse_led_indicies_checkbox"
+    AMPLITUDE_TO_RGB_INPUT = "amplitude_to_rgb_input"
+
+
+class Event:
+    WINDOW_CLOSED = WINDOW_CLOSED
+    TIMEOUT_EVENT = TIMEOUT_EVENT
+    CONFIRMATION_MODAL_OK = Element.CONFIRMATION_MODAL_OK_BUTTON
+    FILE_NAME_COMBO_CHANGE = SettingElement.SETTING_FILE_NAME_COMBO
+    LOAD = Element.LOAD_BUTTON
+    SAVE = Element.SAVE_BUTTON
+    DELETE = Element.DELETE_BUTTON
+    RESET = Element.RESET_SETTING_BUTTON
+
+
+_BAUDRATES = ["115200", "57600", "38400", "31250", "28800", "19200", "14400", "9600", "4800", "2400", "1200", "600", "300"]
 
 
 def _create_default_amplitude_to_rgb() -> List[Tuple[int, int, int]]:
@@ -35,49 +75,9 @@ def __get_hue(amplitude: Union[int, float]) -> int:
     return hue if (hue >= 0) else 0
 
 
-_BAUDRATES = ["115200", "57600", "38400", "31250", "28800", "19200", "14400", "9600", "4800", "2400", "1200", "600", "300"]
-
-
-class SettingElement:
-    SETTING_FILE_NAME_COMBO = "setting_file_name_combo"
-
-    START_LED_INDEX_INPUT = "start_led_index_input"
-    END_LED_INDEX_INPUT = "end_led_index_input"
-    MILLISECONDS_PER_AUDIO_CHUNK_INPUT = "milliseconds_per_audio_chunk_input"
-
-    SERIAL_PORT_INPUT = "serial_port_input"
-    SERIAL_BAUDRATE_DROPDOWN = "serial_baudrate_dropdown"
-    BRIGHTNESS_INPUT = "brightness_input"
-
-    NUMBER_OF_GROUPS_INPUT = "number_of_groups_input"
-    MINIMUM_FREQUENCY_INPUT = "minimum_frequency_input"
-    MAXIMUM_FREQUENCY_INPUT = "maximum_frequency_input"
-    SHOULD_REVERSE_LED_INDICIES_CHECKBOX = "should_reverse_led_indicies_checkbox"
-    AMPLITUDE_TO_RGB_INPUT = "amplitude_to_rgb_input"
-
-
-class Element(SettingElement, view.Element):
-    pass
-
-
-class _Element(Element, view._Element):
-    LOAD_BUTTON = "load_setting_button"
-    SAVE_BUTTON = "save_settings_button"
-    DELETE_BUTTON = "delete_setting_button"
-    RESET_SETTING_BUTTON = "reset_setting_button"
-
-
-class Event(view.Event):
-    FILE_NAME_COMBO_CHANGE = _Element.SETTING_FILE_NAME_COMBO
-    LOAD = _Element.LOAD_BUTTON
-    SAVE = _Element.SAVE_BUTTON
-    DELETE = _Element.DELETE_BUTTON
-    RESET = _Element.RESET_SETTING_BUTTON
-
-
-class SettingView(view.View):
+class SettingView:
     def __init__(self):
-        view.View.__init__(self)
+        self.__main_window: Window = None
 
         sg.user_settings_filename(filename=_get_current_setting_file_name(), path=_get_setting_directory_path())
 
@@ -97,41 +97,109 @@ class SettingView(view.View):
                                                                          SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX: self.__should_reverse_indicies,
                                                                          SettingElement.AMPLITUDE_TO_RGB_INPUT: self.__get_amplitude_to_rgb}
 
+    def __del__(self):
+        self.__close_main_window()
+
+    def get_value(self, element: str) -> Any:
+        if (element not in self.__element_to_value_method):
+            raise ValueError("Element {} is not a value that can be retrieved. Valid elements are : {}".format(element, util.get_non_builtin_items(SettingElement)))
+
+        return self.__element_to_value_method[element]()
+
+    def display_confirmation_modal(self, title: str, error_message: str):
+        '''
+            Display a modal that blocks input from all other windows until said modal's
+            "Ok" button or upper-right "X" button is clicked.
+
+            Args:
+                `title (str)`: The title of the modal.
+                `error_message (str)`: The modal's message to the user.
+        '''
+        LAYOUT = [[sg.Text(text=error_message)], [sg.Button(button_text="Ok")]]
+
+        modal: Window = Window(title=title, layout=LAYOUT, modal=True)
+
+        while True:
+            event = modal.read(timeout=0)
+            if (event == Event.WINDOW_CLOSED, Event.CONFIRMATION_MODAL_OK):
+                modal.close()
+                break
+
+    def run_concurrent(self, on_event: Callable[[str], None] = lambda event: None):
+        '''
+            Args:
+                `on_event (Callable[[str], None], optional)`: Called with the name of the event whenever an event occurs.
+        '''
+        self.__main_window: Window = self._create_main_window()
+        self.__main_window.read(timeout=0)
+
+        while (self.__main_window):
+            event: str = self.__main_window.read(timeout=0)
+            event: str = self._handle_event_before_client_on_event(event)
+
+            on_event(event)
+
+            if (event == Event.WINDOW_CLOSED):
+                self.__close_main_window()
+
+    def __close_main_window(self):
+        if (self.__main_window):
+            self.__main_window.close()
+            self.__main_window = None
+
+    # Helper methods for child classes
+
+    def _update_element(self, element: str, *update_args, **update_kwargs):
+        self.__main_window[element].update(*update_args, **update_kwargs)
+
+    def _create_gui_rows(self, *rows: Tuple[List[sg.Element]]) -> List[List[sg.Element]]:
+        gui_rows: List[List[sg.Element]] = []
+        util.foreach(rows, lambda row: gui_rows.append(row))
+        return gui_rows
+
+    def _get_element_value(self, element: str) -> Any:
+        return self.__main_window[element].get()
+
+    def _fill_input_fields(self, values: Dict[str, Any]):
+        self.__main_window.fill(values)
+
+    # Methods the child class can/shold override
+
     def _create_main_window(self):
         LAYOUT = [[sg.Combo(values=_get_user_setting_file_names(),
                             default_value=("" if (_get_current_setting_file_name() == _get_default_setting_file_name())
                                            else _get_current_setting_file_name()),
-                            key=_Element.SETTING_FILE_NAME_COMBO, size=(50, 1)),
-                   sg.Button(button_text="Load", key=_Element.LOAD_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Save", key=_Element.SAVE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Delete", key=_Element.DELETE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
-                   sg.Button(button_text="Reset", key=_Element.RESET_SETTING_BUTTON, font=styling.BUTTON_FONT)],
+                            key=SettingElement.SETTING_FILE_NAME_COMBO, size=(50, 1)),
+                   sg.Button(button_text="Load", key=Element.LOAD_BUTTON, font=styling.BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Save", key=Element.SAVE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Delete", key=Element.DELETE_BUTTON, font=styling.BUTTON_FONT, disabled=True),
+                   sg.Button(button_text="Reset", key=Element.RESET_SETTING_BUTTON, font=styling.BUTTON_FONT)],
 
                   [sg.Text(text="General", font=styling.H1)],
                   [sg.Text(text="Led Index Range:", font=styling.INPUT_LABEL_FONT),
-                   sg.Text(text="start_index (inclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.START_LED_INDEX_INPUT,
-                                                                                                     default_text=self.__settings[_Element.START_LED_INDEX_INPUT]),
-                   sg.Text(text="end_index (exclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.END_LED_INDEX_INPUT,
-                                                                                                   default_text=self.__settings[_Element.END_LED_INDEX_INPUT])],
-                  [sg.Text(text="Milliseconds per Audio Chunk:", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT,
-                                                                                                          default_text=self.__settings[_Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])],
+                   sg.Text(text="start_index (inclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.START_LED_INDEX_INPUT,
+                                                                                                     default_text=self.__settings[SettingElement.START_LED_INDEX_INPUT]),
+                   sg.Text(text="end_index (exclusive):", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.END_LED_INDEX_INPUT,
+                                                                                                   default_text=self.__settings[SettingElement.END_LED_INDEX_INPUT])],
+                  [sg.Text(text="Milliseconds per Audio Chunk:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT,
+                                                                                                          default_text=self.__settings[SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])],
 
                   [sg.Text(text="Serial", font=styling.H1)],
-                  [sg.Text(text="Port:", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.SERIAL_PORT_INPUT, default_text=self.__settings[_Element.SERIAL_PORT_INPUT])],
-                  [sg.Text(text="Baudrate:", font=styling.INPUT_LABEL_FONT), sg.DropDown(key=_Element.SERIAL_BAUDRATE_DROPDOWN, values=_BAUDRATES, default_value=self.__settings[_Element.SERIAL_BAUDRATE_DROPDOWN])],
-                  [sg.Text(text="Brightness", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.BRIGHTNESS_INPUT, default_text=self.__settings[_Element.BRIGHTNESS_INPUT])],
+                  [sg.Text(text="Port:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.SERIAL_PORT_INPUT, default_text=self.__settings[SettingElement.SERIAL_PORT_INPUT])],
+                  [sg.Text(text="Baudrate:", font=styling.INPUT_LABEL_FONT), sg.DropDown(key=SettingElement.SERIAL_BAUDRATE_DROPDOWN, values=_BAUDRATES, default_value=self.__settings[SettingElement.SERIAL_BAUDRATE_DROPDOWN])],
+                  [sg.Text(text="Brightness", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.BRIGHTNESS_INPUT, default_text=self.__settings[SettingElement.BRIGHTNESS_INPUT])],
 
                   [sg.Text(text="Frequency Visualizer", font=styling.H1)],
-                  [sg.Text(text="Number of Groups:", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.NUMBER_OF_GROUPS_INPUT, default_text=self.__settings[_Element.NUMBER_OF_GROUPS_INPUT])],
+                  [sg.Text(text="Number of Groups:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.NUMBER_OF_GROUPS_INPUT, default_text=self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])],
 
                   [sg.Text(text="Frequency Range:", font=styling.INPUT_LABEL_FONT),
-                   sg.Text("minimum:", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.MINIMUM_FREQUENCY_INPUT, default_text=self.__settings[_Element.MINIMUM_FREQUENCY_INPUT]),
-                   sg.Text("maximum", font=styling.INPUT_LABEL_FONT), sg.Input(key=_Element.MAXIMUM_FREQUENCY_INPUT, default_text=self.__settings[_Element.MAXIMUM_FREQUENCY_INPUT])],
+                   sg.Text("minimum:", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MINIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MINIMUM_FREQUENCY_INPUT]),
+                   sg.Text("maximum", font=styling.INPUT_LABEL_FONT), sg.Input(key=SettingElement.MAXIMUM_FREQUENCY_INPUT, default_text=self.__settings[SettingElement.MAXIMUM_FREQUENCY_INPUT])],
 
-                  [sg.Checkbox(text="Should Reverse Led Indicies", key=_Element.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, font=styling.CHECKBOX_INPUT_FONT)],
+                  [sg.Checkbox(text="Should Reverse Led Indicies", key=SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, font=styling.CHECKBOX_INPUT_FONT)],
 
                   [sg.Text(text="Amplitude to RGB", font=styling.INPUT_LABEL_FONT),
-                   sg.Multiline(key=_Element.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[_Element.AMPLITUDE_TO_RGB_INPUT])],
+                   sg.Multiline(key=SettingElement.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT])],
 
                   [sg.ColorChooserButton(button_text="Pick Color")]]
 
@@ -143,48 +211,42 @@ class SettingView(view.View):
         self.__handle_setting_file_name_combo_event()
         return event
 
-    def get_value(self, element: str) -> Any:
-        if (element not in self.__element_to_value_method):
-            raise ValueError("Element {} is not a value that can be retrieved. Valid elements are : {}".format(element, util.get_non_builtin_items(SettingElement)))
-
-        return self.__element_to_value_method[element]()
-
     def __get_start_led_index(self) -> int:
-        return int(self.__settings[_Element.START_LED_INDEX_INPUT])
+        return int(self.__settings[SettingElement.START_LED_INDEX_INPUT])
 
     def __get_end_led_index(self) -> int:
-        return int(self.__settings[_Element.END_LED_INDEX_INPUT])
+        return int(self.__settings[SettingElement.END_LED_INDEX_INPUT])
 
     def __get_milliseconds_per_audio_chunk(self) -> int:
-        return int(self.__settings[_Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])
+        return int(self.__settings[SettingElement.MILLISECONDS_PER_AUDIO_CHUNK_INPUT])
 
     def __get_serial_port(self) -> str:
-        return self.__settings[_Element.SERIAL_PORT_INPUT]
+        return self.__settings[SettingElement.SERIAL_PORT_INPUT]
 
     def __get_serial_baudrate(self) -> int:
-        return int(self.__settings[_Element.SERIAL_BAUDRATE_DROPDOWN])
+        return int(self.__settings[SettingElement.SERIAL_BAUDRATE_DROPDOWN])
 
     def __get_brightness(self) -> int:
-        return int(self.__settings[_Element.BRIGHTNESS_INPUT])
+        return int(self.__settings[SettingElement.BRIGHTNESS_INPUT])
 
     def __get_minimum_frequency(self) -> int:
-        return int(self.__settings[_Element.MINIMUM_FREQUENCY_INPUT])
+        return int(self.__settings[SettingElement.MINIMUM_FREQUENCY_INPUT])
 
     def __get_maximum_frequency(self) -> int:
-        return int(self.__settings[_Element.MAXIMUM_FREQUENCY_INPUT])
+        return int(self.__settings[SettingElement.MAXIMUM_FREQUENCY_INPUT])
 
     def __should_reverse_indicies(self) -> bool:
-        return self.__settings[_Element.SHOULD_REVERSE_LED_INDICIES_CHECKBOX]
+        return self.__settings[SettingElement.SHOULD_REVERSE_LED_INDICIES_CHECKBOX]
 
     def __get_number_of_groups(self) -> int:
-        return int(self.__settings[_Element.NUMBER_OF_GROUPS_INPUT])
+        return int(self.__settings[SettingElement.NUMBER_OF_GROUPS_INPUT])
 
     def __get_amplitude_to_rgb(self) -> List[Tuple[int, int, int]]:
-        if (self.__settings[_Element.AMPLITUDE_TO_RGB_INPUT] == ""):
+        if (self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT] == ""):
             return _create_default_amplitude_to_rgb()
 
         else:
-            amplitude_rgbs: List[str] = self.__settings[_Element.AMPLITUDE_TO_RGB_INPUT].split("\n")
+            amplitude_rgbs: List[str] = self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT].split("\n")
             for amplitude in range(len(amplitude_rgbs)):
                 amplitude_rgbs[amplitude] = tuple(map(lambda rgb_str: int(rgb_str), amplitude_rgbs[amplitude].split(",")))
             return amplitude_rgbs
@@ -199,7 +261,7 @@ class SettingView(view.View):
         return self._get_element_value(element)
 
     def __delete(self):
-        file_name: str = self.__get_setting_modal_element_value(_Element.SETTING_FILE_NAME_COMBO)
+        file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
         if (not _is_user_setting_file_name(file_name)):
             self.display_confirmation_modal("File not found", "The file {} could not be found.".format(file_name))
         else:
@@ -213,7 +275,7 @@ class SettingView(view.View):
         return values
 
     def __save(self):
-        file_name: str = self.__get_setting_modal_element_value(_Element.SETTING_FILE_NAME_COMBO)
+        file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
 
         if (not _is_valid_user_setting_file_name(file_name)):
             self.display_confirmation_modal("Invalid file name", "The file name {} is invalid.")
@@ -229,7 +291,7 @@ class SettingView(view.View):
                 self._fill_input_fields(self.__settings)
 
     def __load(self):
-        file_name: str = self.__get_setting_modal_element_value(_Element.SETTING_FILE_NAME_COMBO)
+        file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
         if (not _is_user_setting_file_name(file_name)):
             self.display_confirmation_modal("File not found", "The file {} could not be found.".format(file_name))
 
@@ -241,22 +303,22 @@ class SettingView(view.View):
             self._fill_input_fields(self.__settings)
 
     def __handle_setting_file_name_combo_event(self):
-        file_name: str = self.__get_setting_modal_element_value(_Element.SETTING_FILE_NAME_COMBO)
+        file_name: str = self.__get_setting_modal_element_value(SettingElement.SETTING_FILE_NAME_COMBO)
 
         if (file_name == ""):
-            self._update_element(_Element.LOAD_BUTTON, disabled=True)
-            self._update_element(_Element.SAVE_BUTTON, disabled=True)
-            self._update_element(_Element.DELETE_BUTTON, disabled=True)
+            self._update_element(Element.LOAD_BUTTON, disabled=True)
+            self._update_element(Element.SAVE_BUTTON, disabled=True)
+            self._update_element(Element.DELETE_BUTTON, disabled=True)
 
         elif (_is_user_setting_file_name(file_name)):
-            self._update_element(_Element.LOAD_BUTTON, disabled=False)
-            self._update_element(_Element.SAVE_BUTTON, disabled=False)
-            self._update_element(_Element.DELETE_BUTTON, disabled=False)
+            self._update_element(Element.LOAD_BUTTON, disabled=False)
+            self._update_element(Element.SAVE_BUTTON, disabled=False)
+            self._update_element(Element.DELETE_BUTTON, disabled=False)
 
         elif (file_name != None):
-            self._update_element(_Element.LOAD_BUTTON, disabled=True)
-            self._update_element(_Element.SAVE_BUTTON, disabled=False)
-            self._update_element(_Element.DELETE_BUTTON, disabled=True)
+            self._update_element(Element.LOAD_BUTTON, disabled=True)
+            self._update_element(Element.SAVE_BUTTON, disabled=False)
+            self._update_element(Element.DELETE_BUTTON, disabled=True)
 
     def __check_settings(self) -> bool:
         error_messages: List[str] = [get_led_index_range_error_message(self._get_element_value(SettingElement.START_LED_INDEX_INPUT),
