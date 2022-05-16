@@ -57,8 +57,7 @@ class Spectrogram:
         start_frequency, end_frequency = frequency_range
         self.__frequency_range = NonNegativeRange(start_frequency, end_frequency)
 
-    def update_led_strips(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int,
-                          format: numpy.signedinteger):
+    def update_led_strips(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int):
         '''
             Args:
                 `led_strip (LedStrip)`: Will be updated.
@@ -67,7 +66,7 @@ class Spectrogram:
                 `sampling_rate (int)`: The number of samples per second.
                 `format (numpy.signedinteger)`: The format of the audio (i.e. 16 bit, 32 bit, etc.).
         '''
-        audio_data_decimal: bytes = numpy.frombuffer(audio_data, dtype=format)
+        audio_data_decimal: bytes = numpy.frombuffer(audio_data, dtype=numpy.int16)
         fft: numpy.ndarray = numpy.fft.fft(audio_data_decimal)
 
         fft_length = math.ceil(len(fft) / 2)  # the first half of the fft is a mirror copy of the 2nd half; we can ignore the 2nd half

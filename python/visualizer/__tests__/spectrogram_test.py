@@ -1,7 +1,6 @@
 import unittest
 from typing import Iterable, List, Tuple
 
-import numpy
 import util.util as util
 from led_strip.led_strip import LedStrip
 from visualizer.spectrogram import Spectrogram
@@ -118,7 +117,6 @@ class TestConstructor(unittest.TestCase):
 class TestUpdateLedStrips(unittest.TestCase):
     NUMBER_OF_FRAMES = 2205
     SAMPLING_RATE = 44100
-    FORMAT = numpy.int16
 
     FREQUENCY_RANGE = (0, 2300)
 
@@ -166,7 +164,7 @@ class TestUpdateLedStrips(unittest.TestCase):
         audio_data = b''
 
         with self.assertRaises(ValueError) as error:
-            self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE, self.FORMAT)
+            self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
         actual_error_message = str(error.exception)
         expected_error_message = 'Invalid number of FFT data points (0) specified.'
@@ -180,7 +178,7 @@ class TestUpdateLedStrips(unittest.TestCase):
 
             with self.subTest(f'len(audio_data) = {len(audio_data)}'):
 
-                self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE, self.FORMAT)
+                self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
         for invalid_length in range(1, 101, 2):
 
@@ -189,7 +187,7 @@ class TestUpdateLedStrips(unittest.TestCase):
             with self.subTest(f'len(audio_data) = {len(audio_data)}'):
 
                 with self.assertRaises(ValueError) as error:
-                    self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE, self.FORMAT)
+                    self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
                 actual_error_message = str(error.exception)
                 expected_error_message = 'buffer size must be a multiple of element size'
@@ -199,7 +197,7 @@ class TestUpdateLedStrips(unittest.TestCase):
     def test_silent_audio_data(self):
         audio_data = b'\x00' * 141120
 
-        self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE, self.FORMAT)
+        self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
@@ -216,7 +214,7 @@ class TestUpdateLedStrips(unittest.TestCase):
         with open(AUDIO_FILE_PATH, 'rb') as audio_file:
             audio_data: bytes = audio_file.read()
 
-            spectrogram.update_led_strips(led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE, self.FORMAT)
+            spectrogram.update_led_strips(led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
             self.assertEqual(led_strip.number_of_queued_colors, 0)
             self.assertEqual(led_strip.number_of_groups, len(expected_rgbs))
