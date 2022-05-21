@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.gui import Font, ProductionGui
+from libraries.gui import Font, ProductionCanvasGui
 
 
 class TestFont(unittest.TestCase):
@@ -11,46 +11,40 @@ class TestFont(unittest.TestCase):
         self.assertEqual(font.name, 'Arial')
         self.assertEqual(font.size, 12)
         self.assertEqual(font.style, 'normal')
-        self.assertEqual(font.color, '#000000')
 
     def test_constructor_override_defaults(self):
         NAME = 'Times New Roman'
         SIZE = 20
         STYLE = 'bold'
-        COLOR = '#121212'
 
-        font = Font(name=NAME, size=SIZE, style=STYLE, color=COLOR)
+        font = Font(name=NAME, size=SIZE, style=STYLE)
 
         self.assertEqual(font.name, NAME)
         self.assertEqual(font.size, SIZE)
         self.assertEqual(font.style, STYLE)
-        self.assertEqual(font.color, COLOR)
 
     def test_repr(self):
         NAME = 'Times New Roman'
         SIZE = 20
         STYLE = 'bold'
-        COLOR = '#121212'
 
-        font = Font(name=NAME, size=SIZE, style=STYLE, color=COLOR)
+        font = Font(name=NAME, size=SIZE, style=STYLE)
 
-        self.assertEqual(repr(font), f'Font(name={NAME}, size={SIZE}, style={STYLE}, color={COLOR})')
+        self.assertEqual(repr(font), f'Font(name={NAME}, size={SIZE}, style={STYLE})')
 
     def test_eq(self):
         NAME_1 = 'Times New Roman'
         SIZE_1 = 20
         STYLE_1 = 'bold'
-        COLOR_1 = '#121212'
 
         NAME_2 = 'Arial'
         SIZE_2 = 12
         STYLE_2 = 'normal'
-        COLOR_2 = '#424210'
 
-        font_1a = Font(NAME_1, SIZE_1, STYLE_1, COLOR_1)
-        font_1b = Font(NAME_1, SIZE_1, STYLE_1, COLOR_1)
+        font_1a = Font(NAME_1, SIZE_1, STYLE_1)
+        font_1b = Font(NAME_1, SIZE_1, STYLE_1)
 
-        font_2 = Font(NAME_2, SIZE_2, STYLE_2, COLOR_2)
+        font_2 = Font(NAME_2, SIZE_2, STYLE_2)
 
         self.assertEqual(font_1a, font_1b)
 
@@ -62,17 +56,15 @@ class TestFont(unittest.TestCase):
         NAME_1 = 'Times New Roman'
         SIZE_1 = 20
         STYLE_1 = 'bold'
-        COLOR_1 = '#121212'
 
         NAME_2 = 'Arial'
         SIZE_2 = 12
         STYLE_2 = 'normal'
-        COLOR_2 = '#424210'
 
-        hash_1a = hash(Font(NAME_1, SIZE_1, STYLE_1, COLOR_1))
-        hash_1b = hash(Font(NAME_1, SIZE_1, STYLE_1, COLOR_1))
+        hash_1a = hash(Font(NAME_1, SIZE_1, STYLE_1))
+        hash_1b = hash(Font(NAME_1, SIZE_1, STYLE_1))
 
-        hash_2 = hash(Font(NAME_2, SIZE_2, STYLE_2, COLOR_2))
+        hash_2 = hash(Font(NAME_2, SIZE_2, STYLE_2))
 
         self.assertTrue(isinstance(hash_1a, int))
 
@@ -82,8 +74,8 @@ class TestFont(unittest.TestCase):
 
 class TestConstructor(unittest.TestCase):
     def setUp(self):
-        self.__canvas_patch = patch('libraries.gui.Canvas')
-        self.__window_patch = patch('libraries.gui.Window')
+        self.__canvas_patch = patch('PySimpleGUI.Canvas')
+        self.__window_patch = patch('PySimpleGUI.Window')
 
         self.canvas_mock = self.__canvas_patch.start()
         self.window_mock = self.__window_patch.start()
@@ -95,7 +87,7 @@ class TestConstructor(unittest.TestCase):
         WIDTH = 1350
         HEIGHT = 600
 
-        ProductionGui(WIDTH, HEIGHT)
+        ProductionCanvasGui(WIDTH, HEIGHT)
 
         self.window_mock.assert_called_once()
         self.canvas_mock.assert_called_once()
@@ -109,7 +101,7 @@ class TestConstructor(unittest.TestCase):
                 with self.assertRaises(ValueError) as error:
                     height = 600
 
-                    ProductionGui(width, height)
+                    ProductionCanvasGui(width, height)
 
                 error_message = str(error.exception)
                 expected_error_message = f'width must be >= 0, but was {width}.'
@@ -125,7 +117,7 @@ class TestConstructor(unittest.TestCase):
                 with self.assertRaises(ValueError) as error:
                     width = 600
 
-                    ProductionGui(width, height)
+                    ProductionCanvasGui(width, height)
 
                 error_message = str(error.exception)
                 expected_error_message = f'height must be >= 0, but was {height}.'
@@ -135,8 +127,8 @@ class TestConstructor(unittest.TestCase):
 
 class TestMethod(unittest.TestCase):
     def setUp(self):
-        self.__canvas_patch = patch('libraries.gui.Canvas')
-        self.__window_patch = patch('libraries.gui.Window')
+        self.__canvas_patch = patch('PySimpleGUI.Canvas')
+        self.__window_patch = patch('PySimpleGUI.Window')
 
         self.addCleanup(self.__canvas_patch.stop)
         self.addCleanup(self.__window_patch.stop)
@@ -148,7 +140,7 @@ class TestMethod(unittest.TestCase):
 
         WIDTH = 1350
         HEIGHT = 600
-        self.gui = ProductionGui(WIDTH, HEIGHT)
+        self.gui = ProductionCanvasGui(WIDTH, HEIGHT)
 
 
 class TestWidth(TestMethod):
@@ -156,7 +148,7 @@ class TestWidth(TestMethod):
         WIDTH = 1350
         HEIGHT = 600
 
-        gui = ProductionGui(WIDTH, HEIGHT)
+        gui = ProductionCanvasGui(WIDTH, HEIGHT)
 
         self.assertEqual(gui.width, WIDTH)
 
@@ -186,10 +178,11 @@ class TestCreateText(TestMethod):
         CENTER_Y = 20
         TEXT = 'hello'
         FONT = Font()
+        FILL_COLOR = '#000000'
 
-        element_id = self.gui.create_text(CENTER_X, CENTER_Y, TEXT, FONT)
+        element_id = self.gui.create_text(CENTER_X, CENTER_Y, TEXT, FONT, FILL_COLOR)
 
-        tk_canvas_mock.create_text.assert_called_once_with(CENTER_X, CENTER_Y, text=TEXT, fill=FONT.color,
+        tk_canvas_mock.create_text.assert_called_once_with(CENTER_X, CENTER_Y, text=TEXT, fill=FILL_COLOR,
                                                            font=(FONT.name, FONT.size, FONT.style))
 
         self.assertEqual(element_id, ELEMENT_ID)
@@ -206,7 +199,7 @@ class TestCreateText(TestMethod):
             self.gui.create_text(CENTER_X, CENTER_Y, TEXT, FONT)
 
         actual_error_message = str(error.exception)
-        expected_error_message = 'You must call self.update() before creating elements on a ProductionGui.'
+        expected_error_message = 'You must call self.update() before creating elements on a ProductionCanvasGui.'
 
         self.assertEqual(actual_error_message, expected_error_message)
 
@@ -249,7 +242,7 @@ class TestOval(TestMethod):
             self.gui.create_oval(TOP_LEFT_X, TOP_LEFT_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y, FILL_COLOR)
 
         actual_error_message = str(error.exception)
-        expected_error_message = 'You must call self.update() before creating elements on a ProductionGui.'
+        expected_error_message = 'You must call self.update() before creating elements on a ProductionCanvasGui.'
 
         self.assertEqual(actual_error_message, expected_error_message)
 

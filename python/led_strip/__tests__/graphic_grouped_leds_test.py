@@ -5,11 +5,11 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Tuple
 
 from led_strip.grouped_leds import GraphicGroupedLeds, Point
-from libraries.gui import Font, Gui
+from libraries.gui import Font, CanvasGui
 from util.util import rgb_to_hex
 
 
-class FakeGui(Gui):
+class FakeCanvasGui(CanvasGui):
     def __init__(self):
         self.closed = False
         self.number_of_updates = 0
@@ -35,8 +35,8 @@ class FakeGui(Gui):
 
         return element_hash
 
-    def create_text(self, center_x: int, center_y: int, text: str, font: Font = Font()) -> int:
-        element = Text(center_x, center_y, text, font)
+    def create_text(self, center_x: int, center_y: int, text: str, font: Font = Font(), fill_color: str = '#000000') -> int:
+        element = Text(center_x, center_y, text, font, fill_color)
         element_hash = hash(element)
 
         self.__queued_elements[element_hash] = element
@@ -75,7 +75,7 @@ class FakeGui(Gui):
         self.elements[oval_hash].set_fill_color(rgb_to_hex(*rgb))
 
     def __eq__(self, right_value: Any) -> bool:
-        if (isinstance(right_value, FakeGui)):
+        if (isinstance(right_value, FakeCanvasGui)):
             self_gui_elements = Counter(self.elements.values())
             right_value_gui_elements = Counter(right_value.elements.values())
 
@@ -143,31 +143,33 @@ class Oval(Element):
 
 
 class Text(Element):
-    def __init__(self, center_x: int, center_y: int, text: str, font: Font):
+    def __init__(self, center_x: int, center_y: int, text: str, font: Font, fill_color: str):
         self.center_x = center_x
         self.center_y = center_y
 
         self.text = text
         self.font = font
+        self.__fill_color = fill_color
 
     @property
     def fill_color(self) -> str:
-        return self.font.color
+        return self.__fill_color
 
     def set_fill_color(self, color: str):
-        self.font.color = color
+        self.__fill_color = color
 
     def __eq__(self, right_value: Any) -> bool:
         if (isinstance(right_value, Text)):
             return (self.center_x == right_value.center_x
                     and self.center_y == right_value.center_y
                     and self.text == right_value.text
-                    and self.font == right_value.font)
+                    and self.font == right_value.font
+                    and self.fill_color == right_value.fill_color)
 
         return False
 
     def __repr__(self) -> str:
-        return f'Text(center_x={self.center_x}, center_y={self.center_y}, text={self.text}, font={self.font})'
+        return f'Text(center_x={self.center_x}, center_y={self.center_y}, text={self.text}, font={self.font}, fill_color={self.fill_color})'
 
     def __hash__(self) -> int:
         return hash((self.center_x, self.center_y, self.text))
@@ -190,16 +192,16 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(repr(point), f'Point({X}, {Y})')
 
 
-def create_gui_after_init(gui_width: int, leds: GraphicGroupedLeds) -> FakeGui:
+def create_gui_after_init(gui_width: int, leds: GraphicGroupedLeds) -> FakeCanvasGui:
     FONT_NAME = 'Arial'
     FONT_SIZE = int((leds.led_diameter + 5) / len(str(leds.number_of_leds)))
     FONT_STYLE = 'bold'
-    FONT_COLOR = "#ffffff"
+    FILL_COLOR = "#ffffff"
 
     LEDS_PER_ROW = math.floor(gui_width / leds.led_diameter)
     LED_RADIUS = leds.led_diameter / 2
 
-    gui = FakeGui()
+    gui = FakeCanvasGui()
 
     for i in range(leds.start_led, leds.end_led):
         led_center_point = Point(LED_RADIUS + leds.led_diameter * (i % LEDS_PER_ROW),
@@ -213,9 +215,9 @@ def create_gui_after_init(gui_width: int, leds: GraphicGroupedLeds) -> FakeGui:
         gui.create_oval(top_left_point.x, top_left_point.y,
                         bottom_right_point.x, bottom_right_point.y)
 
-        font = Font(FONT_NAME, FONT_SIZE, FONT_STYLE, FONT_COLOR)
+        font = Font(FONT_NAME, FONT_SIZE, FONT_STYLE)
         text = str(i)
-        gui.create_text(led_center_point.x, led_center_point.y, text, font)
+        gui.create_text(led_center_point.x, led_center_point.y, text, font, FILL_COLOR)
 
     gui.update()
 
@@ -230,7 +232,7 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(led_range=valid_led_range):
 
                 group_led_ranges = []
-                gui = FakeGui()
+                gui = FakeCanvasGui()
 
                 leds = GraphicGroupedLeds(valid_led_range, group_led_ranges, gui)
 
@@ -248,7 +250,7 @@ class TestConstructor(unittest.TestCase):
 
                 with self.assertRaises(ValueError):
                     group_led_ranges = []
-                    gui = FakeGui()
+                    gui = FakeCanvasGui()
 
                     GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
 
@@ -260,7 +262,7 @@ class TestConstructor(unittest.TestCase):
 
                 with self.assertRaises(TypeError):
                     group_led_ranges = []
-                    gui = FakeGui()
+                    gui = FakeCanvasGui()
 
                     GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
 
@@ -272,7 +274,7 @@ class TestConstructor(unittest.TestCase):
 
                 with self.assertRaises(TypeError):
                     group_led_ranges = []
-                    gui = FakeGui()
+                    gui = FakeCanvasGui()
 
                     GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
 
@@ -316,7 +318,7 @@ class TestConstructor(unittest.TestCase):
         for group_led_ranges in valid_group_led_ranges:
             with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
 
-                gui = FakeGui()
+                gui = FakeCanvasGui()
 
                 leds = GraphicGroupedLeds(led_range, group_led_ranges, gui)
 
@@ -328,7 +330,7 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
 
                 with self.assertRaises(ValueError):
-                    gui = FakeGui()
+                    gui = FakeCanvasGui()
 
                     GraphicGroupedLeds(led_range, group_led_ranges, gui)
 
@@ -346,7 +348,7 @@ class TestSetGroupRGB(unittest.TestCase):
     GROUP_2 = 2
 
     def setUp(self):
-        self.gui = FakeGui()
+        self.gui = FakeCanvasGui()
         self.leds = GraphicGroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES, self.gui)
 
         self.gui_after_init = create_gui_after_init(self.gui.width, self.leds)
@@ -433,7 +435,7 @@ class TestSetGroupRGB(unittest.TestCase):
     def test_no_groups(self):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = []
-        gui = FakeGui()
+        gui = FakeCanvasGui()
 
         leds = GraphicGroupedLeds(LED_RANGE, GROUP_LED_RANGES, gui)
 

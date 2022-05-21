@@ -2,7 +2,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, List, Tuple
 
-from libraries.gui import Font, Gui
+from libraries.gui import Font, CanvasGui
 from libraries.serial import Serial
 from util.rgb import RGB
 from util.util import NonNegativeIntegerRange, rgb_to_hex
@@ -128,7 +128,7 @@ class ProductionGroupedLeds(GroupedLeds):
 
 class GraphicGroupedLeds(ProductionGroupedLeds):
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]],
-                 gui: Gui, led_diameter: int = 30):
+                 gui: CanvasGui, led_diameter: int = 30):
         super().__init__(led_range, group_led_ranges)
 
         self.__gui = gui
@@ -170,7 +170,7 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         FONT_NAME = 'Arial'
         FONT_SIZE = int((self.led_diameter + 5) / len(str(self.number_of_leds)))
         FONT_STYLE = 'bold'
-        FONT_COLOR = "#ffffff"
+        TEXT_COLOR = "#ffffff"
 
         LEDS_PER_ROW = math.floor(self.__gui.width / self.led_diameter)
         LED_RADIUS = self.led_diameter / 2
@@ -187,9 +187,9 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
             self.__led_element_ids[i] = self.__gui.create_oval(top_left_point.x, top_left_point.y,
                                                                bottom_right_point.x, bottom_right_point.y)
 
-            font = Font(FONT_NAME, FONT_SIZE, FONT_STYLE, FONT_COLOR)
+            font = Font(FONT_NAME, FONT_SIZE, FONT_STYLE)
             text = str(i)
-            self.__gui.create_text(led_center_point.x, led_center_point.y, text, font)
+            self.__gui.create_text(led_center_point.x, led_center_point.y, text, font, TEXT_COLOR)
 
         self.__gui.update()
 

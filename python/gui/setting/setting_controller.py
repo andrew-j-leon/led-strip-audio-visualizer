@@ -54,7 +54,7 @@ _BAUDRATES = ["115200", "57600", "38400", "31250", "28800", "19200", "14400", "9
 
 class SettingController:
     def __init__(self):
-        self.__main_window: sg.Window = None
+        self.__widget_gui: sg.Window = None
 
         sg.user_settings_filename(filename=_get_current_setting_file_name(), path=_get_setting_directory_path())
 
@@ -89,11 +89,11 @@ class SettingController:
             Args:
                 `on_event (Callable[[str], None], optional)`: Called with the name of the event whenever an event occurs.
         '''
-        self.__main_window = self._create_main_window()
-        self.__main_window.read(timeout=0)
+        self.__widget_gui = self._create_main_window()
+        self.__widget_gui.read(timeout=0)
 
-        while (self.__main_window):
-            event: str = self.__main_window.read(timeout=0)[0]
+        while (self.__widget_gui):
+            event: str = self.__widget_gui.read(timeout=0)[0]
             event: str = self._handle_event_before_client_on_event(event)
 
             on_event(event)
@@ -102,14 +102,14 @@ class SettingController:
                 self.__close_main_window()
 
     def __close_main_window(self):
-        if (self.__main_window):
-            self.__main_window.close()
-            self.__main_window = None
+        if (self.__widget_gui):
+            self.__widget_gui.close()
+            self.__widget_gui = None
 
     # Helper methods for child classes
 
     def _update_element(self, element: str, *update_args, **update_kwargs):
-        self.__main_window[element].update(*update_args, **update_kwargs)
+        self.__widget_gui[element].update(*update_args, **update_kwargs)
 
     def _create_gui_rows(self, *rows: Tuple[List[sg.Element]]) -> List[List[sg.Element]]:
         gui_rows: List[List[sg.Element]] = []
@@ -117,10 +117,10 @@ class SettingController:
         return gui_rows
 
     def _get_element_value(self, element: str) -> Any:
-        return self.__main_window[element].get()
+        return self.__widget_gui[element].get()
 
     def _fill_input_fields(self, values: Dict[str, Any]):
-        self.__main_window.fill(values)
+        self.__widget_gui.fill(values)
 
     # Methods the child class can/shold override
 
@@ -159,9 +159,7 @@ class SettingController:
 
                   [sg.Text(text="Amplitude RGBs", font=INPUT_LABEL_FONT),
                    sg.Multiline(key=SettingElement.AMPLITUDE_TO_RGB_INPUT, default_text=self.__settings[SettingElement.AMPLITUDE_TO_RGB_INPUT],
-                                size=(50, 7), autoscroll=True)],
-
-                  [sg.ColorChooserButton(button_text="Pick Color")]]
+                                size=(50, 7), autoscroll=True)]]
 
         return sg.Window(title="Settings", layout=LAYOUT, modal=True)
 

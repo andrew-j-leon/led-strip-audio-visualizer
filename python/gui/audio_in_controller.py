@@ -1,46 +1,31 @@
+from enum import Enum, auto
 from typing import List, Tuple
 
 import pyaudio
-import PySimpleGUI as sg
 import util.util as util
 from gui.setting.setting_controller import SettingController
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
-from libraries.gui import ProductionGui
+from libraries.gui import Button, CheckBox, Combo, Font, ProductionCanvasGui, Text, WidgetGui, WidgetGuiEvent
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
-from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 from visualizer.spectrogram import Spectrogram
 
-BUTTON_FONT = ("Courier New", 14)
-INPUT_LABEL_FONT = ("Courier New", 14)
-DROPDOWN_INPUT_FONT = ("Courier New", 14)
-CHECKBOX_INPUT_FONT = ("Courier New", 14)
-H1 = ("Courier New", 18)
 
+class Element(Enum):
+    SELECT_VISUALIZER_TYPE_DROPDOWN = auto()
+    SERIAL_LED_STRIP_CHECKBOX = auto()
+    GRAPHIC_LED_STRIP_CHECKBOX = auto()
 
-class Element:
-    SELECT_VISUALIZER_TYPE_DROPDOWN = "select_visualizer_type_dropdown"
-    SERIAL_LED_STRIP_CHECKBOX = "serial_led_strip_checkbox"
-    GRAPHIC_LED_STRIP_CHECKBOX = "graphic_led_strip_checkbox"
+    PAUSE_AUDIO_BUTTON = auto()
+    RESUME_AUDIO_BUTTON = auto()
 
-    PAUSE_AUDIO_BUTTON = "pause_audio_button"
-    RESUME_AUDIO_BUTTON = "resume_audio_button"
+    CURRENT_INPUT_SOURCE_MESSAGE = auto()
+    SELECT_INPUT_SOURCE_DROPDOWN = auto()
+    SELECT_INPUT_SOURCE_LABEL = auto()
 
-    CURRENT_INPUT_SOURCE_MESSAGE = "current_input_source_message"
-    SELECT_INPUT_SOURCE_DROPDOWN = "select_input_source_dropdown"
-    SELECT_INPUT_SOURCE_LABEL = "select_input_source_label"
-
-    CONFIRMATION_MODAL_OK_BUTTON = "error_modal_ok_button"
-    SELECT_VISUALIZER_TYPE_LABEL = "label_for_the_select_visualizer_type_dropdown"
-    SETTINGS_BUTTON = "settings_button"
-
-
-class Event:
-    WINDOW_CLOSED = WINDOW_CLOSED
-    TIMEOUT_EVENT = TIMEOUT_EVENT
-    OPEN_SETTINGS_MODAL = Element.SETTINGS_BUTTON
-    PAUSE_AUDIO = Element.PAUSE_AUDIO_BUTTON
-    RESUME_AUDIO = Element.RESUME_AUDIO_BUTTON
+    CONFIRMATION_MODAL_OK_BUTTON = auto()
+    SELECT_VISUALIZER_TYPE_LABEL = auto()
+    SETTINGS_BUTTON = auto()
 
 
 class VisualizerType:
@@ -48,17 +33,17 @@ class VisualizerType:
     FREQUENCY = "Frequency"
 
 
-class State:
-    PLAYING = "playing"
-    PAUSED = "paused"
+class State(Enum):
+    PLAYING = auto()
+    PAUSED = auto()
 
 
 class AudioInController:
-    def __init__(self):
+    def __init__(self, widget_gui: WidgetGui):
         self.__setting_controller = SettingController()
-        self.__main_window: sg.Window = None
+        self.__widget_gui = widget_gui
 
-        self._audio_player_maker = pyaudio.PyAudio()
+        self._audio_player_generator = pyaudio.PyAudio()
         self.__audio_player: pyaudio.Stream = None
         self.__audio_chunk: bytes = b''
         self.__init_audio_player()
@@ -82,21 +67,41 @@ class AudioInController:
             del self.__led_strip
             self.__led_strip = None
 
-        self.__close_main_window()
-
         self.__close_audio_player()
 
-        if (self._audio_player_maker is not None):
-            self._audio_player_maker.terminate()
+        if (self._audio_player_generator is not None):
+            self._audio_player_generator.terminate()
 
     def start(self):
-        self.__main_window = self.__create_main_window()
-        self.__main_window.read(timeout=0)
+        CURRENT_INPUT_SOURCE_FONT = Font("Courier New", 20)
+        BUTTON_FONT = Font("Courier New", 14)
+        INPUT_LABEL_FONT = Font("Courier New", 14)
+        DROPDOWN_INPUT_FONT = Font("Courier New", 14)
+        CHECKBOX_INPUT_FONT = Font("Courier New", 14)
 
-        while (self.__main_window is not None):
-            event: str = self.__main_window.read(timeout=0)[0]
+        VISUALIZER_DROPDOWN_VALUES = [VisualizerType.NONE, VisualizerType.FREQUENCY]
 
-            if (event == Event.OPEN_SETTINGS_MODAL):
+        LAYOUT = [[Button(Element.SETTINGS_BUTTON, text="Settings")],
+
+                  [Text(Element.CURRENT_INPUT_SOURCE_MESSAGE, text="No audio currently playing.", font=CURRENT_INPUT_SOURCE_FONT)],
+
+                  [Button(Element.PAUSE_AUDIO_BUTTON, text="Pause (||)", font=BUTTON_FONT, disabled=True),
+                   Button(Element.RESUME_AUDIO_BUTTON, text="Resume (>)", font=BUTTON_FONT, disabled=False)],
+
+                  [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="Visualizer : ", font=INPUT_LABEL_FONT),
+                   Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, values=VISUALIZER_DROPDOWN_VALUES,
+                         default_value=VisualizerType.FREQUENCY, font=DROPDOWN_INPUT_FONT),
+                   CheckBox(Element.SERIAL_LED_STRIP_CHECKBOX, text="Serial Led Strip", font=CHECKBOX_INPUT_FONT),
+                   CheckBox(Element.GRAPHIC_LED_STRIP_CHECKBOX, text="Graphic Led Strip", font=CHECKBOX_INPUT_FONT)]]
+
+        self.__widget_gui.set_layout(LAYOUT)
+
+        self.__widget_gui.update_display()
+
+        while True:
+            event = self.__widget_gui.read_event()
+
+            if (event == Element.SETTINGS_BUTTON):
                 self.__setting_controller.run_concurrent()
 
             if (self.__is_state(State.PLAYING)):
@@ -111,11 +116,11 @@ class AudioInController:
                 self.__spectrogram.update_led_strips(self.__led_strip, self.__audio_chunk, number_of_frames,
                                                      self.__audio_player._rate)
 
-            if (event != Event.TIMEOUT_EVENT):
+            if (event != WidgetGuiEvent.TIMEOUT):
                 self.__handle_ui_event(event)
 
-            if (event == Event.WINDOW_CLOSED):
-                self.__close_main_window()
+            if (event == WidgetGuiEvent.CLOSE_WINDOW):
+                break
 
     def __is_state(self, state: str) -> bool:
         if (state == State.PLAYING):
@@ -127,19 +132,15 @@ class AudioInController:
         return False
 
     def __init_audio_player(self):
-        default_input_device_info: dict = self._audio_player_maker.get_default_input_device_info()
+        default_input_device_info: dict = self._audio_player_generator.get_default_input_device_info()
 
         if (util.is_empty(default_input_device_info)):
             raise ValueError("There is no default input device set on this machine.")
 
         self.__close_audio_player()
 
-        # format (aka audio bit depth) = bits per sample (more bits = more discreet values for loudness levels
-        # [according to this website https://www.provideocoalition.com/understanding-24-bit-vs-16-bit-audio-production-distribution/
-        #  16 bits gets you 65,536 values for a dynamic range of 96 dB whereas 24 bit gets you 16,777,216 for a dynamic range of
-        # 144 dB])
-        self.__audio_player = self._audio_player_maker.open(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
-                                                            rate=int(default_input_device_info["defaultSampleRate"]), input=True)
+        self.__audio_player = self._audio_player_generator.open(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
+                                                                rate=int(default_input_device_info["defaultSampleRate"]), input=True)
 
         self.__audio_player.stop_stream()
 
@@ -148,53 +149,24 @@ class AudioInController:
             self.__audio_player.close()
             self.__audio_player = None
 
-    def __close_main_window(self):
-        if (self.__main_window):
-            self.__main_window.close()
-            self.__main_window = None
-
-    def __create_main_window(self) -> sg.Window:
-        VISUALIZER_DROPDOWN_VALUES: List[str] = [VisualizerType.NONE, VisualizerType.FREQUENCY]
-
-        CURRENT_INPUT_SOURCE_FONT = ("Courier New", 20)
-
-        layout = [[sg.Button(button_text="Settings", key=Element.SETTINGS_BUTTON)],
-
-                  [sg.Text(text="No audio currently playing.", key=Element.CURRENT_INPUT_SOURCE_MESSAGE, font=CURRENT_INPUT_SOURCE_FONT)],
-
-                  [sg.Button(button_text="Pause (||)", disabled=True, key=Element.PAUSE_AUDIO_BUTTON, font=BUTTON_FONT),
-                   sg.Button(button_text="Resume (>)", disabled=False, key=Element.RESUME_AUDIO_BUTTON, font=BUTTON_FONT)],
-
-                  [sg.Text(text="Visualizer : ", key=Element.SELECT_VISUALIZER_TYPE_LABEL, font=INPUT_LABEL_FONT),
-                   sg.Combo(values=VISUALIZER_DROPDOWN_VALUES,
-                            default_value=VisualizerType.FREQUENCY, key=Element.SELECT_VISUALIZER_TYPE_DROPDOWN, font=DROPDOWN_INPUT_FONT),
-                   sg.Checkbox(text="Serial Led Strip", key=Element.SERIAL_LED_STRIP_CHECKBOX, font=CHECKBOX_INPUT_FONT),
-                   sg.Checkbox(text="Graphic Led Strip", key=Element.GRAPHIC_LED_STRIP_CHECKBOX, font=CHECKBOX_INPUT_FONT)]]
-
-        return sg.Window('Led Strip Music Visualizer', layout=layout, resizable=True, element_padding=(0, 0),
-                         margins=(0, 0), titlebar_background_color="#000917", titlebar_text_color="#8a8a8a")
-
     def __handle_ui_event(self, event: str):
-        def update_element(element: str, **update_kwargs):
-            self.__main_window[element].update(**update_kwargs)
-
         def set_audio_paused_state():
-            update_element(Element.SETTINGS_BUTTON, disabled=False)
-            update_element(Element.PAUSE_AUDIO_BUTTON, disabled=True)
-            update_element(Element.RESUME_AUDIO_BUTTON, disabled=False)
+            self.__widget_gui.enable_widget(Element.SETTINGS_BUTTON)
+            self.__widget_gui.disable_widget(Element.PAUSE_AUDIO_BUTTON)
+            self.__widget_gui.enable_widget(Element.RESUME_AUDIO_BUTTON)
 
-            update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=False)
-            update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=False)
-            update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=False)
+            self.__widget_gui.enable_widget(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
+            self.__widget_gui.enable_widget(Element.SERIAL_LED_STRIP_CHECKBOX)
+            self.__widget_gui.enable_widget(Element.GRAPHIC_LED_STRIP_CHECKBOX)
 
         def set_audio_playing_state():
-            update_element(Element.SETTINGS_BUTTON, disabled=True)
-            update_element(Element.PAUSE_AUDIO_BUTTON, disabled=False)
-            update_element(Element.RESUME_AUDIO_BUTTON, disabled=True)
+            self.__widget_gui.disable_widget(Element.SETTINGS_BUTTON)
+            self.__widget_gui.enable_widget(Element.PAUSE_AUDIO_BUTTON)
+            self.__widget_gui.disable_widget(Element.RESUME_AUDIO_BUTTON)
 
-            update_element(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, disabled=True)
-            update_element(Element.SERIAL_LED_STRIP_CHECKBOX, disabled=True)
-            update_element(Element.GRAPHIC_LED_STRIP_CHECKBOX, disabled=True)
+            self.__widget_gui.disable_widget(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
+            self.__widget_gui.disable_widget(Element.SERIAL_LED_STRIP_CHECKBOX)
+            self.__widget_gui.disable_widget(Element.GRAPHIC_LED_STRIP_CHECKBOX)
 
         def get_group_index_to_led_range() -> List[Tuple[int, int]]:
             def get_number_of_leds() -> int:
@@ -222,8 +194,8 @@ class AudioInController:
             return group_index_to_led_range
 
         def get_led_strip():
-            use_serial_led_strip = self.__main_window[Element.SERIAL_LED_STRIP_CHECKBOX].get()
-            use_graphic_led_strip = self.__main_window[Element.GRAPHIC_LED_STRIP_CHECKBOX].get()
+            use_serial_led_strip = self.__widget_gui.get_widget_value(Element.SERIAL_LED_STRIP_CHECKBOX)
+            use_graphic_led_strip = self.__widget_gui.get_widget_value(Element.GRAPHIC_LED_STRIP_CHECKBOX)
 
             start_led = self.__setting_controller.get_start_led_index()
             end_led = self.__setting_controller.get_end_led_index()
@@ -251,7 +223,7 @@ class AudioInController:
                 WIDTH = 1350
                 HEIGHT = 600
 
-                gui = ProductionGui(WIDTH, HEIGHT)
+                gui = ProductionCanvasGui(WIDTH, HEIGHT)
                 gui.update()
 
                 graphic_grouped_leds = GraphicGroupedLeds(led_range, get_group_index_to_led_range(), gui)
@@ -260,7 +232,7 @@ class AudioInController:
 
         def init_spectrogram():
             self.__delete_spectrogram()
-            visualizer_dropdown_value = self.__main_window[Element.SELECT_VISUALIZER_TYPE_DROPDOWN].get()
+            visualizer_dropdown_value = self.__widget_gui.get_widget_value(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
 
             if (visualizer_dropdown_value == VisualizerType.FREQUENCY):
                 start_frequency = self.__setting_controller.get_minimum_frequency()
@@ -272,15 +244,15 @@ class AudioInController:
 
                 self.__spectrogram = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB)
 
-        if (event == Event.PAUSE_AUDIO):
+        if (event == Element.PAUSE_AUDIO_BUTTON):
             self.__audio_player.stop_stream()
             self.__delete_spectrogram()
             set_audio_paused_state()
 
-        elif (event == Event.RESUME_AUDIO):
-            input_source = self._audio_player_maker.get_default_input_device_info()["name"]
-            current_input_source_message = f"Input Source : {input_source}"
-            update_element(Element.CURRENT_INPUT_SOURCE_MESSAGE, value=current_input_source_message)
+        elif (event == Element.RESUME_AUDIO_BUTTON):
+            input_source = self._audio_player_generator.get_default_input_device_info()["name"]
+            CURRENT_INPUT_SOURCE = f"Input Source : {input_source}"
+            self.__widget_gui.set_widget_value(Element.CURRENT_INPUT_SOURCE_MESSAGE, CURRENT_INPUT_SOURCE)
 
             init_spectrogram()
             self.__audio_player.start_stream()
