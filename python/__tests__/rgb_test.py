@@ -1,6 +1,6 @@
 import unittest
 
-from util.rgb import RGB
+from util import RGB
 
 
 class TestRGB(unittest.TestCase):

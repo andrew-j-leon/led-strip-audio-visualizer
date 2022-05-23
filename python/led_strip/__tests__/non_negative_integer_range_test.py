@@ -1,6 +1,6 @@
 import unittest
 
-from util.util import NonNegativeInteger, NonNegativeIntegerRange
+from led_strip.non_negative_integer_range import NonNegativeInteger, NonNegativeIntegerRange
 
 
 class TestConstructor(unittest.TestCase):

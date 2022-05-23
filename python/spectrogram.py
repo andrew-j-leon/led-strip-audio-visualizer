@@ -1,11 +1,10 @@
 import math
 from statistics import mean
-from typing import Iterable, List, Tuple, Union
+from typing import Any, Iterable, List, Tuple, Union
 
 import numpy
 from led_strip.led_strip import LedStrip
-from util.rgb import RGB
-from util.util import NonNegativeRange
+from util import RGB
 
 # ================================================================== Some useful formulas ==================================================================
 #
@@ -34,6 +33,29 @@ from util.util import NonNegativeRange
 #       freq_i = freq_0 + i*(sampling_rate/number_of_frames)
 #
 # ============================================================================================================================================================
+
+
+class NonNegativeRange:
+    def __init__(self, start, end):
+        if (start < 0):
+            raise ValueError(f'start ({start}) must be >= 0.')
+
+        if (end < 0):
+            raise ValueError(f'end ({end}) must be >= 0.')
+
+        if (start > end):
+            raise ValueError(f'start ({start}) must be <= end ({end}).')
+
+        self.__start = start
+        self.__end = end
+
+    @property
+    def start(self) -> Any:
+        return self.__start
+
+    @property
+    def end(self) -> Any:
+        return self.__end
 
 
 def _get_fft_amplitude(fft_value: complex, number_of_fft_values: int) -> float:

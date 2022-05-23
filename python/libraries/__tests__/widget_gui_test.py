@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.gui import Button, CheckBox, Combo, Font, Multiline, Text, WidgetGui, WidgetGuiEvent
+from libraries.gui import Button, CheckBox, Combo, Font, Input, Multiline, Text, WidgetGui, WidgetGuiEvent
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 
 
@@ -79,31 +79,35 @@ class TestCombo(unittest.TestCase):
     VALUES = ['a', 'b', 'c']
     DEFAULT_VALUE = 'b'
     FONT = Font()
+    SIZE = (10, 20)
 
     def setUp(self):
-        self.combo = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT)
+        self.combo = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT, self.SIZE)
 
     def test_attributes(self):
         self.assertEqual(self.combo.key, self.KEY)
         self.assertEqual(self.combo.values, self.VALUES)
         self.assertEqual(self.combo.default_value, self.DEFAULT_VALUE)
         self.assertEqual(self.combo.font, self.FONT)
+        self.assertEqual(self.combo.size, self.SIZE)
 
     def test_repr(self):
-        expected = f'Combo(key={self.KEY}, values={self.VALUES}, default_value={self.DEFAULT_VALUE}, font={self.FONT})'
+        expected = f'Combo(key={self.KEY}, values={self.VALUES}, default_value={self.DEFAULT_VALUE}, font={self.FONT}, size={self.SIZE})'
         actual = repr(self.combo)
 
         self.assertEqual(actual, expected)
 
     def test_equal(self):
-        COMBO_EQUAL = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT)
+        COMBO_EQUAL = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT, self.SIZE)
 
         NEW_KEY = f'new {self.KEY}'
         NEW_VALUES = self.VALUES + ['d']
         NEW_DEFAULT_VALUE = 'd'
         NEW_FONT = Font()
+        NEW_SIZE = (self.SIZE[0] + 10,
+                    self.SIZE[1] + 20)
 
-        COMBO_NOT_EQUAL = Combo(NEW_KEY, NEW_VALUES, NEW_DEFAULT_VALUE, NEW_FONT)
+        COMBO_NOT_EQUAL = Combo(NEW_KEY, NEW_VALUES, NEW_DEFAULT_VALUE, NEW_FONT, NEW_SIZE)
 
         self.assertEqual(self.combo, COMBO_EQUAL)
         self.assertNotEqual(self.combo, COMBO_NOT_EQUAL)
@@ -183,6 +187,36 @@ class TestMultiline(unittest.TestCase):
         self.assertNotEqual(self.multiline, 'not a multiline')
 
 
+class TestInput(unittest.TestCase):
+    KEY = 'multiline_key'
+    TEXT = 'some multiline text'
+
+    def setUp(self):
+        self.input = Input(self.KEY, self.TEXT)
+
+    def test_attributes(self):
+        self.assertEqual(self.input.key, self.KEY)
+        self.assertEqual(self.input.text, self.TEXT)
+
+    def test_repr(self):
+        expected = f'Input(key={self.KEY}, text={self.TEXT})'
+        actual = repr(self.input)
+
+        self.assertEqual(expected, actual)
+
+    def test_equal(self):
+        INPUT_EQUAL = Input(self.KEY, self.TEXT)
+
+        NEW_KEY = f'new {self.KEY}'
+        NEW_TEXT = f'new {self.TEXT}'
+
+        INPUT_NOT_EQUAL = Input(NEW_KEY, NEW_TEXT)
+
+        self.assertEqual(self.input, INPUT_EQUAL)
+        self.assertNotEqual(self.input, INPUT_NOT_EQUAL)
+        self.assertNotEqual(self.input, 'not an Input')
+
+
 class TestWidgetGui(unittest.TestCase):
     TITLE = 'title'
     IS_MODAL = True
@@ -252,8 +286,9 @@ class TestWidgetGui(unittest.TestCase):
         COMBO_VALUES = ['a', 'b', 'c']
         COMBO_DEFAULT_VALUE = 'b'
         COMBO_FONT = Font()
+        COMBO_SIZE = (10, 20)
 
-        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_DEFAULT_VALUE, COMBO_FONT)
+        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_DEFAULT_VALUE, COMBO_FONT, COMBO_SIZE)
 
         CHECK_BOX_KEY = 'check_box_key'
         CHECK_BOX_TEXT = 'hello i am a checkbox'
@@ -287,7 +322,7 @@ class TestWidgetGui(unittest.TestCase):
 
         COMBO_FONT_TUPLE = (COMBO_FONT.name, COMBO_FONT.size, COMBO_FONT.style)
         combo_mock.assert_called_once_with(key=COMBO_KEY, values=COMBO_VALUES, default_value=COMBO_DEFAULT_VALUE,
-                                           font=COMBO_FONT_TUPLE)
+                                           font=COMBO_FONT_TUPLE, size=COMBO_SIZE)
 
         CHECK_BOX_FONT_TUPLE = (CHECK_BOX_FONT.name, CHECK_BOX_FONT.size, CHECK_BOX_FONT.style)
         checkbox_mock.assert_called_once_with(key=CHECK_BOX_KEY, text=CHECK_BOX_TEXT, font=CHECK_BOX_FONT_TUPLE, default=CHECK_BOX_DEFAULT)

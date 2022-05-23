@@ -2,13 +2,13 @@ from enum import Enum, auto
 from typing import List, Tuple
 
 import pyaudio
-import util.util as util
-from gui.setting.setting_controller import SettingController
+from gui.settings_controller import SettingsController
+from util import Settings
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.gui import Button, CheckBox, Combo, Font, ProductionCanvasGui, Text, WidgetGui, WidgetGuiEvent
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
-from visualizer.spectrogram import Spectrogram
+from spectrogram import Spectrogram
 
 
 class Element(Enum):
@@ -39,9 +39,11 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, widget_gui: WidgetGui):
-        self.__setting_controller = SettingController()
+    def __init__(self, widget_gui: WidgetGui = WidgetGui(),
+                 settings_controller: SettingsController = SettingsController()):
         self.__widget_gui = widget_gui
+
+        self.__settings_controller = settings_controller
 
         self._audio_player_generator = pyaudio.PyAudio()
         self.__audio_player: pyaudio.Stream = None
@@ -50,6 +52,10 @@ class AudioInController:
 
         self.__spectrogram: Spectrogram = None
         self.__led_strip: LedStrip = None
+
+    @property
+    def __settings(self) -> Settings:
+        return self.__settings_controller.settings
 
     def __del__(self):
         self.__delete_spectrogram()
@@ -102,14 +108,13 @@ class AudioInController:
             event = self.__widget_gui.read_event()
 
             if (event == Element.SETTINGS_BUTTON):
-                self.__setting_controller.run_concurrent()
+                self.__settings_controller.start()
 
             if (self.__is_state(State.PLAYING)):
                 MILLISECONDS_PER_SECOND = 1000
                 frames_per_millisecond = self.__audio_player._rate / MILLISECONDS_PER_SECOND  # sample rate (frames / second) / 1000 ms/second = frames / millisecond
 
-                milleseconds_per_audio_chunk = self.__setting_controller.get_milliseconds_per_audio_chunk()  # ms
-                number_of_frames = int(frames_per_millisecond * milleseconds_per_audio_chunk)  # frames / ms * ms = frames
+                number_of_frames = int(frames_per_millisecond * self.__settings.milliseconds_per_audio_chunk)  # frames / ms * ms = frames
 
                 self.__audio_chunk = self.__audio_player.read(number_of_frames)
 
@@ -134,7 +139,7 @@ class AudioInController:
     def __init_audio_player(self):
         default_input_device_info: dict = self._audio_player_generator.get_default_input_device_info()
 
-        if (util.is_empty(default_input_device_info)):
+        if (len(default_input_device_info) == 0):
             raise ValueError("There is no default input device set on this machine.")
 
         self.__close_audio_player()
@@ -170,25 +175,19 @@ class AudioInController:
 
         def get_group_index_to_led_range() -> List[Tuple[int, int]]:
             def get_number_of_leds() -> int:
-                start_led = self.__setting_controller.get_start_led_index()
-                end_led = self.__setting_controller.get_end_led_index()
+                return self.__settings.end_led - self.__settings.start_led
 
-                return end_led - start_led
-
-            number_of_groups = self.__setting_controller.get_number_of_groups()
-
-            number_of_leds_per_group = max(1, get_number_of_leds() // number_of_groups)
+            number_of_leds_per_group = max(1, get_number_of_leds() // self.__settings.number_of_groups)
             group_index_to_led_range = list()
 
-            for group_index in range(number_of_groups):
-                start_led = self.__setting_controller.get_start_led_index()
-                shifted_start_index = group_index * number_of_leds_per_group + start_led
+            for group_index in range(self.__settings.number_of_groups):
+                shifted_start_index = group_index * number_of_leds_per_group + self.__settings.start_led
 
                 shifted_end_index = shifted_start_index + number_of_leds_per_group
 
                 group_index_to_led_range.append((shifted_start_index, shifted_end_index))
 
-            if (self.__setting_controller.should_reverse_indicies()):
+            if (self.__settings.should_reverse_leds):
                 group_index_to_led_range.reverse()
 
             return group_index_to_led_range
@@ -197,25 +196,20 @@ class AudioInController:
             use_serial_led_strip = self.__widget_gui.get_widget_value(Element.SERIAL_LED_STRIP_CHECKBOX)
             use_graphic_led_strip = self.__widget_gui.get_widget_value(Element.GRAPHIC_LED_STRIP_CHECKBOX)
 
-            start_led = self.__setting_controller.get_start_led_index()
-            end_led = self.__setting_controller.get_end_led_index()
-
-            led_range = (start_led, end_led)
+            LED_RANGE = (self.__settings.start_led, self.__settings.end_led)
 
             if (use_serial_led_strip):
-                PORT = self.__setting_controller.get_serial_port()
-                BAUDRATE = self.__setting_controller.get_serial_baudrate()
                 PARITY = PARITY_NONE
                 STOP_BITS = STOPBITS_ONE_POINT_FIVE
                 BYTE_SIZE = EIGHTBITS
                 READ_TIMEOUT = 1
                 WRITE_TIMEOUT = 0
 
-                serial = ProductionSerial(PORT, BAUDRATE, PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
-                brightness = self.__setting_controller.get_brightness()
+                serial = ProductionSerial(self.__settings.serial_port, self.__settings.serial_baudrate,
+                                          PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
 
-                serial_grouped_leds = SerialGroupedLeds(led_range, get_group_index_to_led_range(),
-                                                        serial, brightness)
+                serial_grouped_leds = SerialGroupedLeds(LED_RANGE, get_group_index_to_led_range(),
+                                                        serial, self.__settings.brightness)
 
                 return ProductionLedStrip(serial_grouped_leds)
 
@@ -226,7 +220,7 @@ class AudioInController:
                 gui = ProductionCanvasGui(WIDTH, HEIGHT)
                 gui.update()
 
-                graphic_grouped_leds = GraphicGroupedLeds(led_range, get_group_index_to_led_range(), gui)
+                graphic_grouped_leds = GraphicGroupedLeds(LED_RANGE, get_group_index_to_led_range(), gui)
 
                 return ProductionLedStrip(graphic_grouped_leds)
 
@@ -235,14 +229,11 @@ class AudioInController:
             visualizer_dropdown_value = self.__widget_gui.get_widget_value(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
 
             if (visualizer_dropdown_value == VisualizerType.FREQUENCY):
-                start_frequency = self.__setting_controller.get_minimum_frequency()
-                end_frequency = self.__setting_controller.get_maximum_frequency()
-
-                FREQUENCY_RANGE = (start_frequency, end_frequency)
-                AMPLITUDE_TO_RGB = self.__setting_controller.get_amplitude_to_rgb()
+                FREQUENCY_RANGE = (self.__settings.minimum_frequency,
+                                   self.__settings.maximum_frequency)
                 self.__led_strip = get_led_strip()
 
-                self.__spectrogram = Spectrogram(FREQUENCY_RANGE, AMPLITUDE_TO_RGB)
+                self.__spectrogram = Spectrogram(FREQUENCY_RANGE, self.__settings.amplitude_rgbs)
 
         if (event == Element.PAUSE_AUDIO_BUTTON):
             self.__audio_player.stop_stream()

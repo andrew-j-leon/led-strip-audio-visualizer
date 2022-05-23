@@ -4,8 +4,9 @@ from typing import Dict, Iterable, List, Tuple
 
 from libraries.gui import Font, CanvasGui
 from libraries.serial import Serial
-from util.rgb import RGB
-from util.util import NonNegativeIntegerRange, rgb_to_hex
+from util import RGB
+from util import convert_to_hex
+from led_strip.non_negative_integer_range import NonNegativeIntegerRange
 
 
 class Point:
@@ -164,7 +165,7 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         for i in range(start, end):
             element_id = self.__led_element_ids[i]
 
-            self.__gui.set_element_fill_color(element_id, rgb_to_hex(rgb.red, rgb.green, rgb.blue))
+            self.__gui.set_element_fill_color(element_id, convert_to_hex(rgb.red, rgb.green, rgb.blue))
 
     def __draw_and_store_leds(self):
         FONT_NAME = 'Arial'

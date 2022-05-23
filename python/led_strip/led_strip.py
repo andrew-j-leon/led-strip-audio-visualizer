@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, List, Tuple
 
 from led_strip.grouped_leds import GroupedLeds
-from util.rgb import RGB
+from util import RGB
 
 
 class LedStrip(ABC):

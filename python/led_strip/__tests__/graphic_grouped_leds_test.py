@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 
 from led_strip.grouped_leds import GraphicGroupedLeds, Point
 from libraries.gui import Font, CanvasGui
-from util.util import rgb_to_hex
+from util import convert_to_hex
 
 
 class FakeCanvasGui(CanvasGui):
@@ -72,7 +72,7 @@ class FakeCanvasGui(CanvasGui):
         oval_hash = hash(Oval(top_left_point.x, top_left_point.y,
                               bottom_right_point.x, bottom_right_point.y))
 
-        self.elements[oval_hash].set_fill_color(rgb_to_hex(*rgb))
+        self.elements[oval_hash].set_fill_color(convert_to_hex(*rgb))
 
     def __eq__(self, right_value: Any) -> bool:
         if (isinstance(right_value, FakeCanvasGui)):

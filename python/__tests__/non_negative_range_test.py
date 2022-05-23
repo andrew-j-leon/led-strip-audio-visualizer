@@ -1,6 +1,6 @@
 import unittest
 
-from util.util import NonNegativeRange
+from spectrogram import NonNegativeRange
 
 
 class TestConstructor(unittest.TestCase):

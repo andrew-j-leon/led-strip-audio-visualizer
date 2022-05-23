@@ -152,7 +152,7 @@ class Widget(ABC):
 
 
 class Button(Widget):
-    def __init__(self, key: Hashable, text: str = '', font: Font = Font(), disabled: bool = False):
+    def __init__(self, key: Hashable = None, text: str = '', font: Font = Font(), disabled: bool = False):
         super().__init__(key)
         self.text = text
         self.font = font
@@ -175,7 +175,7 @@ class Button(Widget):
 
 
 class Text(Widget):
-    def __init__(self, key: Hashable, text: str = '', font: Font = Font()):
+    def __init__(self, key: Hashable = None, text: str = '', font: Font = Font()):
         super().__init__(key)
         self.text = text
         self.font = font
@@ -196,18 +196,20 @@ class Text(Widget):
 
 
 class Combo(Widget):
-    def __init__(self, key: Hashable, values: List[str] = [], default_value: str = None, font: Font = Font()):
+    def __init__(self, key: Hashable = None, values: List[str] = [],
+                 default_value: str = None, font: Font = Font(), size=(20, 1)):
         super().__init__(key)
 
         self.values = values
         self.font = font
         self.default_value = default_value
+        self.size = size
 
     def set_value(self, value: Any):
         self.default_value = value
 
     def __repr__(self) -> str:
-        return f'Combo(key={self.key}, values={self.values}, default_value={self.default_value}, font={self.font})'
+        return f'Combo(key={self.key}, values={self.values}, default_value={self.default_value}, font={self.font}, size={self.size})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Combo)):
@@ -220,7 +222,7 @@ class Combo(Widget):
 
 
 class CheckBox(Widget):
-    def __init__(self, key: Hashable, text: str = '', font: Font = Font(), default: bool = False):
+    def __init__(self, key: Hashable = None, text: str = '', font: Font = Font(), default: bool = False):
         super().__init__(key)
 
         self.text = text
@@ -243,7 +245,7 @@ class CheckBox(Widget):
 
 
 class Multiline(Widget):
-    def __init__(self, key: Hashable, text: str = '', size: Tuple[int, int] = (50, 7), auto_scroll: bool = True):
+    def __init__(self, key: Hashable = None, text: str = '', size: Tuple[int, int] = (50, 7), auto_scroll: bool = True):
         super().__init__(key)
 
         self.text = text
@@ -262,6 +264,26 @@ class Multiline(Widget):
                     and self.text == other.text
                     and self.size == other.size
                     and self.auto_scroll == other.auto_scroll)
+
+        return False
+
+
+class Input(Widget):
+    def __init__(self, key: Hashable = None, text: str = ''):
+        super().__init__(key)
+
+        self.text = text
+
+    def set_value(self, value: Any):
+        self.text = value
+
+    def __repr__(self) -> str:
+        return f'Input(key={self.key}, text={self.text})'
+
+    def __eq__(self, other: Any) -> bool:
+        if (isinstance(other, Input)):
+            return (self.key == other.key
+                    and self.text == other.text)
 
         return False
 
@@ -298,7 +320,8 @@ class WidgetGui:
             return sg.Combo(key=widget.key,
                             values=widget.values,
                             default_value=widget.default_value,
-                            font=FONT)
+                            font=FONT,
+                            size=widget.size)
 
         elif (isinstance(widget, CheckBox)):
             WIDGET_FONT = widget.font
@@ -314,6 +337,10 @@ class WidgetGui:
                                 default_text=widget.text,
                                 size=widget.size,
                                 autoscroll=widget.auto_scroll)
+
+        elif (isinstance(widget, Input)):
+            return sg.Input(key=widget.key,
+                            default_text=widget.text)
 
         raise TypeError(f'widget ({widget}) of type {type(widget)} is not a recognized Widget type.')
 
@@ -343,7 +370,7 @@ class WidgetGui:
 
         for row in layout:
             for widget in row:
-                if (widget.key in widgets):
+                if (widget.key in widgets and widget.key is not None):
                     raise ValueError(f'Each widget in layout should have a unique key. There were multiple widgets with the key {widget.key} in the layout {layout}.')
 
                 widgets[widget.key] = widget

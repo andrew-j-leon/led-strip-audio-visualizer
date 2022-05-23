@@ -1,9 +1,9 @@
 import unittest
 from typing import Iterable, List, Tuple
 
-import util.util as util
 from led_strip.led_strip import LedStrip
-from visualizer.spectrogram import Spectrogram
+from spectrogram import Spectrogram
+import util
 
 
 class FakeLedStrip(LedStrip):
