@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, Hashable, Iterable, List, Set, Tuple
+from typing import Any, Dict, Hashable, Iterable, List, Tuple
 
 
 class RGB:
@@ -68,6 +68,22 @@ class Settings:
                 f'brightness = {self.brightness}, minimum_frequency = {self.minimum_frequency}, '
                 f'maximum_frequency = {self.maximum_frequency}, should_reverse_leds = {self.should_reverse_leds}, '
                 f'number_of_groups = {self.number_of_groups}, amplitude_rgbs = {self.amplitude_rgbs})')
+
+    def __eq__(self, other: Any) -> bool:
+        if (isinstance(other, Settings)):
+            return (self.start_led == other.start_led
+                    and self.end_led == other.end_led
+                    and self.milliseconds_per_audio_chunk == other.milliseconds_per_audio_chunk
+                    and self.serial_port == other.serial_port
+                    and self.serial_baudrate == other.serial_baudrate
+                    and self.brightness == other.brightness
+                    and self.minimum_frequency == other.minimum_frequency
+                    and self.maximum_frequency == other.maximum_frequency
+                    and self.should_reverse_leds == other.should_reverse_leds
+                    and self.number_of_groups == other.number_of_groups
+                    and self.amplitude_rgbs == other.amplitude_rgbs)
+
+        return False
 
     @property
     def start_led(self) -> int:
@@ -222,9 +238,12 @@ class SettingsCollection:
         for settings_name, settings in collection.items():
             self.update_collection(settings_name, settings)
 
+    def __contains__(self, settings_name: Hashable) -> bool:
+        return settings_name in self.__collection
+
     @property
-    def settings_names(self) -> Set[Hashable]:
-        return set(self.__collection.keys())
+    def settings_names(self) -> List[Hashable]:
+        return list(self.__collection.keys())
 
     @property
     def current_settings(self) -> Settings:

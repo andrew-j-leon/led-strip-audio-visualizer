@@ -6,7 +6,7 @@ from gui.settings_controller import SettingsController
 from util import Settings
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
-from libraries.gui import Button, CheckBox, Combo, Font, ProductionCanvasGui, Text, WidgetGui, WidgetGuiEvent
+from libraries.gui import Button, CheckBox, Combo, Font, ProductionCanvasGui, Text, ProductionWidgetGui, WidgetGui, WidgetGuiEvent
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 from spectrogram import Spectrogram
 
@@ -39,7 +39,7 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, widget_gui: WidgetGui = WidgetGui(),
+    def __init__(self, widget_gui: WidgetGui = ProductionWidgetGui(),
                  settings_controller: SettingsController = SettingsController()):
         self.__widget_gui = widget_gui
 
@@ -78,7 +78,7 @@ class AudioInController:
         if (self._audio_player_generator is not None):
             self._audio_player_generator.terminate()
 
-    def start(self):
+    def run(self):
         CURRENT_INPUT_SOURCE_FONT = Font("Courier New", 20)
         BUTTON_FONT = Font("Courier New", 14)
         INPUT_LABEL_FONT = Font("Courier New", 14)
@@ -86,6 +86,7 @@ class AudioInController:
         CHECKBOX_INPUT_FONT = Font("Courier New", 14)
 
         VISUALIZER_DROPDOWN_VALUES = [VisualizerType.NONE, VisualizerType.FREQUENCY]
+        VISUALIZER_DROPDOWN_VALUE = VISUALIZER_DROPDOWN_VALUES.index(VisualizerType.FREQUENCY)
 
         LAYOUT = [[Button(Element.SETTINGS_BUTTON, text="Settings")],
 
@@ -95,20 +96,27 @@ class AudioInController:
                    Button(Element.RESUME_AUDIO_BUTTON, text="Resume (>)", font=BUTTON_FONT, disabled=False)],
 
                   [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="Visualizer : ", font=INPUT_LABEL_FONT),
-                   Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, values=VISUALIZER_DROPDOWN_VALUES,
-                         default_value=VisualizerType.FREQUENCY, font=DROPDOWN_INPUT_FONT),
+                   Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, VISUALIZER_DROPDOWN_VALUES,
+                         VISUALIZER_DROPDOWN_VALUE, DROPDOWN_INPUT_FONT),
                    CheckBox(Element.SERIAL_LED_STRIP_CHECKBOX, text="Serial Led Strip", font=CHECKBOX_INPUT_FONT),
                    CheckBox(Element.GRAPHIC_LED_STRIP_CHECKBOX, text="Graphic Led Strip", font=CHECKBOX_INPUT_FONT)]]
 
         self.__widget_gui.set_layout(LAYOUT)
 
-        self.__widget_gui.update_display()
+        self.__widget_gui.redraw_gui()
 
         while True:
-            event = self.__widget_gui.read_event()
+            event = self.__widget_gui.read_event_and_update_gui()
 
             if (event == Element.SETTINGS_BUTTON):
-                self.__settings_controller.start()
+                self.__settings_controller.draw_widget_gui()
+                settings_event = self.__settings_controller.read_event_and_update_gui()
+
+                while (settings_event != WidgetGuiEvent.CLOSE_WINDOW):
+                    self.__settings_controller.handle_event(settings_event)
+                    settings_event = self.__settings_controller.read_event_and_update_gui()
+
+                self.__settings_controller.handle_event(settings_event)
 
             if (self.__is_state(State.PLAYING)):
                 MILLISECONDS_PER_SECOND = 1000

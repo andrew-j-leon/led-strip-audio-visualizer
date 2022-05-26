@@ -29,7 +29,7 @@ class TestConstructor(unittest.TestCase):
 
         settings_collection = SettingsCollection(COLLECTION)
 
-        EXPECTED_SETTINGS_NAMES = set()
+        EXPECTED_SETTINGS_NAMES = list()
 
         self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -57,7 +57,7 @@ class TestConstructor(unittest.TestCase):
 
         settings_collection = SettingsCollection(COLLETION)
 
-        EXPECTED_SETTINGS_NAMES = {SETTINGS_NAME}
+        EXPECTED_SETTINGS_NAMES = [SETTINGS_NAME]
 
         self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -77,7 +77,7 @@ class TestConstructor(unittest.TestCase):
 
         settings_collection = SettingsCollection(COLLETION)
 
-        EXPECTED_SETTINGS_NAMES = {SETTINGS_1_NAME, SETTINGS_2_NAME}
+        EXPECTED_SETTINGS_NAMES = [SETTINGS_1_NAME, SETTINGS_2_NAME]
 
         self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -88,7 +88,7 @@ class TestConstructor(unittest.TestCase):
 
 class TestProperties(SettingsCollectionTestCase):
     def test_settings_names(self):
-        EXPECTED_SETTINGS_NAMES = {self.SETTINGS_1_NAME, self.SETTINGS_2_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME]
 
         self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -144,7 +144,7 @@ class TestUpdateCollection(SettingsCollectionTestCase):
         self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_1_NAME)
         self.assertIs(self.settings_collection.current_settings, self.settings_1)
 
-        EXPECTED_SETTINGS_NAMES = {self.UNUSED_SETTINGS_NAME, self.SETTINGS_1_NAME, self.SETTINGS_2_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME, self.UNUSED_SETTINGS_NAME]
 
         self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -157,7 +157,7 @@ class TestUpdateCollection(SettingsCollectionTestCase):
 
         settings_collection.update_collection(self.UNUSED_SETTINGS_NAME, SETTINGS)
 
-        EXPECTED_SETTINGS_NAMES = {self.UNUSED_SETTINGS_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.UNUSED_SETTINGS_NAME]
 
         self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -171,7 +171,7 @@ class TestDeleteSettings(SettingsCollectionTestCase):
     def test_delete_non_current_setting_with_multiple_settings_in_collection(self):
         self.settings_collection.delete_settings(self.SETTINGS_2_NAME)
 
-        EXPECTED_SETTINGS_NAMES = {self.SETTINGS_1_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME]
 
         self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -182,7 +182,7 @@ class TestDeleteSettings(SettingsCollectionTestCase):
     def test_delete_current_setting_with_multiple_settings_in_collection(self):
         self.settings_collection.delete_settings(self.SETTINGS_1_NAME)
 
-        EXPECTED_SETTINGS_NAMES = {self.SETTINGS_2_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_2_NAME]
 
         self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 
@@ -200,7 +200,7 @@ class TestDeleteSettings(SettingsCollectionTestCase):
     def test_delete_non_existent_setting_with_settings_in_collection(self):
         self.settings_collection.delete_settings(self.NON_EXISTENT_SETTINGS_NAME)
 
-        EXPECTED_SETTINGS_NAMES = {self.SETTINGS_1_NAME, self.SETTINGS_2_NAME}
+        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME]
 
         self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
 

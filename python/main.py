@@ -1,15 +1,15 @@
 from gui.audio_in_controller import AudioInController
 from gui.settings_controller import SettingsController
 from util import Settings, SettingsCollection
-from libraries.gui import WidgetGui
+from libraries.gui import ProductionWidgetGui
 
 if __name__ == '__main__':
 
     AUDIO_IN_GUI_TITLE = 'Audio In Music Visualizer'
     SETTINGS_GUI_TITLE = 'Settings'
 
-    with (WidgetGui(title=AUDIO_IN_GUI_TITLE) as audio_in_controller_widget_gui,
-          WidgetGui(SETTINGS_GUI_TITLE) as settings_controller_widget_gui):
+    with (ProductionWidgetGui(title=AUDIO_IN_GUI_TITLE) as audio_in_controller_widget_gui,
+          ProductionWidgetGui(SETTINGS_GUI_TITLE) as settings_controller_widget_gui):
 
         START_LED = 0
         END_LED = 300
@@ -44,4 +44,4 @@ if __name__ == '__main__':
         audio_in_controller = AudioInController(audio_in_controller_widget_gui,
                                                 settings_controller)
 
-        audio_in_controller.start()
+        audio_in_controller.run()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Dict, Hashable, List, Tuple
+from typing import Any, Dict, Hashable, List, Tuple, Union
 
 import PySimpleGUI as sg
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
@@ -131,43 +131,72 @@ class ProductionCanvasGui(CanvasGui):
 
 
 class Widget(ABC):
-    def __init__(self, key: Hashable):
+    def __init__(self, key: Hashable = None, disabled: bool = False):
         self.__key = key
+        self.disabled = disabled
 
     @property
     def key(self) -> Hashable:
+        if (self.__key is None):
+            raise AttributeError('This Widget does not have a key attribute.')
+
         return self.__key
 
+    @property
     @abstractmethod
-    def set_value(self, value: Any):
+    def value(self) -> Any:
+        pass
+
+    @value.setter
+    @abstractmethod
+    def value(self, value: Any):
         pass
 
     @abstractmethod
     def __repr__(self) -> str:
         pass
 
-    @abstractmethod
     def __eq__(self, other: Any) -> bool:
-        pass
+        if (isinstance(other, Widget)):
+            SELF_HAS_KEY = hasattr(self, 'key')
+            OTHER_HAS_KEY = hasattr(other, 'key')
+
+            NEITHER_HAVE_KEY = not SELF_HAS_KEY and not OTHER_HAS_KEY
+            BOTH_HAVE_KEY = SELF_HAS_KEY and OTHER_HAS_KEY
+
+            return (self.disabled == other.disabled
+                    and (NEITHER_HAVE_KEY or (BOTH_HAVE_KEY and self.key == other.key)))
+
+        return False
 
 
 class Button(Widget):
     def __init__(self, key: Hashable = None, text: str = '', font: Font = Font(), disabled: bool = False):
-        super().__init__(key)
-        self.text = text
-        self.font = font
-        self.disabled = disabled
+        super().__init__(key, disabled)
+        self.__text = text
+        self.__font = font
 
-    def set_value(self, value: Any):
-        self.text = value
+    @property
+    def font(self) -> Font:
+        return self.__font
 
-    def __repr__(self) -> str:
-        return f'Button(key={self.key}, text={self.text}, font={self.font}, disabled={self.disabled})'
+    @property
+    def value(self) -> Any:
+        return self.__text
+
+    @value.setter
+    def value(self, value):
+        self.__text = value
+
+    def __repr__(self):
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'Button({KEY_ARGUMENT}text={self.value}, font={self.font}, disabled={self.disabled})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Button)):
-            return (self.key == other.key
-                    and self.text == other.text
+            return (super().__eq__(other)
+                    and self.value == other.value
                     and self.font == other.font
                     and self.disabled == other.disabled)
 
@@ -177,69 +206,144 @@ class Button(Widget):
 class Text(Widget):
     def __init__(self, key: Hashable = None, text: str = '', font: Font = Font()):
         super().__init__(key)
-        self.text = text
-        self.font = font
+        self.__text = text
+        self.__font = font
 
-    def set_value(self, value: Any):
-        self.text = value
+    @property
+    def font(self) -> Font:
+        return self.__font
+
+    @property
+    def value(self) -> Any:
+        return self.__text
+
+    @value.setter
+    def value(self, value):
+        self.__text = value
 
     def __repr__(self) -> str:
-        return f'Text(key={self.key}, text={self.text}, font={self.font})'
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'Text({KEY_ARGUMENT}text={self.value}, font={self.font})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Text)):
-            return (self.key == other.key
-                    and self.text == other.text
+            return (super().__eq__(other)
+                    and self.value == other.value
                     and self.font == other.font)
 
         return False
 
 
 class Combo(Widget):
-    def __init__(self, key: Hashable = None, values: List[str] = [],
-                 default_value: str = None, font: Font = Font(), size=(20, 1)):
+
+    def __init__(self, key: Hashable = None, values: List[str] = [], value: int = None,
+                 font: Font = Font(), size: Tuple[int, int] = (20, 1)):
         super().__init__(key)
 
-        self.values = values
-        self.font = font
-        self.default_value = default_value
-        self.size = size
+        self.__values = values
+        self.value = value
+        self.__font = font
+        self.__size = size
 
-    def set_value(self, value: Any):
-        self.default_value = value
+    @property
+    def values(self) -> List[str]:
+        return self.__values.copy()
+
+    @property
+    def font(self) -> Font:
+        return self.__font
+
+    @property
+    def size(self) -> Tuple[int, int]:
+        return self.__size
+
+    @property
+    def value(self) -> Any:
+        try:
+            return self.values[self.__value]
+
+        except TypeError:
+            raise AttributeError('This Combo does not have a set value.')
+
+    @value.setter
+    def value(self, value):
+        try:
+            self.__values[value]
+            self.__value = value
+
+        except TypeError:
+            if (value is None):
+                self.__value = value
+
+            else:
+                raise TypeError('value must be an int or NoneType. However, the '
+                                f'given value {value} was of type {type(value)}.')
+
+        except IndexError:
+            raise IndexError(f'This Combo does not have a value at index {value}. '
+                             f'Its values include: {self.__values}')
 
     def __repr__(self) -> str:
-        return f'Combo(key={self.key}, values={self.values}, default_value={self.default_value}, font={self.font}, size={self.size})'
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'Combo({KEY_ARGUMENT}values={self.values}, value={self.__value}, font={self.font}, size={self.size})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Combo)):
-            return (self.key == other.key
+            SELF_HAS_VALUE = hasattr(self, 'value')
+            OTHER_HAS_VALUE = hasattr(other, 'value')
+
+            NEITHER_HAVE_VALUE = not SELF_HAS_VALUE and not OTHER_HAS_VALUE
+            BOTH_HAVE_VALUE = SELF_HAS_VALUE and OTHER_HAS_VALUE
+
+            VALUES_ARE_EQUAL = (NEITHER_HAVE_VALUE
+                                or (BOTH_HAVE_VALUE and self.value == other.value))
+
+            return (super().__eq__(other)
                     and self.values == other.values
+                    and VALUES_ARE_EQUAL
                     and self.font == other.font
-                    and self.default_value == other.default_value)
+                    and self.size == other.size)
 
         return False
 
 
 class CheckBox(Widget):
-    def __init__(self, key: Hashable = None, text: str = '', font: Font = Font(), default: bool = False):
+    def __init__(self, key: Hashable = None, text: str = '', font: Font = Font(), value: bool = False):
         super().__init__(key)
 
-        self.text = text
-        self.font = font
-        self.default = default
+        self.__text = text
+        self.__font = font
+        self.__value = value
 
-    def set_value(self, value: Any):
-        self.default = value
+    @property
+    def text(self) -> str:
+        return self.__text
+
+    @property
+    def font(self) -> Font:
+        return self.__font
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        self.__value = value
 
     def __repr__(self) -> str:
-        return f'CheckBox(key={self.key}, text={self.text}, font={self.font}, default={self.default})'
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'CheckBox({KEY_ARGUMENT}text={self.text}, font={self.font}, value={self.value})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, CheckBox)):
-            return (self.key == other.key
+            return (super().__eq__(other)
                     and self.text == other.text
-                    and self.font == other.font)
+                    and self.font == other.font
+                    and self.value == other.value)
 
         return False
 
@@ -248,22 +352,43 @@ class Multiline(Widget):
     def __init__(self, key: Hashable = None, text: str = '', size: Tuple[int, int] = (50, 7), auto_scroll: bool = True):
         super().__init__(key)
 
-        self.text = text
-        self.size = size
-        self.auto_scroll = auto_scroll
+        self.__text = text
+        self.__size = size
+        self.__auto_scroll = auto_scroll
 
-    def set_value(self, value: Any):
-        self.text = value
+    @property
+    def size(self) -> Tuple[int, int]:
+        return self.__size
+
+    @property
+    def auto_scroll(self) -> bool:
+        return self.__auto_scroll
+
+    @property
+    def value(self) -> str:
+        return self.__text
+
+    @value.setter
+    def value(self, value):
+        self.__text = value
 
     def __repr__(self) -> str:
-        return f'Multiline(key={self.key}, text={self.text}, size={self.size}, auto_scroll={self.auto_scroll})'
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'Multiline({KEY_ARGUMENT}text={self.value}, size={self.size}, auto_scroll={self.auto_scroll})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Multiline)):
-            return (self.key == other.key
-                    and self.text == other.text
-                    and self.size == other.size
-                    and self.auto_scroll == other.auto_scroll)
+            are_equal = (self.value == other.value
+                         and self.size == other.size
+                         and self.auto_scroll == other.auto_scroll)
+
+            try:
+                return are_equal and (self.key == other.key)
+
+            except AttributeError:
+                if (not hasattr(self, 'key') and not hasattr(other, 'key')):
+                    return are_equal
 
         return False
 
@@ -272,18 +397,31 @@ class Input(Widget):
     def __init__(self, key: Hashable = None, text: str = ''):
         super().__init__(key)
 
-        self.text = text
+        self.__text = text
 
-    def set_value(self, value: Any):
-        self.text = value
+    @property
+    def value(self):
+        return self.__text
+
+    @value.setter
+    def value(self, value):
+        self.__text = value
 
     def __repr__(self) -> str:
-        return f'Input(key={self.key}, text={self.text})'
+        KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
+
+        return f'Input({KEY_ARGUMENT}text={self.value})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Input)):
-            return (self.key == other.key
-                    and self.text == other.text)
+            are_equal = self.value == other.value
+
+            try:
+                return are_equal and (self.key == other.key)
+
+            except AttributeError:
+                if (not hasattr(self, 'key') and not hasattr(other, 'key')):
+                    return are_equal
 
         return False
 
@@ -293,15 +431,52 @@ class WidgetGuiEvent(Enum):
     CLOSE_WINDOW = auto()
 
 
-class WidgetGui:
+class WidgetGui(ABC):
+    @abstractmethod
+    def set_layout(self, layout: List[List[Widget]]):
+        pass
+
+    @abstractmethod
+    def redraw_gui(self):
+        pass
+
+    @abstractmethod
+    def read_event_and_update_gui(self) -> Union[Hashable, WidgetGuiEvent]:
+        pass
+
+    @abstractmethod
+    def disable_widget(self, widget_key: Hashable):
+        pass
+
+    @abstractmethod
+    def enable_widget(self, widget_key: Hashable):
+        pass
+
+    @abstractmethod
+    def set_widget_value(self, widget_key: Hashable, value: Any):
+        pass
+
+    @abstractmethod
+    def get_widget_value(self, widget_key: Hashable) -> Any:
+        pass
+
+    @abstractmethod
+    def close(self):
+        pass
+
+
+class ProductionWidgetGui(WidgetGui):
     @classmethod
     def _create_element(cls, widget: Widget) -> sg.Element:
+
+        KEY = None if (not hasattr(widget, 'key')) else widget.key
+
         if (isinstance(widget, Button)):
             WIDGET_FONT = widget.font
             FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
 
-            return sg.Button(key=widget.key,
-                             button_text=widget.text,
+            return sg.Button(key=KEY,
+                             button_text=widget.value,
                              font=FONT,
                              disabled=widget.disabled)
 
@@ -309,17 +484,24 @@ class WidgetGui:
             WIDGET_FONT = widget.font
             FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
 
-            return sg.Text(key=widget.key,
-                           text=widget.text,
+            return sg.Text(key=KEY,
+                           text=widget.value,
                            font=FONT)
 
         elif (isinstance(widget, Combo)):
+            def get_default_value():
+                try:
+                    return widget.value
+
+                except AttributeError:
+                    return None
+
             WIDGET_FONT = widget.font
             FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
 
-            return sg.Combo(key=widget.key,
+            return sg.Combo(key=KEY,
                             values=widget.values,
-                            default_value=widget.default_value,
+                            default_value=get_default_value(),
                             font=FONT,
                             size=widget.size)
 
@@ -327,20 +509,20 @@ class WidgetGui:
             WIDGET_FONT = widget.font
             FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
 
-            return sg.Checkbox(key=widget.key,
+            return sg.Checkbox(key=KEY,
                                text=widget.text,
                                font=FONT,
-                               default=widget.default)
+                               default=widget.value)
 
         elif (isinstance(widget, Multiline)):
-            return sg.Multiline(key=widget.key,
-                                default_text=widget.text,
+            return sg.Multiline(key=KEY,
+                                default_text=widget.value,
                                 size=widget.size,
                                 autoscroll=widget.auto_scroll)
 
         elif (isinstance(widget, Input)):
-            return sg.Input(key=widget.key,
-                            default_text=widget.text)
+            return sg.Input(key=KEY,
+                            default_text=widget.value)
 
         raise TypeError(f'widget ({widget}) of type {type(widget)} is not a recognized Widget type.')
 
@@ -365,21 +547,29 @@ class WidgetGui:
                                   resizable=self.resizable, element_padding=self.element_padding, margins=self.margins,
                                   titlebar_background_color=self.titlebar_background_color, titlebar_text_color=self.titlebar_text_color)
 
-    def set_layout(self, layout: List[List[Widget]]):
+    def close(self):
+        self.__window.close()
+
+    def set_layout(self, layout):
         widgets = dict()
 
         for row in layout:
             for widget in row:
-                if (widget.key in widgets and widget.key is not None):
-                    raise ValueError(f'Each widget in layout should have a unique key. There were multiple widgets with the key {widget.key} in the layout {layout}.')
+                try:
+                    if (widget.key in widgets):
+                        raise ValueError(f'Each widget in layout should have a unique key, but there were '
+                                         + f'multiple widgets with the key {widget.key} in the layout {layout}.')
 
-                widgets[widget.key] = widget
+                    widgets[widget.key] = widget
+
+                except AttributeError:
+                    pass
 
         self.__layout = layout
         self.__widgets = widgets
         self.__is_new_layout = True
 
-    def update_display(self):
+    def redraw_gui(self):
         layout: List[List[sg.Element]] = []
 
         for row in self.__layout:
@@ -392,7 +582,7 @@ class WidgetGui:
                         element = self.__window.find_element(widget.key)
                         widget = self.__widgets[widget.key]
 
-                        widget.set_value(element.get())
+                        widget.value = element.get()
 
                     except KeyError:
                         pass
@@ -412,7 +602,7 @@ class WidgetGui:
 
         self.__is_new_layout = False
 
-    def read_event(self) -> Hashable:
+    def read_event_and_update_gui(self) -> Union[Hashable, WidgetGuiEvent]:
         EVENT = 0
         event = self.__window.read(timeout=0)[EVENT]
 
@@ -424,9 +614,11 @@ class WidgetGui:
 
         return event
 
-    def disable_widget(self, widget_key: Hashable):
+    def disable_widget(self, widget_key):
         try:
-            self.__window.find_element(widget_key).update(disabled=True)
+            element: sg.Element = self.__window.find_element(widget_key)
+            element.update(disabled=True)
+
             self.__widgets[widget_key].disabled = True
 
         except KeyError as error:
@@ -435,9 +627,11 @@ class WidgetGui:
 
             raise error
 
-    def enable_widget(self, widget_key: Hashable):
+    def enable_widget(self, widget_key):
         try:
-            self.__window.find_element(widget_key).update(disabled=False)
+            element: sg.Element = self.__window.find_element(widget_key)
+            element.update(disabled=False)
+
             self.__widgets[widget_key].disabled = False
 
         except KeyError as error:
@@ -446,10 +640,12 @@ class WidgetGui:
 
             raise error
 
-    def set_widget_value(self, widget_key: Hashable, value: Any):
+    def set_widget_value(self, widget_key, value):
         try:
-            self.__window.find_element(widget_key).update(value=value)
-            self.__widgets[widget_key].set_value(value)
+            element: sg.Element = self.__window.find_element(widget_key)
+            element.update(value=value)
+
+            self.__widgets[widget_key].value = value
 
         except KeyError as error:
             if (widget_key not in self.__widgets):
@@ -457,15 +653,11 @@ class WidgetGui:
 
             raise error
 
-    def get_widget_value(self, widget_key: Hashable) -> Any:
+    def get_widget_value(self, widget_key) -> Any:
         return self.__window.find_element(widget_key).get()
 
-    def __enter__(self) -> WidgetGui:
+    def __enter__(self) -> ProductionWidgetGui:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        try:
-            self.__window.close()
-
-        except AttributeError:
-            pass
+        self.__window.close()

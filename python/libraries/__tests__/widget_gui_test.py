@@ -1,220 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.gui import Button, CheckBox, Combo, Font, Input, Multiline, Text, WidgetGui, WidgetGuiEvent
+from libraries.gui import Button, CheckBox, Combo, Font, Multiline, ProductionWidgetGui, Text, WidgetGuiEvent
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
-
-
-class TestButton(unittest.TestCase):
-    KEY = 'button_key'
-    TEXT = 'click me'
-    FONT = Font('Times New Roman', 18, 'bold')
-    DISABLED = False
-
-    def setUp(self):
-        self.button = Button(self.KEY, self.TEXT, self.FONT, self.DISABLED)
-
-    def test_attributes(self):
-        self.assertEqual(self.button.key, self.KEY)
-        self.assertEqual(self.button.text, self.TEXT)
-        self.assertEqual(self.button.font, self.FONT)
-        self.assertEqual(self.button.disabled, self.DISABLED)
-
-    def test_repr(self):
-        expected = f'Button(key={self.KEY}, text={self.TEXT}, font={self.FONT}, disabled={self.DISABLED})'
-        actual = repr(self.button)
-
-        self.assertEqual(actual, expected)
-
-    def test_equal(self):
-        BUTTON_EQUAL = Button(self.KEY, self.TEXT, self.FONT, self.DISABLED)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_TEXT = f'new {self.TEXT}'
-        NEW_FONT = Font()
-        NEW_DISABLED = not self.DISABLED
-
-        BUTTON_NOT_EQUAL = Button(NEW_KEY, NEW_TEXT, NEW_FONT, NEW_DISABLED)
-
-        self.assertEqual(self.button, BUTTON_EQUAL)
-        self.assertNotEqual(self.button, BUTTON_NOT_EQUAL)
-        self.assertNotEqual(self.button, 'not a button')
-
-
-class TestText(unittest.TestCase):
-    KEY = 'text_key'
-    TEXT = 'hello'
-    FONT = Font('Wing Dings', 20, 'italic')
-
-    def setUp(self):
-        self.text = Text(self.KEY, self.TEXT, self.FONT)
-
-    def test_attributes(self):
-        self.assertEqual(self.text.key, self.KEY)
-        self.assertEqual(self.text.text, self.TEXT)
-        self.assertEqual(self.text.font, self.FONT)
-
-    def test_repr(self):
-        expected = f'Text(key={self.KEY}, text={self.TEXT}, font={self.FONT})'
-        actual = repr(self.text)
-
-        self.assertEqual(actual, expected)
-
-    def test_equal(self):
-        TEXT_EQUAL = Text(self.KEY, self.TEXT, self.FONT)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_TEXT = f'new {self.TEXT}'
-        NEW_FONT = Font()
-
-        TEXT_NOT_EQUAL = Button(NEW_KEY, NEW_TEXT, NEW_FONT)
-
-        self.assertEqual(self.text, TEXT_EQUAL)
-        self.assertNotEqual(self.text, TEXT_NOT_EQUAL)
-        self.assertNotEqual(self.text, 'text')
-
-
-class TestCombo(unittest.TestCase):
-    KEY = 'combo_key'
-    VALUES = ['a', 'b', 'c']
-    DEFAULT_VALUE = 'b'
-    FONT = Font()
-    SIZE = (10, 20)
-
-    def setUp(self):
-        self.combo = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT, self.SIZE)
-
-    def test_attributes(self):
-        self.assertEqual(self.combo.key, self.KEY)
-        self.assertEqual(self.combo.values, self.VALUES)
-        self.assertEqual(self.combo.default_value, self.DEFAULT_VALUE)
-        self.assertEqual(self.combo.font, self.FONT)
-        self.assertEqual(self.combo.size, self.SIZE)
-
-    def test_repr(self):
-        expected = f'Combo(key={self.KEY}, values={self.VALUES}, default_value={self.DEFAULT_VALUE}, font={self.FONT}, size={self.SIZE})'
-        actual = repr(self.combo)
-
-        self.assertEqual(actual, expected)
-
-    def test_equal(self):
-        COMBO_EQUAL = Combo(self.KEY, self.VALUES, self.DEFAULT_VALUE, self.FONT, self.SIZE)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_VALUES = self.VALUES + ['d']
-        NEW_DEFAULT_VALUE = 'd'
-        NEW_FONT = Font()
-        NEW_SIZE = (self.SIZE[0] + 10,
-                    self.SIZE[1] + 20)
-
-        COMBO_NOT_EQUAL = Combo(NEW_KEY, NEW_VALUES, NEW_DEFAULT_VALUE, NEW_FONT, NEW_SIZE)
-
-        self.assertEqual(self.combo, COMBO_EQUAL)
-        self.assertNotEqual(self.combo, COMBO_NOT_EQUAL)
-        self.assertNotEqual(self.combo, 'not a combo')
-
-
-class TestCheckBox(unittest.TestCase):
-    KEY = 'check_box_key'
-    TEXT = 'hello i am a checkbox'
-    FONT = Font('some font', 20)
-    DEFAULT = True
-
-    def setUp(self):
-        self.check_box = CheckBox(self.KEY, self.TEXT, self.FONT, self.DEFAULT)
-
-    def test_attributes(self):
-        self.assertEqual(self.check_box.key, self.KEY)
-        self.assertEqual(self.check_box.text, self.TEXT)
-        self.assertEqual(self.check_box.font, self.FONT)
-        self.assertEqual(self.check_box.default, self.DEFAULT)
-
-    def test_repr(self):
-        expected = f'CheckBox(key={self.KEY}, text={self.TEXT}, font={self.FONT}, default={self.DEFAULT})'
-        actual = repr(self.check_box)
-
-        self.assertEqual(expected, actual)
-
-    def test_equal(self):
-        CHECK_BOX_EQUAL = CheckBox(self.KEY, self.TEXT, self.FONT, self.DEFAULT)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_TEXT = f'new {self.TEXT}'
-        NEW_FONT = Font()
-        NEW_DEFAULT = not self.DEFAULT
-
-        CHECK_BOX_NOT_EQUAL = CheckBox(NEW_KEY, NEW_TEXT, NEW_FONT, NEW_DEFAULT)
-
-        self.assertEqual(self.check_box, CHECK_BOX_EQUAL)
-        self.assertNotEqual(self.check_box, CHECK_BOX_NOT_EQUAL)
-        self.assertNotEqual(self.check_box, 'not a checkbox')
-
-
-class TestMultiline(unittest.TestCase):
-    KEY = 'multiline_key'
-    TEXT = 'some multiline text'
-    SIZE = (20, 30)
-    AUTO_SCROLL = False
-
-    def setUp(self):
-        self.multiline = Multiline(self.KEY, self.TEXT, self.SIZE, self.AUTO_SCROLL)
-
-    def test_attributes(self):
-        self.assertEqual(self.multiline.key, self.KEY)
-        self.assertEqual(self.multiline.text, self.TEXT)
-        self.assertEqual(self.multiline.size, self.SIZE)
-        self.assertEqual(self.multiline.auto_scroll, self.AUTO_SCROLL)
-
-    def test_repr(self):
-        expected = f'Multiline(key={self.KEY}, text={self.TEXT}, size={self.SIZE}, auto_scroll={self.AUTO_SCROLL})'
-        actual = repr(self.multiline)
-
-        self.assertEqual(expected, actual)
-
-    def test_equal(self):
-        MULTILINE_EQUAL = Multiline(self.KEY, self.TEXT, self.SIZE, self.AUTO_SCROLL)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_TEXT = f'new {self.TEXT}'
-        NEW_SIZE = (self.SIZE[0] + 10,
-                    self.SIZE[1] + 20)
-        NEW_AUTO_SCROLL = not self.AUTO_SCROLL
-
-        MULTILINE_NOT_EQUAL = Multiline(NEW_KEY, NEW_TEXT, NEW_SIZE, NEW_AUTO_SCROLL)
-
-        self.assertEqual(self.multiline, MULTILINE_EQUAL)
-        self.assertNotEqual(self.multiline, MULTILINE_NOT_EQUAL)
-        self.assertNotEqual(self.multiline, 'not a multiline')
-
-
-class TestInput(unittest.TestCase):
-    KEY = 'multiline_key'
-    TEXT = 'some multiline text'
-
-    def setUp(self):
-        self.input = Input(self.KEY, self.TEXT)
-
-    def test_attributes(self):
-        self.assertEqual(self.input.key, self.KEY)
-        self.assertEqual(self.input.text, self.TEXT)
-
-    def test_repr(self):
-        expected = f'Input(key={self.KEY}, text={self.TEXT})'
-        actual = repr(self.input)
-
-        self.assertEqual(expected, actual)
-
-    def test_equal(self):
-        INPUT_EQUAL = Input(self.KEY, self.TEXT)
-
-        NEW_KEY = f'new {self.KEY}'
-        NEW_TEXT = f'new {self.TEXT}'
-
-        INPUT_NOT_EQUAL = Input(NEW_KEY, NEW_TEXT)
-
-        self.assertEqual(self.input, INPUT_EQUAL)
-        self.assertNotEqual(self.input, INPUT_NOT_EQUAL)
-        self.assertNotEqual(self.input, 'not an Input')
 
 
 class TestWidgetGui(unittest.TestCase):
@@ -234,15 +22,15 @@ class TestWidgetGui(unittest.TestCase):
         self.window_mock = self.__window_patch.start()
         self.window_instance_mock: MagicMock = self.window_mock()
 
-        self.widget_gui = WidgetGui(self.TITLE, self.IS_MODAL, self.RESIZABLE, self.ELEMENT_PADDING, self.MARGINS,
-                                    self.TITLEBAR_BACKGROUND_COLOR, self.TITLEBAR_TEXT_COLOR)
+        self.widget_gui = ProductionWidgetGui(self.TITLE, self.IS_MODAL, self.RESIZABLE, self.ELEMENT_PADDING, self.MARGINS,
+                                              self.TITLEBAR_BACKGROUND_COLOR, self.TITLEBAR_TEXT_COLOR)
 
         self.window_mock.reset_mock()
         self.window_instance_mock.reset_mock()
 
     def test_constructor(self):
-        WidgetGui(self.TITLE, self.IS_MODAL, self.RESIZABLE, self.ELEMENT_PADDING, self.MARGINS,
-                  self.TITLEBAR_BACKGROUND_COLOR, self.TITLEBAR_TEXT_COLOR)
+        ProductionWidgetGui(self.TITLE, self.IS_MODAL, self.RESIZABLE, self.ELEMENT_PADDING, self.MARGINS,
+                            self.TITLEBAR_BACKGROUND_COLOR, self.TITLEBAR_TEXT_COLOR)
 
         self.window_mock.assert_called_once_with(self.TITLE, layout=[[]], modal=self.IS_MODAL,
                                                  resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
@@ -251,7 +39,7 @@ class TestWidgetGui(unittest.TestCase):
                                                  titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
 
     def test_update_display(self):
-        self.widget_gui.update_display()
+        self.widget_gui.redraw_gui()
 
         self.window_mock.assert_called_once_with(self.TITLE, layout=[[]], modal=self.IS_MODAL,
                                                  resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
@@ -284,11 +72,11 @@ class TestWidgetGui(unittest.TestCase):
 
         COMBO_KEY = 'combo_key'
         COMBO_VALUES = ['a', 'b', 'c']
-        COMBO_DEFAULT_VALUE = 'b'
+        COMBO_VALUE = 1
         COMBO_FONT = Font()
         COMBO_SIZE = (10, 20)
 
-        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_DEFAULT_VALUE, COMBO_FONT, COMBO_SIZE)
+        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_VALUE, COMBO_FONT, COMBO_SIZE)
 
         CHECK_BOX_KEY = 'check_box_key'
         CHECK_BOX_TEXT = 'hello i am a checkbox'
@@ -311,7 +99,7 @@ class TestWidgetGui(unittest.TestCase):
 
         self.widget_gui.set_layout(LAYOUT)
 
-        self.widget_gui.update_display()
+        self.widget_gui.redraw_gui()
 
         BUTTON_FONT_TUPLE = (BUTTON_FONT.name, BUTTON_FONT.size, BUTTON_FONT.style)
         button_mock.assert_called_once_with(key=BUTTON_KEY, button_text=BUTTON_TEXT, font=BUTTON_FONT_TUPLE,
@@ -321,7 +109,7 @@ class TestWidgetGui(unittest.TestCase):
         text_mock.assert_called_once_with(key=TEXT_KEY, text=TEXT_TEXT, font=TEXT_FONT_TUPLE)
 
         COMBO_FONT_TUPLE = (COMBO_FONT.name, COMBO_FONT.size, COMBO_FONT.style)
-        combo_mock.assert_called_once_with(key=COMBO_KEY, values=COMBO_VALUES, default_value=COMBO_DEFAULT_VALUE,
+        combo_mock.assert_called_once_with(key=COMBO_KEY, values=COMBO_VALUES, default_value=COMBO_VALUES[COMBO_VALUE],
                                            font=COMBO_FONT_TUPLE, size=COMBO_SIZE)
 
         CHECK_BOX_FONT_TUPLE = (CHECK_BOX_FONT.name, CHECK_BOX_FONT.size, CHECK_BOX_FONT.style)
@@ -372,14 +160,14 @@ class TestWidgetGui(unittest.TestCase):
     def test_read_event_when_event_is_timeout(self):
         self.window_instance_mock.read.return_value = [TIMEOUT_EVENT]
 
-        event = self.widget_gui.read_event()
+        event = self.widget_gui.read_event_and_update_gui()
 
         self.assertEqual(event, WidgetGuiEvent.TIMEOUT)
 
     def test_read_event_when_event_is_close_window(self):
         self.window_instance_mock.read.return_value = [WINDOW_CLOSED]
 
-        event = self.widget_gui.read_event()
+        event = self.widget_gui.read_event_and_update_gui()
 
         self.assertEqual(event, WidgetGuiEvent.CLOSE_WINDOW)
 
@@ -388,7 +176,7 @@ class TestWidgetGui(unittest.TestCase):
 
         self.window_instance_mock.read.return_value = [EVENT]
 
-        event = self.widget_gui.read_event()
+        event = self.widget_gui.read_event_and_update_gui()
 
         self.assertEqual(event, EVENT)
 
@@ -449,7 +237,7 @@ class TestWidgetGui(unittest.TestCase):
 
         self.widget_gui.set_widget_value(WIDGET_KEY, NEW_VALUE)
 
-        self.assertEqual(text.text, NEW_VALUE)
+        self.assertEqual(text.value, NEW_VALUE)
 
         self.window_instance_mock.find_element(WIDGET_KEY).update.assert_called_once_with(value=NEW_VALUE)
 
@@ -470,7 +258,7 @@ class TestWidgetGui(unittest.TestCase):
         self.assertEqual(value, WIDGET_VALUE)
 
     def test_context_manager(self):
-        with WidgetGui() as widget_gui:
+        with ProductionWidgetGui() as widget_gui:
             pass
 
         self.window_instance_mock.close.assert_called_once()
