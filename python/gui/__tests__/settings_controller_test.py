@@ -28,7 +28,7 @@ class FakeWidgetGui(WidgetGui):
                 except AttributeError:
                     pass
 
-    def redraw_gui(self):
+    def draw_layout(self):
         self.displayed_layout = self.queued_layout
 
         for row in self.displayed_layout:
@@ -270,8 +270,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         set_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT, self.MILLISECONDS_PER_AUDIO_CHUNK_2)
         set_widget_value(Element.SERIAL_PORT_INPUT, self.SERIAL_PORT_2)
 
-        SERIAL_BAUDRATE_2_INDEX = Settings.SERIAL_BAUDRATES.index(self.SERIAL_BAUDRATE_2)
-        set_widget_value(Element.SERIAL_BAUDRATE_DROPDOWN, SERIAL_BAUDRATE_2_INDEX)
+        set_widget_value(Element.SERIAL_BAUDRATE_DROPDOWN, str(self.SERIAL_BAUDRATE_2))
 
         set_widget_value(Element.BRIGHTNESS_INPUT, self.BRIGHTNESS_2)
         set_widget_value(Element.MINIMUM_FREQUENCY_INPUT, self.MINIMUM_FREQUENCY_2)
@@ -297,9 +296,7 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         self.settings_controller.draw_widget_gui()
 
-        NAMES = list(self.settings_collection.names())
-        SETTINGS_NAME_VALUE = NAMES.index(self.SETTINGS_1_NAME)
-        set_widget_value(Element.SETTINGS_NAME_COMBO, SETTINGS_NAME_VALUE)
+        set_widget_value(Element.SETTINGS_NAME_COMBO, self.SETTINGS_1_NAME)
 
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
 

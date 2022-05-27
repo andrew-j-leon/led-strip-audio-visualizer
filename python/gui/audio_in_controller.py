@@ -86,7 +86,9 @@ class AudioInController:
         CHECKBOX_INPUT_FONT = Font("Courier New", 14)
 
         VISUALIZER_DROPDOWN_VALUES = [VisualizerType.NONE, VisualizerType.FREQUENCY]
-        VISUALIZER_DROPDOWN_VALUE = VISUALIZER_DROPDOWN_VALUES.index(VisualizerType.FREQUENCY)
+        VISUALIZER_DROPDOWN_WIDGET = Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, VISUALIZER_DROPDOWN_VALUES,
+                                           DROPDOWN_INPUT_FONT)
+        VISUALIZER_DROPDOWN_WIDGET.value = VisualizerType.FREQUENCY
 
         LAYOUT = [[Button(Element.SETTINGS_BUTTON, text="Settings")],
 
@@ -96,14 +98,13 @@ class AudioInController:
                    Button(Element.RESUME_AUDIO_BUTTON, text="Play (>)", font=BUTTON_FONT, disabled=False)],
 
                   [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="Visualizer : ", font=INPUT_LABEL_FONT),
-                   Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, VISUALIZER_DROPDOWN_VALUES,
-                         VISUALIZER_DROPDOWN_VALUE, DROPDOWN_INPUT_FONT),
+                   VISUALIZER_DROPDOWN_WIDGET,
                    CheckBox(Element.SERIAL_LED_STRIP_CHECKBOX, text="Serial Led Strip", font=CHECKBOX_INPUT_FONT),
                    CheckBox(Element.GRAPHIC_LED_STRIP_CHECKBOX, text="Graphic Led Strip", font=CHECKBOX_INPUT_FONT)]]
 
         self.__widget_gui.set_layout(LAYOUT)
 
-        self.__widget_gui.redraw_gui()
+        self.__widget_gui.draw_layout()
 
         while True:
             event = self.__widget_gui.read_event_and_update_gui()

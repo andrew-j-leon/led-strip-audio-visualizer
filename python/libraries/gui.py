@@ -237,18 +237,34 @@ class Text(Widget):
 
 class Combo(Widget):
 
-    def __init__(self, key: Hashable = None, values: List[str] = [], value: int = None,
+    def __init__(self, key: Hashable = None, values: List[str] = [],
                  font: Font = Font(), size: Tuple[int, int] = (20, 1)):
         super().__init__(key)
 
-        self.__values = values
-        self.value = value
+        self.__values = list(dict.fromkeys(values))
+        self.__value = 0
         self.__font = font
         self.__size = size
 
     @property
     def values(self) -> List[str]:
         return self.__values.copy()
+
+    @property
+    def value(self) -> Any:
+        try:
+            return self.values[self.__value]
+
+        except IndexError:
+            raise AttributeError('This Combo does not have any values.')
+
+    @value.setter
+    def value(self, value):
+        try:
+            self.__value = self.__values.index(value)
+
+        except ValueError:
+            raise ValueError(f"{value} is not in this Combo's list of values.")
 
     @property
     def font(self) -> Font:
@@ -258,36 +274,10 @@ class Combo(Widget):
     def size(self) -> Tuple[int, int]:
         return self.__size
 
-    @property
-    def value(self) -> Any:
-        try:
-            return self.values[self.__value]
-
-        except TypeError:
-            raise AttributeError('This Combo does not have a set value.')
-
-    @value.setter
-    def value(self, value):
-        try:
-            self.__values[value]
-            self.__value = value
-
-        except TypeError:
-            if (value is None):
-                self.__value = value
-
-            else:
-                raise TypeError('value must be an int or NoneType. However, the '
-                                f'given value {value} was of type {type(value)}.')
-
-        except IndexError:
-            raise IndexError(f'This Combo does not have a value at index {value}. '
-                             f'Its values include: {self.__values}')
-
     def __repr__(self) -> str:
         KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
 
-        return f'Combo({KEY_ARGUMENT}values={self.values}, value={self.__value}, font={self.font}, size={self.size})'
+        return f'Combo({KEY_ARGUMENT}values={self.values}, font={self.font}, size={self.size})'
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Combo)):
@@ -433,23 +423,19 @@ class WidgetGuiEvent(Enum):
 
 class WidgetGui(ABC):
     @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
     def set_layout(self, layout: List[List[Widget]]):
         pass
 
     @abstractmethod
-    def redraw_gui(self):
+    def draw_layout(self):
         pass
 
     @abstractmethod
     def read_event_and_update_gui(self) -> Union[Hashable, WidgetGuiEvent]:
-        pass
-
-    @abstractmethod
-    def disable_widget(self, widget_key: Hashable):
-        pass
-
-    @abstractmethod
-    def enable_widget(self, widget_key: Hashable):
         pass
 
     @abstractmethod
@@ -461,7 +447,11 @@ class WidgetGui(ABC):
         pass
 
     @abstractmethod
-    def close(self):
+    def disable_widget(self, widget_key: Hashable):
+        pass
+
+    @abstractmethod
+    def enable_widget(self, widget_key: Hashable):
         pass
 
 
@@ -547,6 +537,12 @@ class ProductionWidgetGui(WidgetGui):
                                   resizable=self.resizable, element_padding=self.element_padding, margins=self.margins,
                                   titlebar_background_color=self.titlebar_background_color, titlebar_text_color=self.titlebar_text_color)
 
+    def __enter__(self) -> ProductionWidgetGui:
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.__window.close()
+
     def close(self):
         self.__window.close()
 
@@ -569,7 +565,12 @@ class ProductionWidgetGui(WidgetGui):
         self.__widgets = widgets
         self.__is_new_layout = True
 
-    def redraw_gui(self):
+    def __synchronize_widgets(self):
+        for widget in self.__widgets.values():
+            element = self.__window.find_element(widget.key)
+            widget.value = element.get()
+
+    def draw_layout(self):
         layout: List[List[sg.Element]] = []
 
         for row in self.__layout:
@@ -584,7 +585,7 @@ class ProductionWidgetGui(WidgetGui):
 
                         widget.value = element.get()
 
-                    except KeyError:
+                    except AttributeError:
                         pass
 
                 element = self._create_element(widget)
@@ -655,9 +656,3 @@ class ProductionWidgetGui(WidgetGui):
 
     def get_widget_value(self, widget_key) -> Any:
         return self.__window.find_element(widget_key).get()
-
-    def __enter__(self) -> ProductionWidgetGui:
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.__window.close()

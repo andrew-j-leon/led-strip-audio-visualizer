@@ -39,7 +39,7 @@ class TestWidgetGui(unittest.TestCase):
                                                  titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
 
     def test_update_display(self):
-        self.widget_gui.redraw_gui()
+        self.widget_gui.draw_layout()
 
         self.window_mock.assert_called_once_with(self.TITLE, layout=[[]], modal=self.IS_MODAL,
                                                  resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
@@ -72,11 +72,12 @@ class TestWidgetGui(unittest.TestCase):
 
         COMBO_KEY = 'combo_key'
         COMBO_VALUES = ['a', 'b', 'c']
-        COMBO_VALUE = 1
+        COMBO_VALUE = 'b'
         COMBO_FONT = Font()
         COMBO_SIZE = (10, 20)
 
-        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_VALUE, COMBO_FONT, COMBO_SIZE)
+        COMBO = Combo(COMBO_KEY, COMBO_VALUES, COMBO_FONT, COMBO_SIZE)
+        COMBO.value = COMBO_VALUE
 
         CHECK_BOX_KEY = 'check_box_key'
         CHECK_BOX_TEXT = 'hello i am a checkbox'
@@ -99,7 +100,7 @@ class TestWidgetGui(unittest.TestCase):
 
         self.widget_gui.set_layout(LAYOUT)
 
-        self.widget_gui.redraw_gui()
+        self.widget_gui.draw_layout()
 
         BUTTON_FONT_TUPLE = (BUTTON_FONT.name, BUTTON_FONT.size, BUTTON_FONT.style)
         button_mock.assert_called_once_with(key=BUTTON_KEY, button_text=BUTTON_TEXT, font=BUTTON_FONT_TUPLE,
@@ -109,7 +110,7 @@ class TestWidgetGui(unittest.TestCase):
         text_mock.assert_called_once_with(key=TEXT_KEY, text=TEXT_TEXT, font=TEXT_FONT_TUPLE)
 
         COMBO_FONT_TUPLE = (COMBO_FONT.name, COMBO_FONT.size, COMBO_FONT.style)
-        combo_mock.assert_called_once_with(key=COMBO_KEY, values=COMBO_VALUES, default_value=COMBO_VALUES[COMBO_VALUE],
+        combo_mock.assert_called_once_with(key=COMBO_KEY, values=COMBO_VALUES, default_value=COMBO_VALUE,
                                            font=COMBO_FONT_TUPLE, size=COMBO_SIZE)
 
         CHECK_BOX_FONT_TUPLE = (CHECK_BOX_FONT.name, CHECK_BOX_FONT.size, CHECK_BOX_FONT.style)

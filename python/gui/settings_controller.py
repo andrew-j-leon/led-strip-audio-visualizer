@@ -100,31 +100,30 @@ class SettingsController:
 
         SETTINGS = self.settings
 
-        BAUDRATES = [str(baudrate) for baudrate in Settings.SERIAL_BAUDRATES]
+        def get_baudrates_combo() -> Combo:
+            BAUDRATES = [str(baudrate) for baudrate in Settings.SERIAL_BAUDRATES]
+            combo = Combo(Element.SERIAL_BAUDRATE_DROPDOWN, BAUDRATES)
 
-        def get_baudrates_value() -> Union[int, None]:
+            combo.value = str(SETTINGS.serial_baudrate)
+
+            return combo
+
+        BAUDRATES_COMBO = get_baudrates_combo()
+
+        def get_settings_names_combo() -> Combo:
+            SETTINGS_NAMES = list(self.__settings_collection.names())
+            SETTINGS_NAMES_COMBO_SIZE = (50, 1)
+
+            combo = Combo(Element.SETTINGS_NAME_COMBO, SETTINGS_NAMES, size=SETTINGS_NAMES_COMBO_SIZE)
+
             try:
-                BAUDRATE = SETTINGS.serial_baudrate
-                return BAUDRATES.index(str(BAUDRATE))
-
-            except ValueError:
-                return None
-
-        BAUDRATES_VALUE = get_baudrates_value()
-
-        SETTINGS_NAMES = list(self.__settings_collection.names())
-
-        def get_settings_names_value() -> Union[int, None]:
-            try:
-                CURRENT_SETTINGS_NAME = self.__settings_collection.current_name
-                return SETTINGS_NAMES.index(CURRENT_SETTINGS_NAME)
+                combo.value = self.__settings_collection.current_name
+                return combo
 
             except AttributeError:
-                return None
+                return combo
 
-        SETTINGS_NAMES_VALUE = get_settings_names_value()
-
-        SETTINGS_NAME_COMBO_SIZE = (50, 1)
+        SETTINGS_NAMES_COMBO = get_settings_names_combo()
 
         START_LED = str(SETTINGS.start_led)
         END_LED = str(SETTINGS.end_led)
@@ -150,8 +149,7 @@ class SettingsController:
 
         AMPLITUDE_RGBS = get_amplitude_rgbs(SETTINGS.amplitude_rgbs)
 
-        LAYOUT = [[Combo(Element.SETTINGS_NAME_COMBO, SETTINGS_NAMES,
-                         SETTINGS_NAMES_VALUE, size=SETTINGS_NAME_COMBO_SIZE),
+        LAYOUT = [[SETTINGS_NAMES_COMBO,
                    Button(Element.SAVE_BUTTON, "Save", BUTTON_FONT, True),
                    Button(Element.DELETE_BUTTON, "Delete", BUTTON_FONT, True)],
 
@@ -173,7 +171,7 @@ class SettingsController:
                    Input(Element.SERIAL_PORT_INPUT, SERIAL_PORT)],
 
                   [Text(text="Baudrate:", font=INPUT_LABEL_FONT),
-                   Combo(Element.SERIAL_BAUDRATE_DROPDOWN, BAUDRATES, BAUDRATES_VALUE)],
+                   BAUDRATES_COMBO],
 
                   [Text(text="Brightness", font=INPUT_LABEL_FONT),
                    Input(Element.BRIGHTNESS_INPUT, BRIGHTNESS)],
@@ -197,7 +195,7 @@ class SettingsController:
                    Multiline(Element.AMPLITUDE_RGBS_MULTILINE, AMPLITUDE_RGBS)]]
 
         self.__widget_gui.set_layout(LAYOUT)
-        self.__widget_gui.redraw_gui()
+        self.__widget_gui.draw_layout()
 
     def __save_settings(self):
         START_LED = self.__get_setting_from_wiget_gui(Element.START_LED_INDEX_INPUT)
