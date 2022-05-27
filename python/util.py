@@ -232,68 +232,77 @@ class Settings:
 
 
 class SettingsCollection:
-    def __init__(self, collection: Dict[Hashable, Settings] = {'default': Settings()}):
+    def __init__(self, collection: Dict[Hashable, Settings] = dict()):
         self.__collection: Dict[Hashable, Settings] = dict()
 
-        for settings_name, settings in collection.items():
-            self.update_collection(settings_name, settings)
-
-    def __contains__(self, settings_name: Hashable) -> bool:
-        return settings_name in self.__collection
+        for name, settings in collection.items():
+            self[name] = settings
 
     @property
-    def settings_names(self) -> List[Hashable]:
-        return list(self.__collection.keys())
-
-    @property
-    def current_settings(self) -> Settings:
+    def current_settings(self):
         try:
-            return self.__collection[self.current_settings_name]
+            return self[self.current_name]
 
         except AttributeError:
-            raise AttributeError('There are no Settings in this SettingsCollection. Call update_collection to add a Setting.')
+            raise AttributeError('There are no Settings in this SettingsCollection.')
 
     @property
-    def current_settings_name(self) -> Hashable:
+    def current_name(self):
         try:
-            return self.__current_settings_name
+            return self.__current_name
 
         except AttributeError:
-            raise AttributeError('There are no Settings in this SettingsCollection. Call update_collection to add a Setting.')
+            raise AttributeError('There are no Settings (and, hence, no Settings names) in this SettingsCollection.')
 
-    @current_settings_name.setter
-    def current_settings_name(self, settings_name: Hashable):
-        if (settings_name not in self.__collection):
-            raise ValueError(f'There is no Settings in this SettingsCollection with the name {settings_name}. '
-                             + f'Recognized Settings names include: {self.settings_names}')
+    @current_name.setter
+    def current_name(self, name: Hashable):
+        if (name not in self):
+            raise ValueError(f'There is no Settings in this SettingsCollection with the name {name}.')
 
-        self.__current_settings_name = settings_name
+        self.__current_name = name
 
-    def get_settings(self, settings_name: Hashable) -> Settings:
+    def names(self):
+        return self.__collection.keys()
+
+    def __len__(self):
+        return len(self.__collection)
+
+    def __contains__(self, name: Hashable):
+        return name in self.__collection
+
+    def __iter__(self):
+        return self.__collection.__iter__()
+
+    def __getitem__(self, name: Hashable) -> Settings:
         try:
-            return self.__collection[settings_name]
+            return self.__collection[name]
 
         except KeyError:
-            raise KeyError(f'There is no Settings in this SettingsCollection with the name {settings_name}. '
-                           + f'Recognized Settings names include: {self.settings_names}')
+            raise KeyError(f'This SettingsCollection contains no Settings with the name {name}.')
 
-    def update_collection(self, settings_name: Hashable, settings: Settings):
-        self.__collection[settings_name] = settings
+    def __setitem__(self, name: Hashable, settings: Settings):
+        if (not isinstance(settings, Settings)):
+            raise TypeError(f'settings argument ({settings}) of type {type(settings)} must be an instance of type Settings.')
+
+        self.__collection[name] = settings
 
         if (len(self.__collection) == 1):
-            self.current_settings_name = settings_name
+            self.current_name = name
 
-    def delete_settings(self, settings_name: Hashable):
+    def __delitem__(self, name: str):
         try:
-            self.__collection.pop(settings_name)
+            del self.__collection[name]
 
-            if (len(self.__collection) == 0):
-                del self.__current_settings_name
+            if (name == self.current_name):
+                del self.__current_name
 
-            elif (settings_name == self.current_settings_name):
-                self.current_settings_name = self.settings_names.pop()
+            INDEX = 0
+            self.current_name = list(self.names()).pop(INDEX)
 
-        except (KeyError, AttributeError):
+        except KeyError:
+            raise KeyError(f'This SettingsCollection contains no Settings with the name {name}.')
+
+        except IndexError:
             pass
 
 

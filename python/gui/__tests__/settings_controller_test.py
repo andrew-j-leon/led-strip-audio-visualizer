@@ -229,7 +229,7 @@ class TestConstructor(SettingsControllerTestCase):
         self.assertEqual(settings_controller.settings, EXPECTED_SETTINGS)
 
     def test_with_non_empty_collection(self):
-        SETTINGS_1 = self.settings_collection.get_settings(self.SETTINGS_1_NAME)
+        SETTINGS_1 = self.settings_collection[self.SETTINGS_1_NAME]
 
         self.assertEqual(self.settings_controller.settings, SETTINGS_1)
 
@@ -238,8 +238,8 @@ class TestDrawWidgetGui(SettingsControllerTestCase):
     def test_draw_widget_gui(self):
         self.settings_controller.draw_widget_gui()
 
-        SETTINGS_1 = self.settings_collection.get_settings(self.SETTINGS_1_NAME)
-        SETTINGS_2 = self.settings_collection.get_settings(self.SETTINGS_2_NAME)
+        SETTINGS_1 = self.settings_collection[self.SETTINGS_1_NAME]
+        SETTINGS_2 = self.settings_collection[self.SETTINGS_2_NAME]
 
         self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_1)
         self.check_widget_gui_does_not_match_settings(self.widget_gui, SETTINGS_2)
@@ -284,8 +284,8 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         self.settings_controller.handle_event(Element.SAVE_BUTTON)
 
-        SETTINGS_1 = self.settings_collection.get_settings(self.SETTINGS_1_NAME)
-        SETTINGS_2 = self.settings_collection.get_settings(self.SETTINGS_2_NAME)
+        SETTINGS_1 = self.settings_collection[self.SETTINGS_1_NAME]
+        SETTINGS_2 = self.settings_collection[self.SETTINGS_2_NAME]
 
         self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_1)
         self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_2)
@@ -297,14 +297,15 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         self.settings_controller.draw_widget_gui()
 
-        SETTINGS_NAME_VALUE = self.settings_collection.settings_names.index(self.SETTINGS_1_NAME)
+        NAMES = list(self.settings_collection.names())
+        SETTINGS_NAME_VALUE = NAMES.index(self.SETTINGS_1_NAME)
         set_widget_value(Element.SETTINGS_NAME_COMBO, SETTINGS_NAME_VALUE)
 
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
 
-        self.assertEqual(self.settings_collection.settings_names, [self.SETTINGS_2_NAME])
+        self.assertEqual(set(self.settings_collection.names()), {self.SETTINGS_2_NAME})
 
-        self.assertEqual(self.SETTINGS_2_NAME, self.settings_collection.current_settings_name)
+        self.assertEqual(self.SETTINGS_2_NAME, self.settings_collection.current_name)
 
         SETTINGS_2 = self.settings_collection.current_settings
 
@@ -318,7 +319,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
 
-        self.assertEqual(self.settings_collection.settings_names, [])
+        self.assertTrue(len(self.settings_collection) == 0)
 
         SETTINGS = Settings()
 
@@ -331,7 +332,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
 
-        self.assertEqual(self.settings_collection.settings_names, [])
+        self.assertTrue(len(self.settings_collection) == 0)
 
         SETTINGS = Settings()
 
@@ -417,10 +418,10 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.assertFalse(self.widget_gui.displayed_widgets[Element.SAVE_BUTTON].disabled)
         self.assertFalse(self.widget_gui.displayed_widgets[Element.DELETE_BUTTON].disabled)
 
-        SETTINGS_2 = self.settings_collection.get_settings(self.SETTINGS_2_NAME)
+        SETTINGS_2 = self.settings_collection[self.SETTINGS_2_NAME]
 
         self.assertEqual(SETTINGS_2, self.settings_2)
 
         self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_2)
 
-        self.assertEqual(self.SETTINGS_2_NAME, self.settings_collection.current_settings_name)
+        self.assertEqual(self.SETTINGS_2_NAME, self.settings_collection.current_name)

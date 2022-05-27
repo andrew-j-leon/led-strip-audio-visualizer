@@ -52,11 +52,11 @@ class SettingsController:
             except AttributeError:
                 return ''
 
-        widget_gui_settings_name = get_widget_gui_settings_name()
+        WIDGET_GUI_SETTINGS_NAME = get_widget_gui_settings_name()
 
         try:
-            if (widget_gui_settings_name != self.__settings_collection.current_settings_name):
-                self.__settings_collection.current_settings_name = widget_gui_settings_name
+            if (WIDGET_GUI_SETTINGS_NAME != self.__settings_collection.current_name):
+                self.__settings_collection.current_name = WIDGET_GUI_SETTINGS_NAME
                 self.draw_widget_gui()
                 return
 
@@ -68,17 +68,21 @@ class SettingsController:
             self.draw_widget_gui()
 
         elif (event == Element.DELETE_BUTTON):
-            self.__settings_collection.delete_settings(widget_gui_settings_name)
-            self.draw_widget_gui()
+            try:
+                del self.__settings_collection[WIDGET_GUI_SETTINGS_NAME]
+                self.draw_widget_gui()
+
+            except KeyError:
+                pass
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__widget_gui.close()
 
-        elif (widget_gui_settings_name == ''):
+        elif (WIDGET_GUI_SETTINGS_NAME == ''):
             self.__widget_gui.disable_widget(Element.SAVE_BUTTON)
             self.__widget_gui.disable_widget(Element.DELETE_BUTTON)
 
-        elif (widget_gui_settings_name in self.__settings_collection.settings_names):
+        elif (WIDGET_GUI_SETTINGS_NAME in self.__settings_collection):
             self.__widget_gui.enable_widget(Element.SAVE_BUTTON)
             self.__widget_gui.enable_widget(Element.DELETE_BUTTON)
 
@@ -94,14 +98,7 @@ class SettingsController:
         CHECKBOX_INPUT_FONT = Font("Courier New", 14)
         H1 = Font("Courier New", 18)
 
-        def get_settings() -> Settings:
-            try:
-                return self.__settings_collection.current_settings
-
-            except AttributeError:
-                return Settings()
-
-        SETTINGS = get_settings()
+        SETTINGS = self.settings
 
         BAUDRATES = [str(baudrate) for baudrate in Settings.SERIAL_BAUDRATES]
 
@@ -115,11 +112,11 @@ class SettingsController:
 
         BAUDRATES_VALUE = get_baudrates_value()
 
-        SETTINGS_NAMES = self.__settings_collection.settings_names
+        SETTINGS_NAMES = list(self.__settings_collection.names())
 
         def get_settings_names_value() -> Union[int, None]:
             try:
-                CURRENT_SETTINGS_NAME = self.__settings_collection.current_settings_name
+                CURRENT_SETTINGS_NAME = self.__settings_collection.current_name
                 return SETTINGS_NAMES.index(CURRENT_SETTINGS_NAME)
 
             except AttributeError:
@@ -221,9 +218,9 @@ class SettingsController:
 
         settings_name = self.__widget_gui.get_widget_value(Element.SETTINGS_NAME_COMBO)
 
-        self.__settings_collection.update_collection(settings_name, settings)
+        self.__settings_collection[settings_name] = settings
 
-        self.__settings_collection.current_settings_name = settings_name
+        self.__settings_collection.current_name = settings_name
 
     def __get_setting_from_wiget_gui(self, setting_element: Element) -> Any:
         INTEGER_SETTINGS = {Element.START_LED_INDEX_INPUT,

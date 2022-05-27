@@ -3,207 +3,257 @@ from util import Settings, SettingsCollection
 
 
 class SettingsCollectionTestCase(unittest.TestCase):
+    CURRENT_NAME = 'settings_1_name'
+    NON_CURRENT_NAME = 'settings_2_name'
 
-    SETTINGS_1_NAME = 'settings_1_name'
-    SETTINGS_2_NAME = 'settings_2_name'
-    NON_EXISTENT_SETTINGS_NAME = 'I am not a Settings name in the SettingsCollection'
-    UNUSED_SETTINGS_NAME = 'settings_new_name'
+    NEW_NAME = 'settings_new_name'
+    NON_EXISTENT_NAME = 'non_existant_settings_name'
 
     def setUp(self):
-        self.settings_1 = Settings()
-        self.settings_2 = Settings()
+        self.current_settings = Settings()
+        self.non_current_settings = Settings()
 
-        collection = {self.SETTINGS_1_NAME: self.settings_1,
-                      self.SETTINGS_2_NAME: self.settings_2}
+        self.collection = {self.CURRENT_NAME: self.current_settings,
+                           self.NON_CURRENT_NAME: self.non_current_settings}
 
-        self.settings_collection = SettingsCollection(collection)
+        self.settings_collection = SettingsCollection(self.collection)
+
+
+class TestMiscellaneous(SettingsCollectionTestCase):
+    def test_length(self):
+        SETTINGS_COLLECTION_LENGTH = len(self.settings_collection)
+        EXPECTED_LENGTH = len(self.collection)
+
+        self.assertEqual(SETTINGS_COLLECTION_LENGTH, EXPECTED_LENGTH)
+
+    def test_contains(self):
+        self.assertTrue(self.CURRENT_NAME in self.settings_collection)
+        self.assertTrue(self.NON_CURRENT_NAME in self.settings_collection)
+        self.assertTrue(self.NEW_NAME not in self.settings_collection)
+
+    def test_iter(self):
+        names = list()
+
+        for name in self.settings_collection:
+            names.append(name)
+
+        expected_names = list()
+
+        for name in self.collection:
+            expected_names.append(name)
+
+        self.assertEqual(names, expected_names)
 
 
 class TestConstructor(unittest.TestCase):
-
-    def test_default(self):
-        SettingsCollection()
-
     def test_empty_collection(self):
-        COLLECTION = dict()
+        settings_collection = SettingsCollection()
+
+        with self.assertRaises(AttributeError):
+            settings_collection.current_settings
+
+        with self.assertRaises(AttributeError):
+            settings_collection.current_name
+
+        EXPECTED_LENGTH = 0
+        self.assertEqual(len(settings_collection), EXPECTED_LENGTH)
+
+        EXPECTED_NAMES = dict().keys()
+        self.assertEqual(settings_collection.names(), EXPECTED_NAMES)
+
+    def test_collection_with_one_settings(self):
+        SETTINGS_NAME = 'current_settings'
+        SETTINGS = Settings()
+
+        COLLECTION = {SETTINGS_NAME: SETTINGS}
 
         settings_collection = SettingsCollection(COLLECTION)
 
-        EXPECTED_SETTINGS_NAMES = list()
+        EXPECTED_LENGTH = len(COLLECTION)
+        self.assertEqual(EXPECTED_LENGTH, len(settings_collection))
 
-        self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
-
-        with self.assertRaises(AttributeError) as error:
-            settings_collection.current_settings
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'There are no Settings in this SettingsCollection. Call update_collection to add a Setting.'
-
-        self.assertEqual(actual_error_message, expected_error_message)
-
-        with self.assertRaises(AttributeError) as error:
-            settings_collection.current_settings_name
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'There are no Settings in this SettingsCollection. Call update_collection to add a Setting.'
-
-        self.assertEqual(actual_error_message, expected_error_message)
-
-    def test_collection_with_one_settings(self):
-        SETTINGS_NAME = 'settings_1'
-        SETTINGS = Settings()
-
-        COLLETION = {SETTINGS_NAME: SETTINGS}
-
-        settings_collection = SettingsCollection(COLLETION)
-
-        EXPECTED_SETTINGS_NAMES = [SETTINGS_NAME]
-
-        self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        EXPECTED_NAMES = COLLECTION.keys()
+        self.assertEqual(settings_collection.names(), EXPECTED_NAMES)
 
         self.assertIs(settings_collection.current_settings, SETTINGS)
 
-        self.assertEqual(settings_collection.current_settings_name, SETTINGS_NAME)
+        self.assertEqual(settings_collection.current_name, SETTINGS_NAME)
 
-    def test_collection_with_two_settings(self):
-        SETTINGS_1_NAME = 'settings_1'
+    def test_collection_with_multiple_settings(self):
+        CURRENT_NAME = 'current_settings'
         SETINGS_1 = Settings()
 
-        SETTINGS_2_NAME = 'settings_2'
+        NON_CURRENT_NAME = 'non_current_settings'
         SETTINGS_2 = Settings()
 
-        COLLETION = {SETTINGS_1_NAME: SETINGS_1,
-                     SETTINGS_2_NAME: SETTINGS_2}
+        COLLECTION = {CURRENT_NAME: SETINGS_1,
+                      NON_CURRENT_NAME: SETTINGS_2}
 
-        settings_collection = SettingsCollection(COLLETION)
+        settings_collection = SettingsCollection(COLLECTION)
 
-        EXPECTED_SETTINGS_NAMES = [SETTINGS_1_NAME, SETTINGS_2_NAME]
+        EXPECTED_LENGTH = len(COLLECTION)
+        self.assertEqual(EXPECTED_LENGTH, len(settings_collection))
 
-        self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        EXPECTED_NAMES = COLLECTION.keys()
+        self.assertEqual(EXPECTED_NAMES, settings_collection.names())
 
         self.assertIs(settings_collection.current_settings, SETINGS_1)
 
-        self.assertEqual(settings_collection.current_settings_name, SETTINGS_1_NAME)
+        self.assertEqual(settings_collection.current_name, CURRENT_NAME)
 
 
 class TestProperties(SettingsCollectionTestCase):
-    def test_settings_names(self):
-        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME]
-
-        self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
-
     def test_current_settings(self):
-        self.assertIs(self.settings_collection.current_settings, self.settings_1)
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
 
-    def test_current_settings_name(self):
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_1_NAME)
+    def test_current_name(self):
+        self.assertEqual(self.settings_collection.current_name,
+                         self.CURRENT_NAME)
 
 
-class TestSetCurrentSettingsName(SettingsCollectionTestCase):
-    def test_set_to_settings_name_that_is_in_the_collection(self):
+class TestSettingTheCurrentName(SettingsCollectionTestCase):
+    def test_set_to_a_name_that_is_in_the_collection(self):
+        self.settings_collection.current_name = self.NON_CURRENT_NAME
 
-        self.settings_collection.current_settings_name = self.SETTINGS_2_NAME
+        self.assertEqual(self.settings_collection.current_name, self.NON_CURRENT_NAME)
+        self.assertIs(self.settings_collection.current_settings, self.non_current_settings)
 
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_2_NAME)
+    def test_set_to_a_name_that_is_NOT_in_the_collection(self):
+        with self.assertRaises(ValueError):
+            self.settings_collection.current_name = self.NEW_NAME
 
-    def test_set_to_settings_name_that_is_not_in_the_collection(self):
-
-        with self.assertRaises(ValueError) as error:
-            self.settings_collection.current_settings_name = self.NON_EXISTENT_SETTINGS_NAME
-
-        actual_error_message = str(error.exception)
-        expected_error_message = (f'There is no Settings in this SettingsCollection with the name {self.NON_EXISTENT_SETTINGS_NAME}. '
-                                  f'Recognized Settings names include: {self.settings_collection.settings_names}')
-
-        self.assertEqual(actual_error_message, expected_error_message)
+        self.assertEqual(self.settings_collection.current_name, self.CURRENT_NAME)
+        self.assertIs(self.settings_collection.current_settings, self.current_settings)
 
 
 class TestGetSettings(SettingsCollectionTestCase):
-    def test_get_settings_with_name_that_is_in_the_collection(self):
+    def test_using_names_that_are_in_the_collection(self):
+        CURRENT_SETTINGS = self.settings_collection[self.CURRENT_NAME]
+        NON_CURRENT_SETTINGS = self.settings_collection[self.NON_CURRENT_NAME]
 
-        settings_1 = self.settings_collection.get_settings(self.SETTINGS_1_NAME)
-        settings_2 = self.settings_collection.get_settings(self.SETTINGS_2_NAME)
+        self.assertIs(CURRENT_SETTINGS, self.current_settings)
+        self.assertIs(NON_CURRENT_SETTINGS, self.non_current_settings)
 
-        self.assertIs(settings_1, self.settings_1)
-        self.assertIs(settings_2, self.settings_2)
-
-    def test_get_settings_with_name_that_is_not_in_the_collection(self):
+    def test_using_a_name_that_is_NOT_in_the_collection(self):
         with self.assertRaises(KeyError):
-            self.settings_collection.get_settings(self.NON_EXISTENT_SETTINGS_NAME)
+            self.settings_collection[self.NEW_NAME]
 
 
-class TestUpdateCollection(SettingsCollectionTestCase):
-    def test_update_collection_with_other_elements_already_in_the_collection(self):
-        SETTINGS = Settings()
+class TestSetSettings(SettingsCollectionTestCase):
+    def test_overwrite_current_settings(self):
+        NEW_SETTINGS = Settings()
 
-        self.settings_collection.update_collection(self.UNUSED_SETTINGS_NAME, SETTINGS)
+        self.settings_collection[self.CURRENT_NAME] = NEW_SETTINGS
 
-        settings = self.settings_collection.get_settings(self.UNUSED_SETTINGS_NAME)
-        self.assertIs(settings, SETTINGS)
+        self.assertIs(self.settings_collection[self.CURRENT_NAME],
+                      NEW_SETTINGS)
 
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_1_NAME)
-        self.assertIs(self.settings_collection.current_settings, self.settings_1)
+        self.assertIs(self.settings_collection.current_settings,
+                      NEW_SETTINGS)
 
-        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME, self.UNUSED_SETTINGS_NAME]
+        EXPECTED_LENGTH = 2
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
-        self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+    def test_overwite_a_settings_in_the_collection_that_is_NOT_current_settings(self):
+        NEW_SETTINGS = Settings()
 
-    def test_update_collection_with_no_other_elements_in_the_collection(self):
-        COLLECTION = dict()
+        self.settings_collection[self.NON_CURRENT_NAME] = NEW_SETTINGS
 
-        settings_collection = SettingsCollection(COLLECTION)
+        self.assertIs(self.settings_collection[self.NON_CURRENT_NAME],
+                      NEW_SETTINGS)
 
-        SETTINGS = Settings()
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
 
-        settings_collection.update_collection(self.UNUSED_SETTINGS_NAME, SETTINGS)
+        EXPECTED_LENGTH = 2
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
-        EXPECTED_SETTINGS_NAMES = [self.UNUSED_SETTINGS_NAME]
+    def test_add_a_new_settings_to_the_collection(self):
+        NEW_SETTINGS = Settings()
 
-        self.assertEqual(settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        self.settings_collection[self.NEW_NAME] = NEW_SETTINGS
 
-        self.assertIs(settings_collection.current_settings, SETTINGS)
+        self.assertIs(self.settings_collection[self.NEW_NAME],
+                      NEW_SETTINGS)
 
-        self.assertEqual(settings_collection.current_settings_name, self.UNUSED_SETTINGS_NAME)
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
+
+        EXPECTED_LENGTH = 3
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
+
+    def test_add_a_non_settings_object(self):
+        NEW_SETTINGS = 'not a Settings'
+
+        with self.assertRaises(TypeError):
+            self.settings_collection[self.NEW_NAME] = NEW_SETTINGS
+
+        with self.assertRaises(KeyError):
+            self.settings_collection[self.NEW_NAME]
+
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
+
+        EXPECTED_LENGTH = 2
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
 
 class TestDeleteSettings(SettingsCollectionTestCase):
+    def test_delete_current_settings(self):
+        del self.settings_collection[self.CURRENT_NAME]
 
-    def test_delete_non_current_setting_with_multiple_settings_in_collection(self):
-        self.settings_collection.delete_settings(self.SETTINGS_2_NAME)
+        with self.assertRaises(KeyError):
+            self.settings_collection[self.CURRENT_NAME]
 
-        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME]
+        self.assertIs(self.settings_collection.current_settings,
+                      self.non_current_settings)
 
-        self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        self.assertEqual(self.settings_collection.current_name,
+                         self.NON_CURRENT_NAME)
 
-        self.assertIs(self.settings_collection.current_settings, self.settings_1)
+        EXPECTED_LENGTH = 1
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_1_NAME)
+    def test_delete_non_current_settings(self):
+        del self.settings_collection[self.NON_CURRENT_NAME]
 
-    def test_delete_current_setting_with_multiple_settings_in_collection(self):
-        self.settings_collection.delete_settings(self.SETTINGS_1_NAME)
+        with self.assertRaises(KeyError):
+            self.settings_collection[self.NON_CURRENT_NAME]
 
-        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_2_NAME]
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
 
-        self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        self.assertEqual(self.settings_collection.current_name,
+                         self.CURRENT_NAME)
 
-        self.assertIs(self.settings_collection.current_settings, self.settings_2)
+        EXPECTED_LENGTH = 1
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_2_NAME)
+    def test_delete_settings_that_is_NOT_in_the_collection(self):
+        with self.assertRaises(KeyError):
+            del self.settings_collection[self.NEW_NAME]
 
-    def test_delete_with_no_settings_in_collection(self):
-        COLLECTION = dict()
+        self.assertIs(self.settings_collection.current_settings,
+                      self.current_settings)
 
-        settings_collection = SettingsCollection(COLLECTION)
+        self.assertEqual(self.settings_collection.current_name,
+                         self.CURRENT_NAME)
 
-        settings_collection.delete_settings(self.NON_EXISTENT_SETTINGS_NAME)
+        EXPECTED_LENGTH = 2
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
 
-    def test_delete_non_existent_setting_with_settings_in_collection(self):
-        self.settings_collection.delete_settings(self.NON_EXISTENT_SETTINGS_NAME)
+    def test_delete_ALL_settings_in_the_collection(self):
+        NAMES = list(self.settings_collection.names())
 
-        EXPECTED_SETTINGS_NAMES = [self.SETTINGS_1_NAME, self.SETTINGS_2_NAME]
+        for name in NAMES:
+            del self.settings_collection[name]
 
-        self.assertEqual(self.settings_collection.settings_names, EXPECTED_SETTINGS_NAMES)
+        with self.assertRaises(AttributeError):
+            self.settings_collection.current_settings
 
-        self.assertIs(self.settings_collection.current_settings, self.settings_1)
+        with self.assertRaises(AttributeError):
+            self.settings_collection.current_name
 
-        self.assertEqual(self.settings_collection.current_settings_name, self.SETTINGS_1_NAME)
+        EXPECTED_LENGTH = 0
+        self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
