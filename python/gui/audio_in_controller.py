@@ -92,8 +92,8 @@ class AudioInController:
 
                   [Text(Element.CURRENT_INPUT_SOURCE_MESSAGE, text="No audio currently playing.", font=CURRENT_INPUT_SOURCE_FONT)],
 
-                  [Button(Element.PAUSE_AUDIO_BUTTON, text="Pause (||)", font=BUTTON_FONT, disabled=True),
-                   Button(Element.RESUME_AUDIO_BUTTON, text="Resume (>)", font=BUTTON_FONT, disabled=False)],
+                  [Button(Element.PAUSE_AUDIO_BUTTON, text="Stop ([])", font=BUTTON_FONT, disabled=True),
+                   Button(Element.RESUME_AUDIO_BUTTON, text="Play (>)", font=BUTTON_FONT, disabled=False)],
 
                   [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="Visualizer : ", font=INPUT_LABEL_FONT),
                    Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, VISUALIZER_DROPDOWN_VALUES,
