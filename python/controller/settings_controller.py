@@ -2,8 +2,8 @@
 from collections import Counter
 from enum import Enum, auto
 from typing import Any, List, Tuple, Union
-from libraries.gui import Button, CheckBox, Combo, Font, Input, Multiline, Text, ProductionWidgetGui, WidgetGui, WidgetGuiEvent
-from util import Settings, SettingsCollection
+from libraries.widget_gui import Button, CheckBox, Combo, Input, Multiline, Text, ProductionWidgetGui, WidgetGui, WidgetGuiEvent
+from util import Settings, SettingsCollection, Font
 
 
 class Element(Enum):

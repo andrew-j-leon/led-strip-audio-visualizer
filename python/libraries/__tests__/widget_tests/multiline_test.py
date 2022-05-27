@@ -1,5 +1,5 @@
 from typing import Iterable
-from libraries.gui import Multiline, Widget
+from libraries.widget_gui import Multiline, Widget
 import unittest
 
 

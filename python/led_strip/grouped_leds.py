@@ -2,10 +2,9 @@ import math
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, List, Tuple
 
-from libraries.gui import Font, CanvasGui
+from libraries.canvas_gui import CanvasGui
 from libraries.serial import Serial
-from util import RGB
-from util import convert_to_hex
+from util import RGB, convert_to_hex, Font
 from led_strip.non_negative_integer_range import NonNegativeIntegerRange
 
 

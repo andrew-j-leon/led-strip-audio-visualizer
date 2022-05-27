@@ -1,9 +1,9 @@
 from collections import Counter
 from typing import Any, Dict, Hashable, List, Tuple
 import unittest
-from gui.settings_controller import SettingsController, Element
+from controller.settings_controller import SettingsController, Element
 
-from libraries.gui import Widget, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import Widget, WidgetGui, WidgetGuiEvent
 from util import Settings, SettingsCollection
 
 

@@ -1,5 +1,6 @@
 from typing import Iterable
-from libraries.gui import CheckBox, Font, Widget
+from util import Font
+from libraries.widget_gui import CheckBox, Widget
 import unittest
 
 

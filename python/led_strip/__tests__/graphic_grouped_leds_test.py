@@ -5,8 +5,8 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Tuple
 
 from led_strip.grouped_leds import GraphicGroupedLeds, Point
-from libraries.gui import Font, CanvasGui
-from util import convert_to_hex
+from libraries.canvas_gui import CanvasGui
+from util import convert_to_hex, Font
 
 
 class FakeCanvasGui(CanvasGui):

@@ -4,6 +4,39 @@ import os
 from typing import Any, Dict, Hashable, Iterable, List, Tuple
 
 
+class Font:
+    def __init__(self, name: str = 'Arial', size: int = 12, style: str = 'normal'):
+        self.__name = name
+        self.__size = size
+        self.__style = style
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @property
+    def size(self) -> int:
+        return self.__size
+
+    @property
+    def style(self) -> str:
+        return self.__style
+
+    def __repr__(self) -> str:
+        return f'Font(name={self.name}, size={self.size}, style={self.style})'
+
+    def __eq__(self, right_value: Any) -> bool:
+        if (isinstance(right_value, Font)):
+            return (self.name == right_value.name
+                    and self.size == right_value.size
+                    and self.style == right_value.style)
+
+        return False
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.size, self.style))
+
+
 class RGB:
     def __init__(self, red: int = 0, green: int = 0, blue: int = 0):
         rgb = (red, green, blue)

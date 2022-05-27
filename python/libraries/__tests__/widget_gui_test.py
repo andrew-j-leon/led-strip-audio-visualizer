@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.gui import Button, CheckBox, Combo, Font, Multiline, ProductionWidgetGui, Text, WidgetGuiEvent
+from libraries.widget_gui import Button, CheckBox, Combo, Font, Multiline, ProductionWidgetGui, Text, WidgetGuiEvent
 from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 
 

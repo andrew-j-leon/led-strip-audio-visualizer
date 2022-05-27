@@ -1,5 +1,7 @@
 from typing import Iterable
-from libraries.gui import Combo, Font, Widget
+from util import Font
+
+from libraries.widget_gui import Combo, Widget
 import unittest
 
 
