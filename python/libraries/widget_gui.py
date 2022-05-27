@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+from tkinter import TclError
 from typing import Any, Dict, Hashable, List, Tuple, Union
 
 import PySimpleGUI as sg
@@ -127,7 +128,7 @@ class Combo(Widget):
 
     @property
     def values(self) -> List[str]:
-        return self.__values.copy()
+        return self.__values
 
     @property
     def value(self) -> Any:
@@ -310,7 +311,7 @@ class WidgetGui(ABC):
         pass
 
     @abstractmethod
-    def draw_layout(self):
+    def display_layout(self):
         pass
 
     @abstractmethod
@@ -318,11 +319,11 @@ class WidgetGui(ABC):
         pass
 
     @abstractmethod
-    def set_widget_value(self, widget_key: Hashable, value: Any):
+    def get_widget_value(self, widget_key: Hashable) -> Any:
         pass
 
     @abstractmethod
-    def get_widget_value(self, widget_key: Hashable) -> Any:
+    def set_widget_value(self, widget_key: Hashable, value: Any):
         pass
 
     @abstractmethod
@@ -338,11 +339,13 @@ class ProductionWidgetGui(WidgetGui):
     @classmethod
     def _create_element(cls, widget: Widget) -> sg.Element:
 
+        def create_font(font: Font) -> Tuple[str, int, str]:
+            return (font.name, font.size, font.style)
+
         KEY = None if (not hasattr(widget, 'key')) else widget.key
 
         if (isinstance(widget, Button)):
-            WIDGET_FONT = widget.font
-            FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
+            FONT = create_font(widget.font)
 
             return sg.Button(key=KEY,
                              button_text=widget.value,
@@ -350,33 +353,31 @@ class ProductionWidgetGui(WidgetGui):
                              disabled=widget.disabled)
 
         elif (isinstance(widget, Text)):
-            WIDGET_FONT = widget.font
-            FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
+            FONT = create_font(widget.font)
 
             return sg.Text(key=KEY,
                            text=widget.value,
                            font=FONT)
 
         elif (isinstance(widget, Combo)):
-            def get_default_value():
+            def create_default_value():
                 try:
                     return widget.value
 
                 except AttributeError:
                     return None
 
-            WIDGET_FONT = widget.font
-            FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
+            DEFAULT_VALUE = create_default_value()
+            FONT = create_font(widget.font)
 
             return sg.Combo(key=KEY,
                             values=widget.values,
-                            default_value=get_default_value(),
+                            default_value=DEFAULT_VALUE,
                             font=FONT,
                             size=widget.size)
 
         elif (isinstance(widget, CheckBox)):
-            WIDGET_FONT = widget.font
-            FONT = (WIDGET_FONT.name, WIDGET_FONT.size, WIDGET_FONT.style)
+            FONT = create_font(widget.font)
 
             return sg.Checkbox(key=KEY,
                                text=widget.text,
@@ -401,8 +402,6 @@ class ProductionWidgetGui(WidgetGui):
 
         self.__layout: List[List[Widget]] = [[]]
         self.__widgets: Dict[Hashable, Widget] = dict()
-
-        self.__is_new_layout = True
 
         self.title = title
         self.is_modal = is_modal
@@ -433,7 +432,7 @@ class ProductionWidgetGui(WidgetGui):
                 try:
                     if (widget.key in widgets):
                         raise ValueError(f'Each widget in layout should have a unique key, but there were '
-                                         + f'multiple widgets with the key {widget.key} in the layout {layout}.')
+                                         + f'multiple widgets with the key {widget.key}.')
 
                     widgets[widget.key] = widget
 
@@ -442,14 +441,8 @@ class ProductionWidgetGui(WidgetGui):
 
         self.__layout = layout
         self.__widgets = widgets
-        self.__is_new_layout = True
 
-    def __synchronize_widgets(self):
-        for widget in self.__widgets.values():
-            element = self.__window.find_element(widget.key)
-            widget.value = element.get()
-
-    def draw_layout(self):
+    def display_layout(self):
         layout: List[List[sg.Element]] = []
 
         for row in self.__layout:
@@ -457,16 +450,6 @@ class ProductionWidgetGui(WidgetGui):
             new_row: List[sg.Element] = []
 
             for widget in row:
-                if (not self.__is_new_layout):
-                    try:
-                        element = self.__window.find_element(widget.key)
-                        widget = self.__widgets[widget.key]
-
-                        widget.value = element.get()
-
-                    except AttributeError:
-                        pass
-
                 element = self._create_element(widget)
                 new_row.append(element)
 
@@ -480,11 +463,10 @@ class ProductionWidgetGui(WidgetGui):
 
         self.__window.read(timeout=0)
 
-        self.__is_new_layout = False
-
     def read_event_and_update_gui(self) -> Union[Hashable, WidgetGuiEvent]:
         EVENT = 0
         event = self.__window.read(timeout=0)[EVENT]
+        self.__synchronize_widgets_with_elements()
 
         if (event == TIMEOUT_EVENT):
             return WidgetGuiEvent.TIMEOUT
@@ -494,44 +476,51 @@ class ProductionWidgetGui(WidgetGui):
 
         return event
 
-    def disable_widget(self, widget_key):
-        try:
-            element: sg.Element = self.__window.find_element(widget_key)
-            element.update(disabled=True)
+    def __synchronize_widgets_with_elements(self):
+        for widget in self.__widgets.values():
+            element = self.__window.find_element(widget.key)
 
-            self.__widgets[widget_key].disabled = True
+            try:
+                widget.value = element.get()
 
-        except KeyError as error:
-            if (widget_key not in self.__widgets):
-                raise KeyError(f'There is no widget with the key {widget_key}. Widget keys include: {tuple(self.__widgets.keys())}')
+            except ValueError:
+                if (isinstance(widget, Combo)):
+                    widget.values.append(element.get())
+                    widget.value = element.get()
 
-            raise error
+            except (KeyError, AttributeError, TclError):
+                pass
 
-    def enable_widget(self, widget_key):
-        try:
-            element: sg.Element = self.__window.find_element(widget_key)
-            element.update(disabled=False)
-
-            self.__widgets[widget_key].disabled = False
-
-        except KeyError as error:
-            if (widget_key not in self.__widgets):
-                raise KeyError(f'There is no widget with the key {widget_key}. Widget keys include: {tuple(self.__widgets.keys())}')
-
-            raise error
+    def get_widget_value(self, widget_key) -> Any:
+        return self.__widgets[widget_key].value
 
     def set_widget_value(self, widget_key, value):
         try:
+            widget = self.__widgets[widget_key]
+            widget.value = value
+
             element: sg.Element = self.__window.find_element(widget_key)
             element.update(value=value)
 
-            self.__widgets[widget_key].value = value
+        except KeyError:
+            raise KeyError(f'There is no widget with the key {widget_key}.')
 
-        except KeyError as error:
-            if (widget_key not in self.__widgets):
-                raise KeyError(f'There is no widget with the key {widget_key}. Widget keys include: {tuple(self.__widgets.keys())}')
+    def disable_widget(self, widget_key):
+        try:
+            self.__widgets[widget_key].disabled = True
 
-            raise error
+            element: sg.Element = self.__window.find_element(widget_key)
+            element.update(disabled=True)
 
-    def get_widget_value(self, widget_key) -> Any:
-        return self.__window.find_element(widget_key).get()
+        except KeyError:
+            raise KeyError(f'There is no widget with the key {widget_key}.')
+
+    def enable_widget(self, widget_key):
+        try:
+            self.__widgets[widget_key].disabled = False
+
+            element: sg.Element = self.__window.find_element(widget_key)
+            element.update(disabled=False)
+
+        except KeyError:
+            raise KeyError(f'There is no widget with the key {widget_key}.')

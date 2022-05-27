@@ -105,7 +105,7 @@ class AudioInController:
 
         self.__widget_gui.set_layout(LAYOUT)
 
-        self.__widget_gui.draw_layout()
+        self.__widget_gui.display_layout()
 
         while True:
             event = self.__widget_gui.read_event_and_update_gui()

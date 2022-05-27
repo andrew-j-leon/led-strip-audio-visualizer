@@ -28,7 +28,7 @@ class FakeWidgetGui(WidgetGui):
                 except AttributeError:
                     pass
 
-    def draw_layout(self):
+    def display_layout(self):
         self.displayed_layout = self.queued_layout
 
         for row in self.displayed_layout:

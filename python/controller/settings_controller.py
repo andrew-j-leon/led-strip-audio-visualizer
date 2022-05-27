@@ -195,7 +195,7 @@ class SettingsController:
                    Multiline(Element.AMPLITUDE_RGBS_MULTILINE, AMPLITUDE_RGBS)]]
 
         self.__widget_gui.set_layout(LAYOUT)
-        self.__widget_gui.draw_layout()
+        self.__widget_gui.display_layout()
 
     def __save_settings(self):
         START_LED = self.__get_setting_from_wiget_gui(Element.START_LED_INDEX_INPUT)

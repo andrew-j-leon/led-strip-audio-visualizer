@@ -39,7 +39,7 @@ class TestWidgetGui(unittest.TestCase):
                                                  titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
 
     def test_update_display(self):
-        self.widget_gui.draw_layout()
+        self.widget_gui.display_layout()
 
         self.window_mock.assert_called_once_with(self.TITLE, layout=[[]], modal=self.IS_MODAL,
                                                  resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
@@ -100,7 +100,7 @@ class TestWidgetGui(unittest.TestCase):
 
         self.widget_gui.set_layout(LAYOUT)
 
-        self.widget_gui.draw_layout()
+        self.widget_gui.display_layout()
 
         BUTTON_FONT_TUPLE = (BUTTON_FONT.name, BUTTON_FONT.size, BUTTON_FONT.style)
         button_mock.assert_called_once_with(key=BUTTON_KEY, button_text=BUTTON_TEXT, font=BUTTON_FONT_TUPLE,
@@ -249,14 +249,14 @@ class TestWidgetGui(unittest.TestCase):
             self.widget_gui.set_widget_value(WIDGET_KEY, 'value')
 
     def test_get_widget_value(self):
-        WIDGET_KEY = 'key'
-        WIDGET_VALUE = 'hello'
+        TEXT = Text('key', 'hello')
 
-        self.window_instance_mock.find_element(WIDGET_KEY).get.return_value = WIDGET_VALUE
+        LAYOUT = [[TEXT]]
 
-        value = self.widget_gui.get_widget_value(WIDGET_KEY)
+        self.widget_gui.set_layout(LAYOUT)
+        self.widget_gui.display_layout()
 
-        self.assertEqual(value, WIDGET_VALUE)
+        self.assertEqual(TEXT.value, self.widget_gui.get_widget_value('key'))
 
     def test_context_manager(self):
         with ProductionWidgetGui() as widget_gui:
