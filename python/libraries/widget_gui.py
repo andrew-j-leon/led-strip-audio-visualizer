@@ -235,7 +235,7 @@ class Multiline(Widget):
         return self.__auto_scroll
 
     @property
-    def value(self) -> str:
+    def value(self):
         return self.__text
 
     @value.setter
@@ -492,7 +492,16 @@ class ProductionWidgetGui(WidgetGui):
                 pass
 
     def get_widget_value(self, widget_key) -> Any:
-        return self.__widgets[widget_key].value
+        try:
+            widget = self.__widgets[widget_key]
+            return widget.value
+
+        except KeyError:
+            raise KeyError(f'There is no widget with the key {widget_key}.')
+
+        except AttributeError:
+            widget = self.__widgets[widget_key]
+            raise ValueError(f'The Widget for the key {widget_key} ({widget}) does not have a value.')
 
     def set_widget_value(self, widget_key, value):
         try:

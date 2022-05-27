@@ -61,7 +61,12 @@ class FakeWidgetGui(WidgetGui):
         self.queued_widgets[widget_key].value = value
 
     def get_widget_value(self, widget_key):
-        return self.displayed_widgets[widget_key].value
+        try:
+            return self.displayed_widgets[widget_key].value
+
+        except AttributeError:
+            widget = self.displayed_widgets[widget_key]
+            raise ValueError(f'The Widget for the key {widget_key} ({widget}) does not have a value.')
 
     def close(self):
         self.closed = True
@@ -166,15 +171,15 @@ class SettingsControllerTestCase(unittest.TestCase):
 
         AMPLITUDE_RGBS = get_amplitude_rgbs(settings.amplitude_rgbs)
 
-        self.assertNotEqual(START_LED, get_widget_value(Element.START_LED_INDEX_INPUT))
-        self.assertNotEqual(END_LED, get_widget_value(Element.END_LED_INDEX_INPUT))
+        self.assertNotEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
+        self.assertNotEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
         self.assertNotEqual(MILLISECONDS_PER_AUDIO_CHUNK, get_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT))
         self.assertNotEqual(SERIAL_PORT, get_widget_value(Element.SERIAL_PORT_INPUT))
-        self.assertNotEqual(SERIAL_BAUDRATE, get_widget_value(Element.SERIAL_BAUDRATE_DROPDOWN))
+        self.assertNotEqual(SERIAL_BAUDRATE, get_widget_value(Element.SERIAL_BAUDRATE_COMBO))
         self.assertNotEqual(BRIGHTNESS, get_widget_value(Element.BRIGHTNESS_INPUT))
         self.assertNotEqual(MINIMUM_FREQUENCY, get_widget_value(Element.MINIMUM_FREQUENCY_INPUT))
         self.assertNotEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
-        self.assertNotEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.SHOULD_REVERSE_LED_INDICIES_CHECKBOX))
+        self.assertNotEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
         self.assertNotEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
         self.assertNotEqual(AMPLITUDE_RGBS, get_widget_value(Element.AMPLITUDE_RGBS_MULTILINE))
 
@@ -195,27 +200,20 @@ class SettingsControllerTestCase(unittest.TestCase):
 
         AMPLITUDE_RGBS = get_amplitude_rgbs(settings.amplitude_rgbs)
 
-        self.assertEqual(START_LED, get_widget_value(Element.START_LED_INDEX_INPUT))
-        self.assertEqual(END_LED, get_widget_value(Element.END_LED_INDEX_INPUT))
+        self.assertEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
+        self.assertEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
         self.assertEqual(MILLISECONDS_PER_AUDIO_CHUNK, get_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT))
         self.assertEqual(SERIAL_PORT, get_widget_value(Element.SERIAL_PORT_INPUT))
-        self.assertEqual(SERIAL_BAUDRATE, get_widget_value(Element.SERIAL_BAUDRATE_DROPDOWN))
+        self.assertEqual(SERIAL_BAUDRATE, get_widget_value(Element.SERIAL_BAUDRATE_COMBO))
         self.assertEqual(BRIGHTNESS, get_widget_value(Element.BRIGHTNESS_INPUT))
         self.assertEqual(MINIMUM_FREQUENCY, get_widget_value(Element.MINIMUM_FREQUENCY_INPUT))
         self.assertEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
-        self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.SHOULD_REVERSE_LED_INDICIES_CHECKBOX))
+        self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
         self.assertEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
         self.assertEqual(AMPLITUDE_RGBS, get_widget_value(Element.AMPLITUDE_RGBS_MULTILINE))
 
 
 class TestConstructor(SettingsControllerTestCase):
-    def test_default(self):
-        settings_controller = SettingsController()
-
-        EXPECTED_SETTINGS = Settings()
-
-        self.assertEqual(settings_controller.settings, EXPECTED_SETTINGS)
-
     def test_with_empty_collection(self):
         widget_gui = FakeWidgetGui()
 
@@ -265,17 +263,17 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         self.settings_controller.draw_widget_gui()
 
-        set_widget_value(Element.START_LED_INDEX_INPUT, self.START_LED_2)
-        set_widget_value(Element.END_LED_INDEX_INPUT, self.END_LED_2)
+        set_widget_value(Element.START_LED_INPUT, self.START_LED_2)
+        set_widget_value(Element.END_LED_INPUT, self.END_LED_2)
         set_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT, self.MILLISECONDS_PER_AUDIO_CHUNK_2)
         set_widget_value(Element.SERIAL_PORT_INPUT, self.SERIAL_PORT_2)
 
-        set_widget_value(Element.SERIAL_BAUDRATE_DROPDOWN, str(self.SERIAL_BAUDRATE_2))
+        set_widget_value(Element.SERIAL_BAUDRATE_COMBO, str(self.SERIAL_BAUDRATE_2))
 
         set_widget_value(Element.BRIGHTNESS_INPUT, self.BRIGHTNESS_2)
         set_widget_value(Element.MINIMUM_FREQUENCY_INPUT, self.MINIMUM_FREQUENCY_2)
         set_widget_value(Element.MAXIMUM_FREQUENCY_INPUT, self.MAXIMUM_FREQUENCY_2)
-        set_widget_value(Element.SHOULD_REVERSE_LED_INDICIES_CHECKBOX, self.SHOULD_REVERSE_LEDS_2)
+        set_widget_value(Element.REVERSE_LEDS_CHECK_BOX, self.SHOULD_REVERSE_LEDS_2)
         set_widget_value(Element.NUMBER_OF_GROUPS_INPUT, self.NUMBER_OF_GROUPS_2)
 
         AMPLITUDE_RGBS = get_amplitude_rgbs(self.AMPLITUDE_RGBS_2)
@@ -327,7 +325,9 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
         self.settings_controller.handle_event(Element.DELETE_BUTTON)
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
+
+        with self.assertRaises(ValueError):
+            self.settings_controller.handle_event(Element.DELETE_BUTTON)
 
         self.assertTrue(len(self.settings_collection) == 0)
 

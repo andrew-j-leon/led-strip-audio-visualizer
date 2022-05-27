@@ -6,7 +6,7 @@ from controller.settings_controller import SettingsController
 from util import Settings, Font
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
-from libraries.widget_gui import Button, CheckBox, Combo, Font, Text, ProductionWidgetGui, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import Button, CheckBox, Combo, Font, Text, WidgetGui, WidgetGuiEvent
 from libraries.canvas_gui import ProductionCanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 from spectrogram import Spectrogram
@@ -40,8 +40,7 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, widget_gui: WidgetGui = ProductionWidgetGui(),
-                 settings_controller: SettingsController = SettingsController()):
+    def __init__(self, widget_gui: WidgetGui, settings_controller: SettingsController):
         self.__widget_gui = widget_gui
 
         self.__settings_controller = settings_controller
