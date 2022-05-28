@@ -23,6 +23,13 @@ class Element(Enum):
     AMPLITUDE_RGBS_MULTILINE = auto()
 
 
+class Event(Enum):
+    SELECT_CURRENT_SETTINGS_NAME = auto()
+    SELECT_NON_CURRENT_SETTINGS_NAME = auto()
+    CLEAR_SETTINGS_NAME = auto()
+    ENTER_NEW_SETTINGS_NAME = auto()
+
+
 class SettingsController:
     def __init__(self, widget_gui: WidgetGui, settings_collection: SettingsCollection = SettingsCollection()):
         self.__widget_gui = widget_gui
@@ -36,62 +43,109 @@ class SettingsController:
         except AttributeError:
             return Settings()
 
-    def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent]:
-        return self.__widget_gui.read_event_and_update_gui()
+    def __get_selected_settings_name(self) -> str:
+        try:
+            COMBO = self.__widget_gui.get_widget(Element.SETTINGS_NAME_COMBO)
+            return COMBO.value
 
-    def handle_event(self, event: Union[Element, WidgetGuiEvent]):
+        except AttributeError:
+            return ''
 
-        def get_widget_gui_settings_name() -> str:
+    def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent, Event]:
+        def the_current_settings_name_is_selected(settings_name: str):
             try:
-                return self.__widget_gui.get_widget_value(Element.SETTINGS_NAME_COMBO)
-
-            except ValueError:
-                return ''
-
-        WIDGET_GUI_SETTINGS_NAME = get_widget_gui_settings_name()
-
-        def a_new_settings_name_from_the_dropdown_was_selected():
-            try:
-                return (WIDGET_GUI_SETTINGS_NAME != self.__settings_collection.current_name
-                        and WIDGET_GUI_SETTINGS_NAME in self.__settings_collection)
+                return settings_name == self.__settings_collection.current_name
 
             except AttributeError:
                 return False
 
-        if (a_new_settings_name_from_the_dropdown_was_selected()):
-            self.__settings_collection.current_name = WIDGET_GUI_SETTINGS_NAME
-            self.draw_widget_gui()
+        def a_non_current_settings_name_is_selected(settings_name: str):
+            try:
+                return (settings_name != self.__settings_collection.current_name
+                        and settings_name in self.__settings_collection)
+
+            except AttributeError:
+                return False
+
+        EVENT = self.__widget_gui.read_event_and_update_gui()
+
+        if (EVENT == WidgetGuiEvent.TIMEOUT):
+            SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
+
+            if (the_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
+                return Event.SELECT_CURRENT_SETTINGS_NAME
+
+            elif (a_non_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
+                return Event.SELECT_NON_CURRENT_SETTINGS_NAME
+
+            elif (SELECTED_SETTINGS_NAME == ''):
+                return Event.CLEAR_SETTINGS_NAME
+
+            return Event.ENTER_NEW_SETTINGS_NAME
+
+        return EVENT
+
+    def handle_event(self, event: Union[Element, WidgetGuiEvent]):
+        SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
+
+        if (event == WidgetGuiEvent.TIMEOUT):
+            pass
 
         elif (event == Element.SAVE_BUTTON):
             self.__save_settings()
-            self.draw_widget_gui()
+            self.display()
 
         elif (event == Element.DELETE_BUTTON):
             try:
-                del self.__settings_collection[WIDGET_GUI_SETTINGS_NAME]
-                self.draw_widget_gui()
+                del self.__settings_collection[SELECTED_SETTINGS_NAME]
+                self.display()
 
             except KeyError:
-                raise ValueError(f'There is no Settings with the name {WIDGET_GUI_SETTINGS_NAME} to delete.')
+                raise ValueError(f'There is no Settings with the name {SELECTED_SETTINGS_NAME} to delete.')
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__widget_gui.close()
 
-        elif (WIDGET_GUI_SETTINGS_NAME == ''):
-            self.__widget_gui.disable_widget(Element.SAVE_BUTTON)
-            self.__widget_gui.disable_widget(Element.DELETE_BUTTON)
-
-        elif (WIDGET_GUI_SETTINGS_NAME in self.__settings_collection):
-            self.__widget_gui.enable_widget(Element.SAVE_BUTTON)
-            self.__widget_gui.enable_widget(Element.DELETE_BUTTON)
-
         else:
-            self.__widget_gui.enable_widget(Element.SAVE_BUTTON)
-            self.__widget_gui.disable_widget(Element.DELETE_BUTTON)
+            save_button: Button = self.__widget_gui.get_widget(Element.SAVE_BUTTON)
+            delete_button: Button = self.__widget_gui.get_widget(Element.DELETE_BUTTON)
 
-        return event
+            if (event == Event.SELECT_CURRENT_SETTINGS_NAME):
+                save_button.enabled = True
+                delete_button.enabled = True
 
-    def draw_widget_gui(self):
+                self.__widget_gui.update_widget(save_button)
+                self.__widget_gui.update_widget(delete_button)
+
+            elif (event == Event.SELECT_NON_CURRENT_SETTINGS_NAME):
+                try:
+                    self.__settings_collection.current_name = SELECTED_SETTINGS_NAME
+                    self.display()
+
+                except ValueError as error:
+                    if (SELECTED_SETTINGS_NAME not in self.__settings_collection):
+                        raise ValueError(f"The selected settings name {SELECTED_SETTINGS_NAME} is not in this SettingsController's SettingsCollection.")
+
+                    raise error
+
+            elif (event == Event.CLEAR_SETTINGS_NAME):
+                save_button.enabled = False
+                delete_button.enabled = False
+
+                self.__widget_gui.update_widget(save_button)
+                self.__widget_gui.update_widget(delete_button)
+
+            elif (event == Event.ENTER_NEW_SETTINGS_NAME):
+                save_button.enabled = True
+                delete_button.enabled = False
+
+                self.__widget_gui.update_widget(save_button)
+                self.__widget_gui.update_widget(delete_button)
+
+            else:
+                raise ValueError(f'This SettingsController does not recognize the event {event}.')
+
+    def display(self):
         FONT = Font("Courier New", 14)
 
         SETTINGS = self.settings
@@ -208,7 +262,8 @@ class SettingsController:
                             BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY, SHOULD_REVERSE_LEDS,
                             NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
 
-        SETTINGS_NAME = self.__widget_gui.get_widget_value(Element.SETTINGS_NAME_COMBO)
+        SETTINGS_NAME_COMBO = self.__widget_gui.get_widget(Element.SETTINGS_NAME_COMBO)
+        SETTINGS_NAME = SETTINGS_NAME_COMBO.value
 
         self.__settings_collection[SETTINGS_NAME] = settings
         self.__settings_collection.current_name = SETTINGS_NAME
@@ -223,7 +278,8 @@ class SettingsController:
                             Element.MAXIMUM_FREQUENCY_INPUT,
                             Element.NUMBER_OF_GROUPS_INPUT}
 
-        WIDGET_VALUE = self.__widget_gui.get_widget_value(setting_element)
+        WIDGET = self.__widget_gui.get_widget(setting_element)
+        WIDGET_VALUE = WIDGET.value
 
         if (setting_element in INTEGER_SETTINGS):
             return int(WIDGET_VALUE)

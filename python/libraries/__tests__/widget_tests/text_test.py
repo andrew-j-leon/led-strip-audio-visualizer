@@ -7,9 +7,14 @@ import unittest
 
 class TextTestCase(unittest.TestCase):
     KEY = 'text_key'
+    NEW_KEY = f'new {KEY}'
     NO_KEY = None
+
     TEXT = 'hello'
+    NEW_TEXT = f'new {TEXT}'
+
     FONT = Font('Wing Dings', 20, 'italic')
+    NEW_FONT = Font('Arial', 12, 'normal')
 
     def setUp(self):
         self.text_with_key = Text(self.KEY, self.TEXT, self.FONT)
@@ -30,13 +35,16 @@ class TestConstructor(TextTestCase):
         self.assertEqual(self.text_with_no_key.font, self.FONT)
 
 
-class TestSettingValue(TextTestCase):
-    def test_set_value(self):
-        VALUE = f'{self.TEXT} new'
+class TestSetters(TextTestCase):
+    def test_setting_value(self):
+        self.text_with_key.value = self.NEW_TEXT
 
-        self.text_with_key.value = VALUE
+        self.assertEqual(self.text_with_key.value, self.NEW_TEXT)
 
-        self.assertEqual(self.text_with_key.value, VALUE)
+    def test_setting_font(self):
+        self.text_with_key.font = self.NEW_FONT
+
+        self.assertEqual(self.text_with_key.font, self.NEW_FONT)
 
 
 class TestRepr(TextTestCase):
@@ -52,37 +60,28 @@ class TestRepr(TextTestCase):
 
 
 class TestEqual(TextTestCase):
-    UNEQUAL_TEXT = f'new {TextTestCase.TEXT}'
-
-    FONT_NAME = 'Arial'
-    FONT_SIZE = TextTestCase.FONT.size + 2
-    FONT_STYLE = 'bold'
-    UNEQUAL_FONT = Font(FONT_NAME, FONT_SIZE, FONT_STYLE)
-
     def test_with_key(self):
-        self.assertNotEqual(self.text_with_key, self.text_with_no_key)
-
         EQUAL_TEXT = Text(self.KEY, self.TEXT, self.FONT)
-
         self.assertEqual(self.text_with_key, EQUAL_TEXT)
 
-        UNEQUAL_KEY = f'new {self.KEY}'
+        self.assertNotEqual(self.text_with_key, self.text_with_no_key)
+        self.assertNotEqual(self.text_with_key, 'not Text')
 
-        UNEQUAL_PARAMETERS = [{'key': UNEQUAL_KEY, 'text': self.TEXT, 'font': self.FONT},
-                              {'key': self.KEY, 'text': self.UNEQUAL_TEXT, 'font': self.FONT},
-                              {'key': self.KEY, 'text': self.FONT, 'font': self.UNEQUAL_FONT}]
+        UNEQUAL_PARAMETERS = [{'key': self.NEW_KEY, 'text': self.TEXT, 'font': self.FONT},
+                              {'key': self.KEY, 'text': self.NEW_TEXT, 'font': self.FONT},
+                              {'key': self.KEY, 'text': self.FONT, 'font': self.NEW_FONT}]
 
         self.check_not_equal_with_and_without_key(self.text_with_key, UNEQUAL_PARAMETERS)
 
     def test_with_no_key(self):
-        self.assertNotEqual(self.text_with_no_key, self.text_with_key)
-
         EQUAL_TEXT = Text(self.NO_KEY, self.TEXT, self.FONT)
-
         self.assertEqual(self.text_with_no_key, EQUAL_TEXT)
 
-        UNEQUAL_PARAMETERS = [{'key': self.NO_KEY, 'text': self.UNEQUAL_TEXT, 'font': self.FONT},
-                              {'key': self.NO_KEY, 'text': self.FONT, 'font': self.UNEQUAL_FONT}]
+        self.assertNotEqual(self.text_with_no_key, self.text_with_key)
+        self.assertNotEqual(self.text_with_key, 'not Text')
+
+        UNEQUAL_PARAMETERS = [{'key': self.NO_KEY, 'text': self.NEW_TEXT, 'font': self.FONT},
+                              {'key': self.NO_KEY, 'text': self.FONT, 'font': self.NEW_FONT}]
 
         self.check_not_equal_with_and_without_key(self.text_with_no_key, UNEQUAL_PARAMETERS)
 
