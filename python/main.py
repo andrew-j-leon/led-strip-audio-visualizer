@@ -1,7 +1,7 @@
 from controller.audio_in_controller import AudioInController
 from controller.settings_controller import SettingsController
-from util import Settings, SettingsCollection
 from libraries.widget_gui import ProductionWidgetGui
+from util import Settings, SettingsCollection
 
 if __name__ == '__main__':
 

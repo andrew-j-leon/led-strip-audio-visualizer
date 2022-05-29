@@ -1,8 +1,8 @@
+import unittest
 from typing import Iterable
+
 from libraries.widget_gui import Text, Widget
 from util import Font
-
-import unittest
 
 
 class TextTestCase(unittest.TestCase):

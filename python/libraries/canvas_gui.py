@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import PySimpleGUI as sg
-
 from util import Font
 
 

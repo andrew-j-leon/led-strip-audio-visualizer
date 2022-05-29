@@ -1,7 +1,8 @@
-from typing import Iterable
-from util import Font
-from libraries.widget_gui import CheckBox, Widget
 import unittest
+from typing import Iterable
+
+from libraries.widget_gui import CheckBox, Widget
+from util import Font
 
 
 class CheckBoxTestCase(unittest.TestCase):

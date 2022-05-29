@@ -1,6 +1,7 @@
-from typing import Iterable
-from libraries.widget_gui import Multiline, Widget
 import unittest
+from typing import Iterable
+
+from libraries.widget_gui import Multiline, Widget
 
 
 class MultilineTestCase(unittest.TestCase):

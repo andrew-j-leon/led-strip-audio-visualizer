@@ -1,8 +1,8 @@
+import unittest
 from collections import Counter
 from typing import Any, Dict, Hashable, List, Tuple
-import unittest
-from controller.settings_controller import SettingsController, Element, Event
 
+from controller.settings_controller import Element, Event, SettingsController
 from libraries.widget_gui import Button, Combo, Widget, WidgetGui, WidgetGuiEvent
 from util import Settings, SettingsCollection
 

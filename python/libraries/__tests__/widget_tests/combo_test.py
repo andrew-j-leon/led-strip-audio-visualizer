@@ -1,9 +1,9 @@
+import unittest
 from collections import Counter
 from typing import Iterable
-from util import Font
 
 from libraries.widget_gui import Combo, Widget
-import unittest
+from util import Font
 
 
 class ComboTestCase(unittest.TestCase):

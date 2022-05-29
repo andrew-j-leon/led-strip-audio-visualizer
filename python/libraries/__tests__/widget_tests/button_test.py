@@ -1,7 +1,8 @@
-from typing import Iterable
-from util import Font
-from libraries.widget_gui import Button, Widget
 import unittest
+from typing import Iterable
+
+from libraries.widget_gui import Button, Widget
+from util import Font
 
 
 class ButtonTestCase(unittest.TestCase):

@@ -118,7 +118,7 @@ class CheckBox(Widget):
 
 class Combo(Widget):
     def __init__(self, key: Hashable = None, values: List[str] = [],
-                 font: Font = Font(), size: Tuple[int, int] = (20, 1), enabled: bool = True):
+                 font: Font = Font(), size: Tuple[int, int] = (20, 7), enabled: bool = True):
         super().__init__(key)
 
         self.__values = list(dict.fromkeys(values))
@@ -469,15 +469,19 @@ class ProductionWidgetGui(WidgetGui):
         element: sg.Element = self.__window.find_element(WIDGET_KEY)
 
         if (type(widget) is Button):
+            element: sg.Button
             element.update(text=widget.value,
                            disabled=not widget.enabled)
 
         elif (type(widget) is CheckBox):
+            element: sg.Checkbox
             element.update(value=widget.value,
                            text=widget.text,
                            disabled=not widget.enabled)
 
         elif (type(widget) is Combo):
+            element: sg.Combo
+
             def create_default_value():
                 try:
                     return widget.value
@@ -495,16 +499,18 @@ class ProductionWidgetGui(WidgetGui):
                            disabled=not widget.enabled)
 
         elif (type(widget) is Input):
+            element: sg.Input
             element.update(value=widget.value,
                            disabled=not widget.enabled)
 
         elif (type(widget) is Multiline):
+            element: sg.Multiline
             element.update(value=widget.value,
-                           size=widget.size,
                            autoscroll=widget.auto_scroll,
                            disabled=not widget.enabled)
 
         elif (type(widget) is Text):
+            element: sg.Text
             FONT = self._create_font(widget.font)
 
             element.update(value=widget.value,

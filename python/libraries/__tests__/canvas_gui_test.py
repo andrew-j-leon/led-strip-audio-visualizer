@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from util import Font
 from libraries.canvas_gui import ProductionCanvasGui
+from util import Font
 
 
 class TestFont(unittest.TestCase):

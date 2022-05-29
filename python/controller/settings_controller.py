@@ -1,9 +1,10 @@
 
 from collections import Counter
 from enum import Enum, auto
-from typing import Any, Union
-from libraries.widget_gui import Button, CheckBox, Combo, Input, Multiline, Text, WidgetGui, WidgetGuiEvent
-from util import Settings, SettingsCollection, Font
+from typing import Any, Dict, Union
+
+from libraries.widget_gui import Button, CheckBox, Combo, Input, Multiline, Text, Widget, WidgetGui, WidgetGuiEvent
+from util import Font, Settings, SettingsCollection
 
 
 class Element(Enum):
@@ -88,17 +89,14 @@ class SettingsController:
     def handle_event(self, event: Union[Element, WidgetGuiEvent]):
         SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
 
-        if (event == WidgetGuiEvent.TIMEOUT):
-            pass
-
-        elif (event == Element.SAVE_BUTTON):
+        if (event == Element.SAVE_BUTTON):
             self.__save_settings()
-            self.display()
+            self.__update_widgets()
 
         elif (event == Element.DELETE_BUTTON):
             try:
                 del self.__settings_collection[SELECTED_SETTINGS_NAME]
-                self.display()
+                self.__update_widgets()
 
             except KeyError:
                 raise ValueError(f'There is no Settings with the name {SELECTED_SETTINGS_NAME} to delete.')
@@ -106,7 +104,7 @@ class SettingsController:
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__widget_gui.close()
 
-        else:
+        elif (event != WidgetGuiEvent.TIMEOUT):
             save_button: Button = self.__widget_gui.get_widget(Element.SAVE_BUTTON)
             delete_button: Button = self.__widget_gui.get_widget(Element.DELETE_BUTTON)
 
@@ -120,7 +118,7 @@ class SettingsController:
             elif (event == Event.SELECT_NON_CURRENT_SETTINGS_NAME):
                 try:
                     self.__settings_collection.current_name = SELECTED_SETTINGS_NAME
-                    self.display()
+                    self.__update_widgets()
 
                 except ValueError as error:
                     if (SELECTED_SETTINGS_NAME not in self.__settings_collection):
@@ -146,13 +144,85 @@ class SettingsController:
                 raise ValueError(f'This SettingsController does not recognize the event {event}.')
 
     def display(self):
+        def get_widget(widget_key: Element) -> Widget:
+            return WIDGETS[widget_key]
+
+        WIDGETS = self.__create_widgets_with_keys()
+
+        SETTINGS_NAMES_COMBO = get_widget(Element.SETTINGS_NAME_COMBO)
+        SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
+        DELETE_BUTTON = get_widget(Element.DELETE_BUTTON)
+
+        START_LED_INPUT = get_widget(Element.START_LED_INPUT)
+        END_LED_INPUT = get_widget(Element.END_LED_INPUT)
+
+        MILLISECONDS_PER_AUDIO_CHUNK_INPUT = get_widget(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT)
+
+        SERIAL_PORT_INPUT = get_widget(Element.SERIAL_PORT_INPUT)
+
+        BAUDRATES_COMBO = get_widget(Element.SERIAL_BAUDRATE_COMBO)
+
+        BRIGHTNESS_INPUT = get_widget(Element.BRIGHTNESS_INPUT)
+
+        NUMBER_OF_GROUPS_INPUT = get_widget(Element.NUMBER_OF_GROUPS_INPUT)
+
+        MINIMUM_FREQUENCY_INPUT = get_widget(Element.MINIMUM_FREQUENCY_INPUT)
+
+        MAXIMUM_FREQUENCY_INPUT = get_widget(Element.MAXIMUM_FREQUENCY_INPUT)
+
+        REVERSE_LEDS_CHECK_BOX = get_widget(Element.REVERSE_LEDS_CHECK_BOX)
+
+        AMPLITUDE_RGBS_MULTILINE = get_widget(Element.AMPLITUDE_RGBS_MULTILINE)
+
         FONT = Font("Courier New", 14)
 
-        SETTINGS = self.settings
+        START_LED_LABEL = Text(text="Start LED (inclusive):", font=FONT)
+        END_LED_LABEL = Text(text="End LED (exclusive):", font=FONT)
+        MILLISECONDS_PER_AUDIO_CHUNK_LABEL = Text(text="Milliseconds per Audio Chunk:", font=FONT)
+        SERIAL_PORT_LABEL = Text(text="Port:", font=FONT)
+        BAUDRATES_LABEL = Text(text="Baudrate:", font=FONT)
+        BRIGHTNESS_LABEL = Text(text="Brightness", font=FONT)
+        NUMBER_OF_GROUPS_LABEL = Text(text="Number of Groups:", font=FONT)
+        MINIMUM_FREQUENCY_LABEL = Text(text="Minimum Frequency:", font=FONT)
+        MAXIMUM_FREQUENCY_LABEL = Text(text="Maximum Frequency:", font=FONT)
 
+        LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON],
+
+                  [START_LED_LABEL, START_LED_INPUT],
+                  [END_LED_LABEL, END_LED_INPUT],
+
+                  [MILLISECONDS_PER_AUDIO_CHUNK_LABEL, MILLISECONDS_PER_AUDIO_CHUNK_INPUT],
+
+                  [SERIAL_PORT_LABEL, SERIAL_PORT_INPUT],
+
+                  [BAUDRATES_LABEL, BAUDRATES_COMBO],
+
+                  [BRIGHTNESS_LABEL, BRIGHTNESS_INPUT],
+
+                  [NUMBER_OF_GROUPS_LABEL, NUMBER_OF_GROUPS_INPUT],
+
+                  [MINIMUM_FREQUENCY_LABEL, MINIMUM_FREQUENCY_INPUT],
+                  [MAXIMUM_FREQUENCY_LABEL, MAXIMUM_FREQUENCY_INPUT],
+
+                  [REVERSE_LEDS_CHECK_BOX],
+
+                  [AMPLITUDE_RGBS_MULTILINE]]
+
+        self.__widget_gui.set_layout(LAYOUT)
+        self.__widget_gui.display_layout()
+
+    def __update_widgets(self):
+        WIDGETS = self.__create_widgets_with_keys()
+
+        for widget in WIDGETS.values():
+            self.__widget_gui.update_widget(widget)
+
+        self.read_event_and_update_gui()
+
+    def __create_widgets_with_keys(self) -> Dict[Element, Widget]:
         def create_settings_names_combo():
             SETTINGS_NAMES = list(self.__settings_collection.names())
-            SETTINGS_NAMES_COMBO_SIZE = (50, 1)
+            SETTINGS_NAMES_COMBO_SIZE = (40, 7)
 
             combo = Combo(Element.SETTINGS_NAME_COMBO, SETTINGS_NAMES, size=SETTINGS_NAMES_COMBO_SIZE)
 
@@ -183,67 +253,57 @@ class SettingsController:
 
             return Multiline(Element.AMPLITUDE_RGBS_MULTILINE, text.strip())
 
+        FONT = Font("Courier New", 14)
+        SETTINGS = self.settings
+
         SETTINGS_NAMES_COMBO = create_settings_names_combo()
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)
         DELETE_BUTTON = Button(Element.DELETE_BUTTON, "Delete", FONT, True)
 
-        START_LED_LABEL = Text(text="Start LED (inclusive):", font=FONT)
         START_LED_INPUT = Input(Element.START_LED_INPUT, str(SETTINGS.start_led))
-
-        END_LED_LABEL = Text(text="End LED (exclusive):", font=FONT)
         END_LED_INPUT = Input(Element.END_LED_INPUT, str(SETTINGS.end_led))
 
-        MILLISECONDS_PER_AUDIO_CHUNK_LABEL = Text(text="Milliseconds per Audio Chunk:", font=FONT)
         MILLISECONDS_PER_AUDIO_CHUNK_INPUT = Input(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT,
                                                    str(SETTINGS.milliseconds_per_audio_chunk))
 
-        SERIAL_PORT_LABEL = Text(text="Port:", font=FONT)
         SERIAL_PORT_INPUT = Input(Element.SERIAL_PORT_INPUT, SETTINGS.serial_port)
 
-        BAUDRATES_LABEL = Text(text="Baudrate:", font=FONT)
         BAUDRATES_COMBO = create_baudrates_combo()
 
-        BRIGHTNESS_LABEL = Text(text="Brightness", font=FONT)
         BRIGHTNESS_INPUT = Input(Element.BRIGHTNESS_INPUT, str(SETTINGS.brightness))
 
-        NUMBER_OF_GROUPS_LABEL = Text(text="Number of Groups:", font=FONT)
         NUMBER_OF_GROUPS_INPUT = Input(Element.NUMBER_OF_GROUPS_INPUT, str(SETTINGS.number_of_groups))
 
-        MINIMUM_FREQUENCY_LABEL = Text(text="Minimum Frequency:", font=FONT)
         MINIMUM_FREQUENCY_INPUT = Input(Element.MINIMUM_FREQUENCY_INPUT, str(SETTINGS.minimum_frequency))
 
-        MAXIMUM_FREQUENCY_LABEL = Text(text="Maximum Frequency:", font=FONT)
         MAXIMUM_FREQUENCY_INPUT = Input(Element.MAXIMUM_FREQUENCY_INPUT, str(SETTINGS.maximum_frequency))
 
         REVERSE_LEDS_CHECK_BOX = CheckBox(Element.REVERSE_LEDS_CHECK_BOX,
                                           "Reverse LEDs", FONT, SETTINGS.should_reverse_leds)
 
-        AMPLITUDE_RGBS = create_amplitude_rgbs_multiline()
+        AMPLITUDE_RGBS_MULTILINE = create_amplitude_rgbs_multiline()
 
-        LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON],
+        widgets = dict()
 
-                  [START_LED_LABEL, START_LED_INPUT],
-                  [END_LED_LABEL, END_LED_INPUT],
+        def add_widget(widget: Widget):
+            widgets[widget.key] = widget
 
-                  [MILLISECONDS_PER_AUDIO_CHUNK_LABEL, MILLISECONDS_PER_AUDIO_CHUNK_INPUT],
+        add_widget(SETTINGS_NAMES_COMBO)
+        add_widget(SAVE_BUTTON)
+        add_widget(DELETE_BUTTON)
+        add_widget(START_LED_INPUT)
+        add_widget(END_LED_INPUT)
+        add_widget(MILLISECONDS_PER_AUDIO_CHUNK_INPUT)
+        add_widget(SERIAL_PORT_INPUT)
+        add_widget(BAUDRATES_COMBO)
+        add_widget(BRIGHTNESS_INPUT)
+        add_widget(NUMBER_OF_GROUPS_INPUT)
+        add_widget(MINIMUM_FREQUENCY_INPUT)
+        add_widget(MAXIMUM_FREQUENCY_INPUT)
+        add_widget(REVERSE_LEDS_CHECK_BOX)
+        add_widget(AMPLITUDE_RGBS_MULTILINE)
 
-                  [SERIAL_PORT_LABEL, SERIAL_PORT_INPUT],
-
-                  [BAUDRATES_LABEL, BAUDRATES_COMBO],
-
-                  [BRIGHTNESS_LABEL, BRIGHTNESS_INPUT],
-
-                  [NUMBER_OF_GROUPS_LABEL, NUMBER_OF_GROUPS_INPUT],
-
-                  [MINIMUM_FREQUENCY_LABEL, MINIMUM_FREQUENCY_INPUT],
-                  [MAXIMUM_FREQUENCY_LABEL, MAXIMUM_FREQUENCY_INPUT],
-
-                  [REVERSE_LEDS_CHECK_BOX],
-
-                  [AMPLITUDE_RGBS]]
-
-        self.__widget_gui.set_layout(LAYOUT)
-        self.__widget_gui.display_layout()
+        return widgets
 
     def __save_settings(self):
         START_LED = self.__get_setting_from_wiget_gui(Element.START_LED_INPUT)

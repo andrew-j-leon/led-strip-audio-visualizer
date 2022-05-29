@@ -1,5 +1,5 @@
-from typing import List, Tuple
 import unittest
+from typing import List, Tuple
 
 from util import Settings
 

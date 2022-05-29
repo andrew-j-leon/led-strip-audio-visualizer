@@ -3,13 +3,13 @@ from typing import List, Tuple
 
 import pyaudio
 from controller.settings_controller import SettingsController
-from util import Settings, Font
 from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
-from libraries.widget_gui import Button, CheckBox, Combo, Font, Text, WidgetGui, WidgetGuiEvent
 from libraries.canvas_gui import ProductionCanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
+from libraries.widget_gui import Button, CheckBox, Combo, Font, Text, WidgetGui, WidgetGuiEvent
 from spectrogram import Spectrogram
+from util import Font, Settings
 
 
 class Element(Enum):
