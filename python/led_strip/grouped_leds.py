@@ -216,6 +216,11 @@ class SerialGroupedLeds(ProductionGroupedLeds):
 
     def __del__(self):
         try:
+            group_rgbs = []
+            for group in range(self.number_of_groups):
+                group_rgbs.append((group, (0, 0, 0)))
+
+            self.set_group_rgbs(group_rgbs)
             self.__serial.close()
 
         except AttributeError:

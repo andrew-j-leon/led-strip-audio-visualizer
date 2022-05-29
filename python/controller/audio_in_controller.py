@@ -7,15 +7,13 @@ from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.canvas_gui import ProductionCanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
-from libraries.widget_gui import Button, CheckBox, Combo, Font, Text, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import Button, Combo, Font, Text, WidgetGui, WidgetGuiEvent
 from spectrogram import Spectrogram
 from util import Font, Settings
 
 
 class Element(Enum):
-    SELECT_VISUALIZER_TYPE_DROPDOWN = auto()
-    SERIAL_LED_STRIP_CHECKBOX = auto()
-    GRAPHIC_LED_STRIP_CHECKBOX = auto()
+    LED_STRIP_COMBO = auto()
 
     PAUSE_AUDIO_BUTTON = auto()
     RESUME_AUDIO_BUTTON = auto()
@@ -27,11 +25,6 @@ class Element(Enum):
     CONFIRMATION_MODAL_OK_BUTTON = auto()
     SELECT_VISUALIZER_TYPE_LABEL = auto()
     SETTINGS_BUTTON = auto()
-
-
-class VisualizerType:
-    NONE = "None"
-    FREQUENCY = "Frequency"
 
 
 class State(Enum):
@@ -82,13 +75,9 @@ class AudioInController:
         CURRENT_INPUT_SOURCE_FONT = Font("Courier New", 20)
         BUTTON_FONT = Font("Courier New", 14)
         INPUT_LABEL_FONT = Font("Courier New", 14)
-        DROPDOWN_INPUT_FONT = Font("Courier New", 14)
-        CHECKBOX_INPUT_FONT = Font("Courier New", 14)
 
-        VISUALIZER_DROPDOWN_VALUES = [VisualizerType.NONE, VisualizerType.FREQUENCY]
-        VISUALIZER_DROPDOWN_WIDGET = Combo(Element.SELECT_VISUALIZER_TYPE_DROPDOWN, VISUALIZER_DROPDOWN_VALUES,
-                                           DROPDOWN_INPUT_FONT)
-        VISUALIZER_DROPDOWN_WIDGET.value = VisualizerType.FREQUENCY
+        LED_STRIP_COMBO_VALUES = ['Serial LED Strip', 'Graphic LED Strip']
+        LED_STRIP_COMBO = Combo(Element.LED_STRIP_COMBO, LED_STRIP_COMBO_VALUES)
 
         LAYOUT = [[Button(Element.SETTINGS_BUTTON, text="Settings")],
 
@@ -97,10 +86,8 @@ class AudioInController:
                   [Button(Element.PAUSE_AUDIO_BUTTON, text="Stop ([])", font=BUTTON_FONT, enabled=False),
                    Button(Element.RESUME_AUDIO_BUTTON, text="Play (>)", font=BUTTON_FONT, enabled=True)],
 
-                  [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="Visualizer : ", font=INPUT_LABEL_FONT),
-                   VISUALIZER_DROPDOWN_WIDGET,
-                   CheckBox(Element.SERIAL_LED_STRIP_CHECKBOX, text="Serial Led Strip", font=CHECKBOX_INPUT_FONT),
-                   CheckBox(Element.GRAPHIC_LED_STRIP_CHECKBOX, text="Graphic Led Strip", font=CHECKBOX_INPUT_FONT)]]
+                  [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="LED Strip Type : ", font=INPUT_LABEL_FONT),
+                   LED_STRIP_COMBO]]
 
         self.__widget_gui.set_layout(LAYOUT)
         self.__widget_gui.display_layout()
@@ -167,45 +154,33 @@ class AudioInController:
             SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
             PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.PAUSE_AUDIO_BUTTON)
             RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.RESUME_AUDIO_BUTTON)
-            VISUALIZER_COMBO: Combo = self.__widget_gui.get_widget(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
-            SERIAL_LED_STRIP_CHECKBOX: CheckBox = self.__widget_gui.get_widget(Element.SERIAL_LED_STRIP_CHECKBOX)
-            GRAPHIC_LED_STRIP_CHECKBOX: CheckBox = self.__widget_gui.get_widget(Element.GRAPHIC_LED_STRIP_CHECKBOX)
+            LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
 
             SETTINGS_BUTTON.enabled = True
             PAUSE_BUTTON.enabled = False
             RESUME_BUTTON.enabled = True
-            VISUALIZER_COMBO.enabled = True
-            SERIAL_LED_STRIP_CHECKBOX.enabled = True
-            GRAPHIC_LED_STRIP_CHECKBOX.enabled = True
+            LED_STRIP_COMBO.enabled = True
 
             self.__widget_gui.update_widget(SETTINGS_BUTTON)
             self.__widget_gui.update_widget(PAUSE_BUTTON)
             self.__widget_gui.update_widget(RESUME_BUTTON)
-            self.__widget_gui.update_widget(VISUALIZER_COMBO)
-            self.__widget_gui.update_widget(SERIAL_LED_STRIP_CHECKBOX)
-            self.__widget_gui.update_widget(GRAPHIC_LED_STRIP_CHECKBOX)
+            self.__widget_gui.update_widget(LED_STRIP_COMBO)
 
         def set_audio_playing_state():
             SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
             PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.PAUSE_AUDIO_BUTTON)
             RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.RESUME_AUDIO_BUTTON)
-            VISUALIZER_COMBO: Combo = self.__widget_gui.get_widget(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
-            SERIAL_LED_STRIP_CHECKBOX: CheckBox = self.__widget_gui.get_widget(Element.SERIAL_LED_STRIP_CHECKBOX)
-            GRAPHIC_LED_STRIP_CHECKBOX: CheckBox = self.__widget_gui.get_widget(Element.GRAPHIC_LED_STRIP_CHECKBOX)
+            LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
 
             SETTINGS_BUTTON.enabled = False
             PAUSE_BUTTON.enabled = True
             RESUME_BUTTON.enabled = False
-            VISUALIZER_COMBO.enabled = False
-            SERIAL_LED_STRIP_CHECKBOX.enabled = False
-            GRAPHIC_LED_STRIP_CHECKBOX.enabled = False
+            LED_STRIP_COMBO.enabled = True
 
             self.__widget_gui.update_widget(SETTINGS_BUTTON)
             self.__widget_gui.update_widget(PAUSE_BUTTON)
             self.__widget_gui.update_widget(RESUME_BUTTON)
-            self.__widget_gui.update_widget(VISUALIZER_COMBO)
-            self.__widget_gui.update_widget(SERIAL_LED_STRIP_CHECKBOX)
-            self.__widget_gui.update_widget(GRAPHIC_LED_STRIP_CHECKBOX)
+            self.__widget_gui.update_widget(LED_STRIP_COMBO)
 
         def get_group_index_to_led_range() -> List[Tuple[int, int]]:
             def get_number_of_leds() -> int:
@@ -227,15 +202,11 @@ class AudioInController:
             return group_index_to_led_range
 
         def get_led_strip():
-            SERIAL_LED_STRIP_CHECKBOX = self.__widget_gui.get_widget(Element.SERIAL_LED_STRIP_CHECKBOX)
-            USE_SERIAL_LED_STRIP = SERIAL_LED_STRIP_CHECKBOX.value
-
-            GRAPHIC_LED_STRIP_CHECKBOX = self.__widget_gui.get_widget(Element.GRAPHIC_LED_STRIP_CHECKBOX)
-            USE_GRAPHIC_LED_STRIP = GRAPHIC_LED_STRIP_CHECKBOX.value
+            LED_STRIP_COMBO = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
 
             LED_RANGE = (self.__settings.start_led, self.__settings.end_led)
 
-            if (USE_SERIAL_LED_STRIP):
+            if (LED_STRIP_COMBO.value == 'Serial LED Strip'):
                 PARITY = PARITY_NONE
                 STOP_BITS = STOPBITS_ONE_POINT_FIVE
                 BYTE_SIZE = EIGHTBITS
@@ -250,7 +221,7 @@ class AudioInController:
 
                 return ProductionLedStrip(serial_grouped_leds)
 
-            if (USE_GRAPHIC_LED_STRIP):
+            if (LED_STRIP_COMBO.value == 'Graphic LED Strip'):
                 WIDTH = 1350
                 HEIGHT = 600
 
@@ -263,15 +234,12 @@ class AudioInController:
 
         def init_spectrogram():
             self.__delete_spectrogram()
-            VISUALIZER_COMBO = self.__widget_gui.get_widget(Element.SELECT_VISUALIZER_TYPE_DROPDOWN)
-            USE_VISUALIZER_COMBO = VISUALIZER_COMBO.value
 
-            if (USE_VISUALIZER_COMBO == VisualizerType.FREQUENCY):
-                FREQUENCY_RANGE = (self.__settings.minimum_frequency,
-                                   self.__settings.maximum_frequency)
-                self.__led_strip = get_led_strip()
+            FREQUENCY_RANGE = (self.__settings.minimum_frequency,
+                               self.__settings.maximum_frequency)
+            self.__led_strip = get_led_strip()
 
-                self.__spectrogram = Spectrogram(FREQUENCY_RANGE, self.__settings.amplitude_rgbs)
+            self.__spectrogram = Spectrogram(FREQUENCY_RANGE, self.__settings.amplitude_rgbs)
 
         if (event == Element.PAUSE_AUDIO_BUTTON):
             self.__audio_player.stop_stream()
@@ -291,6 +259,10 @@ class AudioInController:
             set_audio_playing_state()
 
     def __delete_spectrogram(self):
+        if (self.__led_strip is not None):
+            del self.__led_strip
+            self.__led_strip = None
+
         if (self.__spectrogram is not None):
             del self.__spectrogram
             self.__spectrogram = None
