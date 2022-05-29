@@ -217,8 +217,6 @@ class SettingsController:
         for widget in WIDGETS.values():
             self.__widget_gui.update_widget(widget)
 
-        self.read_event_and_update_gui()
-
     def __create_widgets_with_keys(self) -> Dict[Element, Widget]:
         def create_settings_names_combo():
             SETTINGS_NAMES = list(self.__settings_collection.names())

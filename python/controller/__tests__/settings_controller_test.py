@@ -72,6 +72,7 @@ class FakeWidgetGui(WidgetGui):
             raise KeyError(f'There is no Widget with the key {WIDGET_KEY}.')
 
         self.queued_widgets[WIDGET_KEY] = widget
+        self.displayed_widgets = self.queued_widgets
 
 
 def create_amplitude_rgbs_widget_value(amplitude_rgbs: List[Tuple[int, int, int]]) -> str:
@@ -222,18 +223,6 @@ class SettingsControllerTestCase(unittest.TestCase):
 
         self.widget_gui.queued_widgets[Element.SETTINGS_NAME_COMBO] = NEW_QUEUED_COMBO
         self.widget_gui.displayed_widgets[Element.SETTINGS_NAME_COMBO] = NEW_DISPLAYED_COMBO
-
-        # self.widget_gui.displayed_widgets[Element.SETTINGS_NAME_COMBO]
-
-        # original_get_widget = self.widget_gui.get_widget
-
-        # def new_get_widget(widget_key: Hashable):
-        #     if (widget_key == Element.SETTINGS_NAME_COMBO):
-        #         return Combo(Element.SETTINGS_NAME_COMBO, values)
-
-        #     return original_get_widget(widget_key)
-
-        # self.widget_gui.get_widget = new_get_widget
 
 
 class TestConstructor(SettingsControllerTestCase):
