@@ -3,7 +3,8 @@ from collections import Counter
 from enum import Enum, auto
 from typing import Any, Dict, Union
 
-from libraries.widget_gui import Button, CheckBox, Combo, Input, Multiline, Text, Widget, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import WidgetGui, WidgetGuiEvent
+from libraries.widget import Widget, Button, CheckBox, Combo, Input, Multiline, Text
 from util import Font, Settings, SettingsCollection
 
 

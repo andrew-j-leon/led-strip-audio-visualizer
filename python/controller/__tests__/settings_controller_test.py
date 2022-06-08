@@ -3,7 +3,8 @@ from collections import Counter
 from typing import Any, Dict, Hashable, List, Tuple
 
 from controller.settings_controller import Element, Event, SettingsController
-from libraries.widget_gui import Button, Combo, Widget, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import WidgetGui, WidgetGuiEvent
+from libraries.widget import Widget, Button, Combo
 from util import Settings, SettingsCollection
 
 

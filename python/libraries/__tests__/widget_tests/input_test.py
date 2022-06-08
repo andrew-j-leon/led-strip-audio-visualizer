@@ -1,7 +1,7 @@
 import unittest
 from typing import Iterable
 
-from libraries.widget_gui import Input, Widget
+from libraries.widget import Widget, Input
 
 
 class InputTestCase(unittest.TestCase):

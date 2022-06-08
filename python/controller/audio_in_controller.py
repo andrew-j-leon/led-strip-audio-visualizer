@@ -7,7 +7,8 @@ from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.canvas_gui import ProductionCanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
-from libraries.widget_gui import Button, Combo, Font, Text, WidgetGui, WidgetGuiEvent
+from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
+from libraries.widget import Button, Combo, Text
 from spectrogram import Spectrogram
 from util import Font, Settings
 
