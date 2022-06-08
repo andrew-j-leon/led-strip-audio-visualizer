@@ -22,14 +22,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in INVALID_ARGUMENTS:
             with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
 
-                with self.assertRaises(TypeError) as error:
-
+                with self.assertRaises(TypeError):
                     NonNegativeIntegerRange(start, end)
-
-                error_message = str(error.exception)
-                expected_error_message = f'start ({start}) must be of type int, but was of type {type(start)}.'
-
-                self.assertEqual(error_message, expected_error_message)
 
     def test_end_is_not_int(self):
         INVALID_ARGUMENTS = [(0, NonNegativeInteger(0)),
@@ -38,14 +32,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in INVALID_ARGUMENTS:
             with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
 
-                with self.assertRaises(TypeError) as error:
-
+                with self.assertRaises(TypeError):
                     NonNegativeIntegerRange(start, end)
-
-                error_message = str(error.exception)
-                expected_error_message = f'end ({end}) must be of type int, but was of type {type(end)}.'
-
-                self.assertEqual(error_message, expected_error_message)
 
     def test_start_greater_than_end(self):
         START_GREATER_THAN_END_ARGUMENTS = [(1, 0), (546, 4)]
@@ -53,13 +41,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in START_GREATER_THAN_END_ARGUMENTS:
             with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     NonNegativeIntegerRange(start, end)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'start ({start}) must be < end ({end}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestRepr(unittest.TestCase):

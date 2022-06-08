@@ -33,18 +33,10 @@ class TestConstructor(unittest.TestCase):
     def test_serial_connection_failed(self):
         self.serial_instance_mock.read.return_value = bytes()
 
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaises(ValueError):
 
             ProductionSerial(self.PORT, self.BAUD_RATE, PARITY_NONE, STOPBITS_ONE_POINT_FIVE,
                              EIGHTBITS, self.READ_TIMEOUT, self.WRITE_TIMEOUT)
-
-        error_message = str(error.exception)
-
-        EXPECTED_NUMBER_OF_BYTES = 2
-        ACTUAL_NUMBER_OF_BYTES = 0
-        expected_error_message = f'ProductionSerial expected {EXPECTED_NUMBER_OF_BYTES} bytes from the serial connection (representing the number of leds in the led strip), but instead received {ACTUAL_NUMBER_OF_BYTES} bytes.'
-
-        self.assertEqual(error_message, expected_error_message)
 
 
 class TestMethods(unittest.TestCase):

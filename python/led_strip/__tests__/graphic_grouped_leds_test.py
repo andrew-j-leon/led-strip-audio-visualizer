@@ -458,17 +458,12 @@ class TestSetGroupRGB(unittest.TestCase):
         for group in GROUPS:
             with self.subTest(group=group):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     rgb = (10, 20, 30)
 
                     group_rgbs = [(group, rgb)]
 
                     self.leds.set_group_rgbs(group_rgbs)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'group must be >= 0, but was {group}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
                 self.assertEqual(self.gui, self.gui_after_init)
 

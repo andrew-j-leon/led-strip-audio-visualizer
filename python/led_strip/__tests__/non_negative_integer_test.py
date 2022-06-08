@@ -51,25 +51,15 @@ class TestConstructor(unittest.TestCase):
         for argument in arguments:
             with self.subTest(f'NonNegativeInteger({argument})'):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     NonNegativeInteger(argument)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'int({argument}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def check_cannot_convert_to_int(self, arguments: list):
         for argument in arguments:
             with self.subTest(f'NonNegativeInteger({argument})'):
 
-                with self.assertRaises((TypeError, ValueError)) as error:
+                with self.assertRaises((TypeError, ValueError)):
                     NonNegativeInteger(argument)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = get_error_message(lambda: int(argument))
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestRepr(unittest.TestCase):

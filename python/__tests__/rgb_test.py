@@ -30,15 +30,10 @@ class TestRGB(unittest.TestCase):
         for invalid_rgb in INVALID_RGBS:
             with self.subTest(f'rgb={invalid_rgb}'):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     red, green, blue = invalid_rgb
 
                     RGB(red, green, blue)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'rgb values must be between 0 (inclusive) & 255 (inclusive), (red, green, blue) was {invalid_rgb}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_repr(self):
         RED = 1

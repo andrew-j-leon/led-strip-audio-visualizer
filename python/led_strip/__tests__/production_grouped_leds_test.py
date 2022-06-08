@@ -214,13 +214,8 @@ class TestGetGroupRGB(GroupMethodsTestCase):
         for group in GROUPS:
             with self.subTest(group=group):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.leds.get_group_rgb(group)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'group must be >= 0, but was {group}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_group_exceeds_max_group(self):
         GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
@@ -315,17 +310,12 @@ class TestSetGroupRGB(GroupMethodsTestCase):
         for group in GROUPS:
             with self.subTest(group=group):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     rgb = (10, 20, 30)
 
                     group_rgbs = [(group, rgb)]
 
                     self.leds.set_group_rgbs(group_rgbs)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'group must be >= 0, but was {group}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_group_exceeds_max_group(self):
         GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
@@ -367,7 +357,6 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
             with self.subTest(group=group):
 
                 with self.assertRaises(IndexError):
-
                     leds.get_group_led_range(group)
 
     def test_group_less_than_0(self):
@@ -376,14 +365,8 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
         for group in GROUPS:
             with self.subTest(group=group):
 
-                with self.assertRaises(ValueError) as error:
-
+                with self.assertRaises(ValueError):
                     self.leds.get_group_led_range(group)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'group must be >= 0, but was {group}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_group_exceeds_max_group(self):
         GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]

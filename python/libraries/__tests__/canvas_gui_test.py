@@ -99,15 +99,10 @@ class TestConstructor(unittest.TestCase):
         for width in WIDTHS:
             with self.subTest(width=width):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     height = 600
 
                     ProductionCanvasGui(width, height)
-
-                error_message = str(error.exception)
-                expected_error_message = f'width must be >= 0, but was {width}.'
-
-                self.assertEqual(error_message, expected_error_message)
 
     def test_invalid_height(self):
         HEIGHTS = [-100, -1]
@@ -115,15 +110,10 @@ class TestConstructor(unittest.TestCase):
         for height in HEIGHTS:
             with self.subTest(height=height):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     width = 600
 
                     ProductionCanvasGui(width, height)
-
-                error_message = str(error.exception)
-                expected_error_message = f'height must be >= 0, but was {height}.'
-
-                self.assertEqual(error_message, expected_error_message)
 
 
 class TestMethod(unittest.TestCase):
@@ -191,18 +181,13 @@ class TestCreateText(TestMethod):
     def test_update_not_called(self):
         self.element_instance_mock.TKCanvas = None
 
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaises(ValueError):
             CENTER_X = 10
             CENTER_Y = 20
             TEXT = 'hello'
             FONT = Font()
 
             self.gui.create_text(CENTER_X, CENTER_Y, TEXT, FONT)
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'You must call self.update() before creating elements on a ProductionCanvasGui.'
-
-        self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestOval(TestMethod):
@@ -231,7 +216,7 @@ class TestOval(TestMethod):
     def test_update_not_called(self):
         self.element_instance_mock.TKCanvas = None
 
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaises(ValueError):
             TOP_LEFT_X = 10
             TOP_LEFT_Y = 20
 
@@ -241,11 +226,6 @@ class TestOval(TestMethod):
             FILL_COLOR = '#122436'
 
             self.gui.create_oval(TOP_LEFT_X, TOP_LEFT_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y, FILL_COLOR)
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'You must call self.update() before creating elements on a ProductionCanvasGui.'
-
-        self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestSetElementFillColor(TestMethod):
@@ -259,13 +239,8 @@ class TestSetElementFillColor(TestMethod):
         tk_canvas_mock.itemconfig.assert_called_once_with(ELEMENT_ID, fill=FILL_COLOR)
 
     def test_update_not_called(self):
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaises(ValueError):
             self.element_instance_mock.TKCanvas = None
 
             FILL_COLOR = '#112233'
             self.gui.set_element_fill_color(20, FILL_COLOR)
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'You must call self.update() before editting elements.'
-
-        self.assertEqual(actual_error_message, expected_error_message)

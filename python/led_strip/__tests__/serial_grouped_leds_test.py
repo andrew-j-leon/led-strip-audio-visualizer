@@ -43,17 +43,12 @@ class TestConstructor(unittest.TestCase):
         for number_of_leds in NUMBER_OF_LEDS:
             with self.subTest(serial_number_of_leds=SERIAL_NUMBER_OF_LEDS, number_of_leds=number_of_leds):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     led_range = (0, number_of_leds)
                     group_led_ranges = []
                     brightness = 10
 
                     SerialGroupedLeds(led_range, group_led_ranges, SERIAL, brightness)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'The serial connection stated that there are {SERIAL_NUMBER_OF_LEDS} leds, but this LedStrip object is set for {number_of_leds} leds.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_led_range_outside_of_serial_led_range(self):
         SERIAL_NUMBER_OF_LEDS = 100
@@ -65,18 +60,11 @@ class TestConstructor(unittest.TestCase):
         for led_range in LED_RANGES:
             with self.subTest(serial_led_range=(0, SERIAL_NUMBER_OF_LEDS), led_range=led_range):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     group_led_ranges = []
                     brightness = 10
 
                     SerialGroupedLeds(led_range, group_led_ranges, SERIAL, brightness)
-
-                actual_error_message = str(error.exception)
-
-                start_led, end_led = led_range
-                expected_error_message = f"The serial connection stated that its led indicies range from 0 (inclusive) to {SERIAL_NUMBER_OF_LEDS} (exclusive), but this LedStrip ranges from {start_led} (inclusive) to {end_led} (exclusive)."
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_brightness(self):
         SERIAL_NUMBER_OF_LEDS = 100
@@ -98,14 +86,8 @@ class TestConstructor(unittest.TestCase):
         for invalid_brightness in INVALID_BRIGHTNESSES:
             with self.subTest(brightness=invalid_brightness):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     SerialGroupedLeds(LED_RANGE, GROUP_LED_RANGES, SERIAL, invalid_brightness)
-
-                actual_error_message = str(error.exception)
-
-                expected_error_message = f'brightness must be >= 0 and <= 255, but was {invalid_brightness}.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_valid_led_ranges(self):
         VALID_LED_RANGES = [(0, 0), (0, 1), (0, self.NUMBER_OF_LEDS), (1, 1), (1, self.NUMBER_OF_LEDS)]

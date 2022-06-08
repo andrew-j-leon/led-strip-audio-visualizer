@@ -52,15 +52,10 @@ class TestStartLed(SettingsTestCase):
 
             with self.subTest(start_led=start_led):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.start_led = start_led
 
                 self.assertEqual(self.settings.start_led, self.START_LED)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'start_led ({start_led}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_greater_than_end_led(self):
         START_LEDS_GREATER_THAN_END_LED = [self.END_LED + 1, self.END_LED + 100]
@@ -69,15 +64,10 @@ class TestStartLed(SettingsTestCase):
 
             with self.subTest(start_led=start_led):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.start_led = start_led
 
                 self.assertEqual(self.settings.start_led, self.START_LED)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'start_led ({start_led}) must be <= end_led ({self.END_LED}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         START_LEDS = [0, self.END_LED // 2, self.END_LED]
@@ -105,15 +95,10 @@ class TestEndLed(unittest.TestCase):
 
             with self.subTest(end_led=end_led):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.end_led = end_led
 
                 self.assertEqual(self.settings.end_led, self.END_LED)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'end_led ({end_led}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_less_than_start_led(self):
         END_LEDS_LESS_THAN_START_LED = [self.START_LED - 1, 0]
@@ -122,15 +107,10 @@ class TestEndLed(unittest.TestCase):
 
             with self.subTest(end_led=end_led):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.end_led = end_led
 
                 self.assertEqual(self.settings.end_led, self.END_LED)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'end_led ({end_led}) must be >= start_led ({self.START_LED}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         END_LEDS = [self.START_LED, self.START_LED + 1, self.START_LED + 100]
@@ -152,15 +132,10 @@ class TestMillisecondsPerAudioChunk(SettingsTestCase):
 
             with self.subTest(milliseconds_per_audio_chunk=milliseconds_per_audio_chunk):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.milliseconds_per_audio_chunk = milliseconds_per_audio_chunk
 
                 self.assertEqual(self.settings.milliseconds_per_audio_chunk, self.MILLISECONDS_PER_AUDIO_CHUNK)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'milliseconds_per_audio_chunk ({milliseconds_per_audio_chunk}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         MILLISECONDS_PER_AUDIO_CHUNKS = [0, 1, 100]
@@ -184,15 +159,10 @@ class TestSerialBaudrate(SettingsTestCase):
         for serial_baudrate in INVALID_SERIAL_BAUDRATES:
             with self.subTest(serial_baudrate=serial_baudrate):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.serial_baudrate = serial_baudrate
 
                 self.assertEqual(self.settings.serial_baudrate, self.SERIAL_BAUDRATE)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'Invalid serial_baudrate. Valid serial baudrates include: {Settings.SERIAL_BAUDRATES}'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         for serial_baudrate in Settings.SERIAL_BAUDRATES:
@@ -212,15 +182,10 @@ class TestBrightness(SettingsTestCase):
 
             with self.subTest(brightness=brightness):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.brightness = brightness
 
                 self.assertEqual(self.settings.brightness, self.BRIGHTNESS)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'brightness ({brightness}) must be >= 0 and <= 255.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         VALID_BRIGHTNESSES = [0, 1, 100, 254, 255]
@@ -243,15 +208,10 @@ class TestMinimumFrequency(SettingsTestCase):
 
             with self.subTest(minimum_frequency=minimum_frequency):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.minimum_frequency = minimum_frequency
 
                 self.assertEqual(self.settings.minimum_frequency, self.MINIMUM_FREQUENCY)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'minimum_frequency ({minimum_frequency}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_greater_than_maximum_frequency(self):
         MINIMUM_FREQUENCIES_GREATER_THAN_MAXIMUM_FREQUENCY = [self.MAXIMUM_FREQUENCY + 1, self.MAXIMUM_FREQUENCY + 100]
@@ -260,15 +220,10 @@ class TestMinimumFrequency(SettingsTestCase):
 
             with self.subTest(minimum_frequency=minimum_frequency):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.minimum_frequency = minimum_frequency
 
                 self.assertEqual(self.settings.minimum_frequency, self.MINIMUM_FREQUENCY)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'minimum_frequency ({minimum_frequency}) must be <= maximum_frequency ({self.MAXIMUM_FREQUENCY}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         MINIMUM_FREQUENCIES = [0, self.MAXIMUM_FREQUENCY // 2, self.MAXIMUM_FREQUENCY]
@@ -298,16 +253,11 @@ class TestMaximumFrequency(unittest.TestCase):
 
             with self.subTest(maximum_frequency=maximum_frequency):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
 
                     self.settings.maximum_frequency = maximum_frequency
 
                 self.assertEqual(self.settings.maximum_frequency, self.MAXIMUM_FREQUENCY)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'maximum_frequency ({maximum_frequency}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_less_than_minimum_frequency(self):
         MAXIMUM_FREQUENCIES_LESS_THAN_MINIMUM_FREQUENCY = [self.MINIMUM_FREQUENCY - 1, 0]
@@ -316,16 +266,11 @@ class TestMaximumFrequency(unittest.TestCase):
 
             with self.subTest(maximum_frequency=maximum_frequency):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
 
                     self.settings.maximum_frequency = maximum_frequency
 
                 self.assertEqual(self.settings.maximum_frequency, self.MAXIMUM_FREQUENCY)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'maximum_frequency ({maximum_frequency}) must be >= minimum_frequency ({self.MINIMUM_FREQUENCY}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         MAXIMUM_FREQUENCIES = [self.MINIMUM_FREQUENCY, self.MINIMUM_FREQUENCY + 1, self.MINIMUM_FREQUENCY + 100]
@@ -348,15 +293,10 @@ class TestNumberOfGroups(SettingsTestCase):
         for number_of_groups in INVALID_NUMBER_OF_GROUPS:
             with self.subTest(number_of_groups=number_of_groups):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.number_of_groups = number_of_groups
 
                 self.assertEqual(self.settings.number_of_groups, self.NUMBER_OF_GROUPS)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'number_of_groups ({number_of_groups}) must be >= 0 and <= 255.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_set_to_valid_value(self):
         NUMBER_OF_GROUPS = [0, 1, 100, 254, 255]
@@ -387,17 +327,10 @@ class TestAmplitudeRGBs(unittest.TestCase):
 
             with self.subTest(amplitude_rgbs=amplitude_rgbs):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.amplitude_rgbs = amplitude_rgbs
 
                 self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-                actual_error_message = str(error.exception)
-
-                INDEX = 0
-                expected_error_message = f'The red value for the rgb at index {INDEX}, {amplitude_rgbs[INDEX]}, was not >= 0 and <= 255.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_invalid_green(self):
         AMPLITUDE_RGBS_WITH_INVALID_GREEN = [[(0, -1, 0)],
@@ -409,17 +342,10 @@ class TestAmplitudeRGBs(unittest.TestCase):
 
             with self.subTest(amplitude_rgbs=amplitude_rgbs):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.amplitude_rgbs = amplitude_rgbs
 
                 self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-                actual_error_message = str(error.exception)
-
-                INDEX = 0
-                expected_error_message = f'The green value for the rgb at index {INDEX}, {amplitude_rgbs[INDEX]}, was not >= 0 and <= 255.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_invalid_blue(self):
         AMPLITUDE_RGBS_WITH_INVALID_BLUE = [[(0, 0, -1)],
@@ -431,17 +357,10 @@ class TestAmplitudeRGBs(unittest.TestCase):
 
             with self.subTest(amplitude_rgbs=amplitude_rgbs):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.amplitude_rgbs = amplitude_rgbs
 
                 self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-                actual_error_message = str(error.exception)
-
-                INDEX = 0
-                expected_error_message = f'The blue value for the rgb at index {INDEX}, {amplitude_rgbs[INDEX]}, was not >= 0 and <= 255.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_rgb_does_not_have_three_values(self):
         AMPLITUDE_RGBS_WITH_RGBS_WITHOUT_THREE_VALUES = [[tuple()],
@@ -454,17 +373,10 @@ class TestAmplitudeRGBs(unittest.TestCase):
 
             with self.subTest(amplitude_rgbs=amplitude_rgbs):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     self.settings.amplitude_rgbs = amplitude_rgbs
 
                 self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-                actual_error_message = str(error.exception)
-
-                INDEX = 0
-                expected_error_message = f'The rgb at index {INDEX}, {amplitude_rgbs[INDEX]}, was not an Iterable with three values.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_valid_value(self):
         def create_amplitude_rgbs(color: str) -> List[List[Tuple[int, int, int]]]:

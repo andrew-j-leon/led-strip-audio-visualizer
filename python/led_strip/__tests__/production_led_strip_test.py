@@ -156,15 +156,10 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
         for invalid_group in INVALID_GROUPS:
             with self.subTest(group=invalid_group):
 
-                with self.assertRaises(IndexError) as error:
+                with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
 
                     led_strip.enqueue_rgb(invalid_group, rgb)
-
-                error_message = str(error.exception)
-                expected_error_message = f'Tried to enqueue RGB {repr(rgb)} into group {invalid_group}, but valid group indices range from 0 (inclusive) to {NUMBER_OF_GROUPS} (exclusive).'
-
-                self.assertEqual(error_message, expected_error_message)
 
                 self.check_all_groups_are_rgb(self.BLACK_RGB)
 
@@ -174,15 +169,10 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
         for invalid_group in INVALID_GROUPS:
             with self.subTest(group=invalid_group):
 
-                with self.assertRaises(IndexError) as error:
+                with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
 
                     self.led_strip.enqueue_rgb(invalid_group, rgb)
-
-                error_message = str(error.exception)
-                expected_error_message = f'Tried to enqueue RGB {repr(rgb)} into group {invalid_group}, but valid group indices range from 0 (inclusive) to {self.NUMBER_OF_GROUPS} (exclusive).'
-
-                self.assertEqual(error_message, expected_error_message)
 
                 self.check_all_groups_are_rgb(self.BLACK_RGB)
 

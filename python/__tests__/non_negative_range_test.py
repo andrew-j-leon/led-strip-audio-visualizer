@@ -21,13 +21,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in RANGES:
             with self.subTest(range=(start, end)):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     NonNegativeRange(start, end)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'start ({start}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_end_is_negative(self):
         RANGES = [(0, -1), (0, -100),
@@ -36,13 +31,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in RANGES:
             with self.subTest(range=(start, end)):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     NonNegativeRange(start, end)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'end ({end}) must be >= 0.'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
     def test_start_is_greater_than_end(self):
         RANGES = [(1, 0), (100, 0), (2, 1), (100, 1),
@@ -51,13 +41,8 @@ class TestConstructor(unittest.TestCase):
         for start, end in RANGES:
             with self.subTest(range=(start, end)):
 
-                with self.assertRaises(ValueError) as error:
+                with self.assertRaises(ValueError):
                     NonNegativeRange(start, end)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = f'start ({start}) must be <= end ({end}).'
-
-                self.assertEqual(actual_error_message, expected_error_message)
 
 
 class TestStartAndEnd(unittest.TestCase):

@@ -163,13 +163,9 @@ class TestUpdateLedStrips(unittest.TestCase):
     def test_empty_audio_data(self):
         audio_data = b''
 
-        with self.assertRaises(ValueError) as error:
-            self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
-
-        actual_error_message = str(error.exception)
-        expected_error_message = 'Invalid number of FFT data points (0) specified.'
-
-        self.assertEqual(actual_error_message, expected_error_message)
+        with self.assertRaises(ValueError):
+            self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES,
+                                               self.SAMPLING_RATE)
 
     def test_audio_data_length(self):
         for valid_length in range(2, 100, 2):
@@ -186,13 +182,9 @@ class TestUpdateLedStrips(unittest.TestCase):
 
             with self.subTest(f'len(audio_data) = {len(audio_data)}'):
 
-                with self.assertRaises(ValueError) as error:
-                    self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
-
-                actual_error_message = str(error.exception)
-                expected_error_message = 'buffer size must be a multiple of element size'
-
-                self.assertEqual(actual_error_message, expected_error_message)
+                with self.assertRaises(ValueError):
+                    self.spectrogram.update_led_strips(self.led_strip, audio_data, self.NUMBER_OF_FRAMES,
+                                                       self.SAMPLING_RATE)
 
     def test_silent_audio_data(self):
         audio_data = b'\x00' * 141120
