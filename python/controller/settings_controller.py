@@ -54,30 +54,15 @@ class SettingsController:
             return ''
 
     def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent, Event]:
-        def the_current_settings_name_is_selected(settings_name: str):
-            try:
-                return settings_name == self.__settings_collection.current_name
-
-            except AttributeError:
-                return False
-
-        def a_non_current_settings_name_is_selected(settings_name: str):
-            try:
-                return (settings_name != self.__settings_collection.current_name
-                        and settings_name in self.__settings_collection)
-
-            except AttributeError:
-                return False
-
         EVENT = self.__widget_gui.read_event_and_update_gui()
 
         if (EVENT == WidgetGuiEvent.TIMEOUT):
             SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
 
-            if (the_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
+            if (self.__the_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
                 return Event.SELECT_CURRENT_SETTINGS_NAME
 
-            elif (a_non_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
+            elif (self.__a_non_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
                 return Event.SELECT_NON_CURRENT_SETTINGS_NAME
 
             elif (SELECTED_SETTINGS_NAME == ''):
@@ -86,6 +71,21 @@ class SettingsController:
             return Event.ENTER_NEW_SETTINGS_NAME
 
         return EVENT
+
+    def __the_current_settings_name_is_selected(self, settings_name: str):
+        try:
+            return settings_name == self.__settings_collection.current_name
+
+        except AttributeError:
+            return False
+
+    def __a_non_current_settings_name_is_selected(self, settings_name: str):
+        try:
+            return (settings_name != self.__settings_collection.current_name
+                    and settings_name in self.__settings_collection)
+
+        except AttributeError:
+            return False
 
     def handle_event(self, event: Union[Element, WidgetGuiEvent]):
         SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
@@ -106,15 +106,15 @@ class SettingsController:
             self.__widget_gui.close()
 
         elif (event != WidgetGuiEvent.TIMEOUT):
-            save_button: Button = self.__widget_gui.get_widget(Element.SAVE_BUTTON)
-            delete_button: Button = self.__widget_gui.get_widget(Element.DELETE_BUTTON)
+            SAVE_BUTTON: Button = self.__widget_gui.get_widget(Element.SAVE_BUTTON)
+            DELETE_BUTTON: Button = self.__widget_gui.get_widget(Element.DELETE_BUTTON)
 
             if (event == Event.SELECT_CURRENT_SETTINGS_NAME):
-                save_button.enabled = True
-                delete_button.enabled = True
+                SAVE_BUTTON.enabled = True
+                DELETE_BUTTON.enabled = True
 
-                self.__widget_gui.update_widget(save_button)
-                self.__widget_gui.update_widget(delete_button)
+                self.__widget_gui.update_widget(SAVE_BUTTON)
+                self.__widget_gui.update_widget(DELETE_BUTTON)
 
             elif (event == Event.SELECT_NON_CURRENT_SETTINGS_NAME):
                 try:
@@ -128,18 +128,18 @@ class SettingsController:
                     raise error
 
             elif (event == Event.CLEAR_SETTINGS_NAME):
-                save_button.enabled = False
-                delete_button.enabled = False
+                SAVE_BUTTON.enabled = False
+                DELETE_BUTTON.enabled = False
 
-                self.__widget_gui.update_widget(save_button)
-                self.__widget_gui.update_widget(delete_button)
+                self.__widget_gui.update_widget(SAVE_BUTTON)
+                self.__widget_gui.update_widget(DELETE_BUTTON)
 
             elif (event == Event.ENTER_NEW_SETTINGS_NAME):
-                save_button.enabled = True
-                delete_button.enabled = False
+                SAVE_BUTTON.enabled = True
+                DELETE_BUTTON.enabled = False
 
-                self.__widget_gui.update_widget(save_button)
-                self.__widget_gui.update_widget(delete_button)
+                self.__widget_gui.update_widget(SAVE_BUTTON)
+                self.__widget_gui.update_widget(DELETE_BUTTON)
 
             else:
                 raise ValueError(f'This SettingsController does not recognize the event {event}.')
@@ -148,7 +148,7 @@ class SettingsController:
         def get_widget(widget_key: Element) -> Widget:
             return WIDGETS[widget_key]
 
-        WIDGETS = self.__create_widgets_with_keys()
+        WIDGETS = self.__create_widgets()
 
         SETTINGS_NAMES_COMBO = get_widget(Element.SETTINGS_NAME_COMBO)
         SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
@@ -213,12 +213,12 @@ class SettingsController:
         self.__widget_gui.display_layout()
 
     def __update_widgets(self):
-        WIDGETS = self.__create_widgets_with_keys()
+        WIDGETS = self.__create_widgets()
 
         for widget in WIDGETS.values():
             self.__widget_gui.update_widget(widget)
 
-    def __create_widgets_with_keys(self) -> Dict[Element, Widget]:
+    def __create_widgets(self) -> Dict[Element, Widget]:
         def create_settings_names_combo():
             SETTINGS_NAMES = list(self.__settings_collection.names())
             SETTINGS_NAMES_COMBO_SIZE = (40, 7)

@@ -1,6 +1,6 @@
 from controller.audio_in_controller import AudioInController
 from controller.settings_controller import SettingsController
-from libraries.widget_gui import ProductionWidgetGui
+from libraries.widget_gui import ProductionWidgetGui, WidgetGuiEvent
 from util import Settings, SettingsCollection
 
 if __name__ == '__main__':
@@ -44,4 +44,12 @@ if __name__ == '__main__':
         audio_in_controller = AudioInController(audio_in_controller_widget_gui,
                                                 settings_controller)
 
-        audio_in_controller.run()
+        audio_in_controller.display()
+
+        event = audio_in_controller.read_event_and_update_gui()
+
+        while (event != WidgetGuiEvent.CLOSE_WINDOW):
+            audio_in_controller.handle_event(event)
+            event = audio_in_controller.read_event_and_update_gui()
+
+        audio_in_controller.handle_event(event)
