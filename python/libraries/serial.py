@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Union
 
 import serial
+from serial.serialutil import SerialException
 
 PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE = 'N', 'E', 'O', 'M', 'S'
 STOPBITS_ONE, STOPBITS_ONE_POINT_FIVE, STOPBITS_TWO = (1, 1.5, 2)
@@ -28,13 +29,20 @@ class Serial(ABC):
         pass
 
     @abstractmethod
+    def open(self, port: str, baud_rate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
+             read_timeout: int, write_timeout: int):
+        pass
+
+    @abstractmethod
     def close(self):
         pass
 
 
 class ProductionSerial(Serial):
-    def __init__(self, port: str, baud_rate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
-                 read_timeout: int, write_timeout: int):
+    def open(self, port: str, baud_rate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
+             read_timeout: int, write_timeout: int):
+        self.close()
+
         self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
                                       read_timeout, write_timeout=write_timeout)
 
@@ -48,17 +56,41 @@ class ProductionSerial(Serial):
 
     @property
     def number_of_bytes_in_buffer(self) -> int:
-        return self.__serial.in_waiting
+        try:
+            return self.__serial.in_waiting
+
+        except (AttributeError, SerialException):
+            raise ValueError('No Serial connection is established. Did you remember to call '
+                             'open? Did you call close, but never called open after?')
 
     @property
     def number_of_leds(self) -> int:
-        return self.__number_of_leds
+        try:
+            return self.__number_of_leds
+
+        except (AttributeError, SerialException):
+            raise ValueError('No Serial connection is established. Did you remember to call '
+                             'open? Did you call close, but never called open after?')
 
     def read(self, number_of_bytes: int) -> Any:
-        return self.__serial.read(number_of_bytes)
+        try:
+            return self.__serial.read(number_of_bytes)
+
+        except (AttributeError, SerialException):
+            raise ValueError('No Serial connection is established. Did you remember to call '
+                             'open? Did you call close, but never called open after?')
 
     def write(self, data: bytes):
-        return self.__serial.write(data)
+        try:
+            return self.__serial.write(data)
+
+        except (AttributeError, SerialException):
+            raise ValueError('No Serial connection is established. Did you remember to call '
+                             'open? Did you call close, but never called open after?')
 
     def close(self):
-        return self.__serial.close()
+        try:
+            self.__serial.close()
+
+        except AttributeError:
+            pass

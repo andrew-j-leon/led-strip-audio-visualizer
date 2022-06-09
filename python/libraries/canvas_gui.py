@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from tkinter import TclError
 from typing import List
 
 import PySimpleGUI as sg
@@ -11,6 +12,15 @@ class CanvasGui(ABC):
     @property
     @abstractmethod
     def width(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def height(self) -> int:
+        pass
+
+    @abstractmethod
+    def open(self):
         pass
 
     @abstractmethod
@@ -45,8 +55,24 @@ class ProductionCanvasGui(CanvasGui):
             raise ValueError(f'height must be >= 0, but was {height}.')
 
         self.__width = width
+        self.__height = height
 
-        canvas = sg.Canvas(size=(width, height), background_color='#4a4a4a', key=self.CANVAS_KEY)
+    @property
+    def width(self):
+        return self.__width
+
+    @property
+    def height(self):
+        return self.__height
+
+    def update(self):
+        self.__window.read(timeout=0)
+
+    def open(self):
+        self.close()
+
+        SIZE = (self.width, self.height)
+        canvas = sg.Canvas(size=SIZE, background_color='#4a4a4a', key=self.CANVAS_KEY)
 
         layout: List[List[sg.Element]] = [[canvas]]
 
@@ -54,15 +80,12 @@ class ProductionCanvasGui(CanvasGui):
                                   margins=(0, 0), titlebar_background_color="#000917", titlebar_text_color="#8a8a8a",
                                   disable_close=True, disable_minimize=False)
 
-    @property
-    def width(self):
-        return self.__width
-
-    def update(self):
-        self.__window.read(timeout=0)
-
     def close(self):
-        self.__window.close()
+        try:
+            self.__window.close()
+
+        except AttributeError:
+            pass
 
     def create_text(self, center_x: int, center_y: int, text: str, font: Font = Font(), fill_color: str = '#000000') -> int:
         try:
@@ -75,6 +98,9 @@ class ProductionCanvasGui(CanvasGui):
         except AttributeError:
             raise ValueError('You must call self.update() before creating elements on a ProductionCanvasGui.')
 
+        except TclError:
+            raise ValueError(f'The canvas is closed. Make sure to call open.')
+
     def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str = '#000000') -> int:
         try:
             canvas_element: sg.Element = self.__window.find_element(self.CANVAS_KEY)
@@ -86,6 +112,9 @@ class ProductionCanvasGui(CanvasGui):
         except AttributeError:
             raise ValueError('You must call self.update() before creating elements on a ProductionCanvasGui.')
 
+        except TclError:
+            raise ValueError(f'The canvas is closed. Make sure to call open.')
+
     def set_element_fill_color(self, element_id: int, color: str):
         try:
             canvas_element: sg.Element = self.__window.find_element(self.CANVAS_KEY)
@@ -94,3 +123,6 @@ class ProductionCanvasGui(CanvasGui):
 
         except AttributeError:
             raise ValueError('You must call self.update() before editting elements.')
+
+        except TclError:
+            raise ValueError(f'The canvas is closed. Make sure to call open.')

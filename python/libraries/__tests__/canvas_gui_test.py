@@ -74,24 +74,14 @@ class TestFont(unittest.TestCase):
 
 
 class TestConstructor(unittest.TestCase):
-    def setUp(self):
-        self.__canvas_patch = patch('PySimpleGUI.Canvas')
-        self.__window_patch = patch('PySimpleGUI.Window')
-
-        self.canvas_mock = self.__canvas_patch.start()
-        self.window_mock = self.__window_patch.start()
-
-        self.addCleanup(self.__canvas_patch.stop)
-        self.addCleanup(self.__window_patch.stop)
-
     def test_valid(self):
         WIDTH = 1350
         HEIGHT = 600
 
-        ProductionCanvasGui(WIDTH, HEIGHT)
+        canvas_gui = ProductionCanvasGui(WIDTH, HEIGHT)
 
-        self.window_mock.assert_called_once()
-        self.canvas_mock.assert_called_once()
+        self.assertEqual(canvas_gui.width, WIDTH)
+        self.assertEqual(canvas_gui.height, HEIGHT)
 
     def test_invalid_width(self,):
         WIDTHS = [-100, -1]
@@ -116,7 +106,7 @@ class TestConstructor(unittest.TestCase):
                     ProductionCanvasGui(width, height)
 
 
-class TestMethod(unittest.TestCase):
+class ProductionCanvasGuiTestCase(unittest.TestCase):
     def setUp(self):
         self.__canvas_patch = patch('PySimpleGUI.Canvas')
         self.__window_patch = patch('PySimpleGUI.Window')
@@ -124,9 +114,10 @@ class TestMethod(unittest.TestCase):
         self.addCleanup(self.__canvas_patch.stop)
         self.addCleanup(self.__window_patch.stop)
 
-        self.__window_mock = self.__window_patch.start()
+        self.canvas_mock = self.__canvas_patch.start()
+        self.window_mock = self.__window_patch.start()
 
-        self.window_instance_mock = self.__window_mock.return_value = MagicMock()
+        self.window_instance_mock = self.window_mock.return_value = MagicMock()
         self.element_instance_mock = self.window_instance_mock.find_element.return_value = MagicMock()
 
         WIDTH = 1350
@@ -134,32 +125,47 @@ class TestMethod(unittest.TestCase):
         self.gui = ProductionCanvasGui(WIDTH, HEIGHT)
 
 
-class TestWidth(TestMethod):
-    def test_width(self):
-        WIDTH = 1350
-        HEIGHT = 600
+class TestOpen(ProductionCanvasGuiTestCase):
+    def test_open(self):
+        self.gui.open()
 
-        gui = ProductionCanvasGui(WIDTH, HEIGHT)
+        self.window_mock.assert_called_once()
+        self.canvas_mock.assert_called_once()
 
-        self.assertEqual(gui.width, WIDTH)
+    def test_open_when_already_open(self):
+        self.gui.open()
+
+        self.window_instance_mock.close.assert_not_called()
+        self.window_mock.reset_mock()
+        self.canvas_mock.reset_mock()
+
+        self.gui.open()
+
+        self.window_instance_mock.close.assert_called_once()
+        self.window_mock.assert_called_once()
+        self.canvas_mock.assert_called_once()
 
 
-class TestUpdate(TestMethod):
+class TestProductionCanvasGui(ProductionCanvasGuiTestCase):
+    def setUp(self):
+        super().setUp()
+        self.gui.open()
+
     def test_update(self):
         self.gui.update()
 
         self.window_instance_mock.read.assert_called_once_with(timeout=0)
 
-
-class TestClose(TestMethod):
     def test_close(self):
         self.gui.close()
 
         self.window_instance_mock.close.assert_called_once()
 
+    def test_close_when_already_closed(self):
+        self.gui.close()
+        self.gui.close()
 
-class TestCreateText(TestMethod):
-    def test_valid(self):
+    def test_create_text(self):
         tk_canvas_mock = self.element_instance_mock.TKCanvas = MagicMock()
 
         ELEMENT_ID = 10
@@ -178,7 +184,7 @@ class TestCreateText(TestMethod):
 
         self.assertEqual(element_id, ELEMENT_ID)
 
-    def test_update_not_called(self):
+    def test_create_text_when_update_was_not_called(self):
         self.element_instance_mock.TKCanvas = None
 
         with self.assertRaises(ValueError):
@@ -189,9 +195,7 @@ class TestCreateText(TestMethod):
 
             self.gui.create_text(CENTER_X, CENTER_Y, TEXT, FONT)
 
-
-class TestOval(TestMethod):
-    def test_valid(self):
+    def test_create_oval(self):
         tk_canvas_mock = self.element_instance_mock.TKCanvas = MagicMock()
 
         ELEMENT_ID = 10
@@ -213,7 +217,7 @@ class TestOval(TestMethod):
 
         self.assertEqual(element_id, ELEMENT_ID)
 
-    def test_update_not_called(self):
+    def test_create_oval_when_update_was_not_called(self):
         self.element_instance_mock.TKCanvas = None
 
         with self.assertRaises(ValueError):
@@ -227,9 +231,7 @@ class TestOval(TestMethod):
 
             self.gui.create_oval(TOP_LEFT_X, TOP_LEFT_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y, FILL_COLOR)
 
-
-class TestSetElementFillColor(TestMethod):
-    def test_valid(self):
+    def test_set_element_fill_color(self):
         tk_canvas_mock = self.element_instance_mock.TKCanvas = MagicMock()
 
         ELEMENT_ID = 10
@@ -238,7 +240,7 @@ class TestSetElementFillColor(TestMethod):
 
         tk_canvas_mock.itemconfig.assert_called_once_with(ELEMENT_ID, fill=FILL_COLOR)
 
-    def test_update_not_called(self):
+    def test_set_element_fill_color_when_update_was_not_called(self):
         with self.assertRaises(ValueError):
             self.element_instance_mock.TKCanvas = None
 

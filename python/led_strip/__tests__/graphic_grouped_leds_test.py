@@ -22,8 +22,15 @@ class FakeCanvasGui(CanvasGui):
     def width(self) -> int:
         return 1920
 
+    @property
+    def height(self) -> int:
+        return 1080
+
     def close(self):
         self.closed = True
+
+    def open(self):
+        self.closed = False
 
     def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str = '#000000') -> int:
         element = Oval(top_left_x, top_left_y, bottom_right_x, bottom_right_y)

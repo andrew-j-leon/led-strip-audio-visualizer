@@ -29,6 +29,9 @@ class FakeSerial(Serial):
     def close(self):
         pass
 
+    def open(self):
+        pass
+
 
 class TestConstructor(unittest.TestCase):
     NUMBER_OF_LEDS = 100

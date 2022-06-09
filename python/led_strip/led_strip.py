@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Tuple
 
-from led_strip.grouped_leds import GroupedLeds
+from led_strip.grouped_leds import GroupedLeds, ProductionGroupedLeds
 from util import RGB
 
 
@@ -32,9 +32,13 @@ class LedStrip(ABC):
     def clear_queued_colors(self):
         pass
 
+    @abstractmethod
+    def turn_off(self):
+        pass
+
 
 class ProductionLedStrip(LedStrip):
-    def __init__(self, grouped_leds: GroupedLeds):
+    def __init__(self, grouped_leds: GroupedLeds = ProductionGroupedLeds()):
         self.__grouped_leds = grouped_leds
         self.__color_queue: List[Tuple[int, RGB]] = []
 
@@ -60,3 +64,14 @@ class ProductionLedStrip(LedStrip):
 
     def clear_queued_colors(self):
         self.__color_queue.clear()
+
+    def turn_off(self):
+        self.clear_queued_colors()
+
+        BLACK = (0, 0, 0)
+
+        for group in range(self.number_of_groups):
+            self.enqueue_rgb(group, BLACK)
+
+        self.show_queued_colors()
+        self.clear_queued_colors()

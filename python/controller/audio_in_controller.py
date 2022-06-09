@@ -1,12 +1,14 @@
-from enum import Enum, auto
-from typing import List, Tuple, Union
+from __future__ import annotations
 
-import pyaudio
+from enum import Enum, auto
+from typing import Callable, List, Tuple, Union
+
 from controller.settings_controller import SettingsController
-from led_strip.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
+from led_strip.grouped_leds import GraphicGroupedLeds, GroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
-from libraries.canvas_gui import ProductionCanvasGui
-from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
+from libraries.audio_in_stream import AudioInStream
+from libraries.canvas_gui import CanvasGui
+from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Serial
 from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
 from libraries.widget import Button, Combo, Text
 from spectrogram import Spectrogram
@@ -16,8 +18,8 @@ from util import Font, Settings
 class Element(Enum):
     LED_STRIP_COMBO = auto()
 
-    PAUSE_AUDIO_BUTTON = auto()
-    RESUME_AUDIO_BUTTON = auto()
+    STOP_AUDIO_BUTTON = auto()
+    PLAY_AUDIO_BUTTON = auto()
 
     CURRENT_INPUT_SOURCE_MESSAGE = auto()
     SELECT_INPUT_SOURCE_DROPDOWN = auto()
@@ -38,47 +40,42 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, widget_gui: WidgetGui, settings_controller: SettingsController):
+    def __init__(self, widget_gui: WidgetGui, settings_controller: SettingsController,
+                 create_serial_connection: Callable[[], Serial], create_led_strip_canvas_gui: Callable[[], CanvasGui],
+                 create_audio_in_stream: Callable[[], AudioInStream]):
         self.__widget_gui = widget_gui
 
         self.__settings_controller = settings_controller
 
-        self._audio_player_generator = pyaudio.PyAudio()
-        self.__audio_player: pyaudio.Stream = None
-        self.__init_audio_player()
+        self.__led_strip: LedStrip = ProductionLedStrip()
+        self.__spectrogram = Spectrogram(self.__led_strip)
 
-        self.__spectrogram: Spectrogram = None
-        self.__led_strip: LedStrip = None
+        self.__serial = create_serial_connection()
+        self.__led_strip_gui = create_led_strip_canvas_gui()
+        self.__audio_in_stream = create_audio_in_stream()
 
     @property
     def __settings(self) -> Settings:
         return self.__settings_controller.settings
 
-    def __del__(self):
-        self.__delete_spectrogram()
+    def __enter__(self) -> AudioInController:
+        return self
 
-        if (self.__led_strip is not None):
-            BLACK_RGB = (0, 0, 0)
+    def __exit__(self, *args):
+        try:
+            self.__led_strip.turn_off()
 
-            self.__led_strip.clear_queued_colors()
+        except ValueError:
+            pass
 
-            for group in range(self.__led_strip.number_of_groups):
-                self.__led_strip.enqueue_rgb(group, BLACK_RGB)
-
-            self.__led_strip.show_queued_colors()
-
-            del self.__led_strip
-            self.__led_strip = None
-
-        self.__close_audio_player()
-
-        if (self._audio_player_generator is not None):
-            self._audio_player_generator.terminate()
+        self.__audio_in_stream.close()
+        self.__serial.close()
+        self.__led_strip_gui.close()
 
     def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent]:
         EVENT = self.__widget_gui.read_event_and_update_gui()
 
-        if (EVENT == WidgetGuiEvent.TIMEOUT and self.__is_state(State.PLAYING)):
+        if (EVENT == WidgetGuiEvent.TIMEOUT and self.__audio_in_stream.is_open()):
             return Event.PLAYING
 
         return EVENT
@@ -96,30 +93,41 @@ class AudioInController:
 
         elif (event == Event.PLAYING):
             MILLISECONDS_PER_SECOND = 1000
-            frames_per_millisecond = self.__audio_player._rate / MILLISECONDS_PER_SECOND  # sample rate (frames / second) / 1000 ms/second = frames / millisecond
+            FRAMES_PER_MILLISECOND = self.__audio_in_stream.sample_rate / MILLISECONDS_PER_SECOND
+            NUMBER_OF_FRAMES = int(FRAMES_PER_MILLISECOND * self.__settings.milliseconds_per_audio_chunk)
 
-            number_of_frames = int(frames_per_millisecond * self.__settings.milliseconds_per_audio_chunk)  # frames / ms * ms = frames
+            AUDIO_CHUNK = self.__audio_in_stream.read(NUMBER_OF_FRAMES)
 
-            AUDIO_CHUNK = self.__audio_player.read(number_of_frames)
+            self.__spectrogram.update_led_strip(AUDIO_CHUNK, NUMBER_OF_FRAMES, self.__audio_in_stream.sample_rate)
 
-            self.__spectrogram.update_led_strips(self.__led_strip, AUDIO_CHUNK, number_of_frames,
-                                                 self.__audio_player._rate)
+        elif (event == Element.STOP_AUDIO_BUTTON):
+            self.__led_strip.turn_off()
 
-        elif (event == Element.PAUSE_AUDIO_BUTTON):
-            self.__audio_player.stop_stream()
-            self.__delete_spectrogram()
+            self.__led_strip_gui.close()
+            self.__serial.close()
+            self.__audio_in_stream.close()
+
             self.__set_audio_paused_state()
 
-        elif (event == Element.RESUME_AUDIO_BUTTON):
-            input_source = self._audio_player_generator.get_default_input_device_info()["name"]
+        elif (event == Element.PLAY_AUDIO_BUTTON):
+            self.__audio_in_stream.open()
+
+            input_source = self.__audio_in_stream.input_source
             CURRENT_INPUT_SOURCE = f"Input Source : {input_source}"
 
             CURRENT_INPUT_SOURCE_TEXT = self.__widget_gui.get_widget(Element.CURRENT_INPUT_SOURCE_MESSAGE)
             CURRENT_INPUT_SOURCE_TEXT.value = CURRENT_INPUT_SOURCE
             self.__widget_gui.update_widget(CURRENT_INPUT_SOURCE_TEXT)
 
-            self.__init_spectrogram()
-            self.__audio_player.start_stream()
+            self.__spectrogram.set_amplitude_rgbs(self.__settings.amplitude_rgbs)
+            self.__spectrogram.set_frequency_range(self.__settings.minimum_frequency,
+                                                   self.__settings.maximum_frequency)
+
+            GROUPED_LEDS = self.__create_grouped_leds()
+            self.__led_strip = ProductionLedStrip(GROUPED_LEDS)
+
+            self.__spectrogram.set_led_strip(self.__led_strip)
+
             self.__set_audio_playing_state()
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
@@ -139,8 +147,8 @@ class AudioInController:
 
                   [Text(Element.CURRENT_INPUT_SOURCE_MESSAGE, text="No audio currently playing.", font=TITLE_TEXT)],
 
-                  [Button(Element.PAUSE_AUDIO_BUTTON, text="Stop ([])", font=FONT, enabled=False),
-                   Button(Element.RESUME_AUDIO_BUTTON, text="Play (>)", font=FONT, enabled=True)],
+                  [Button(Element.STOP_AUDIO_BUTTON, text="Stop ([])", font=FONT, enabled=False),
+                   Button(Element.PLAY_AUDIO_BUTTON, text="Play (>)", font=FONT, enabled=True)],
 
                   [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="LED Strip Type : ", font=FONT),
                    LED_STRIP_COMBO]]
@@ -148,37 +156,10 @@ class AudioInController:
         self.__widget_gui.set_layout(LAYOUT)
         self.__widget_gui.display_layout()
 
-    def __is_state(self, state: str) -> bool:
-        if (state == State.PLAYING):
-            return (isinstance(self.__audio_player, pyaudio.Stream) and self.__audio_player.is_active())
-
-        elif (state == State.PAUSED):
-            return (isinstance(self.__audio_player, pyaudio.Stream) and self.__audio_player.is_stopped())
-
-        return False
-
-    def __init_audio_player(self):
-        default_input_device_info: dict = self._audio_player_generator.get_default_input_device_info()
-
-        if (len(default_input_device_info) == 0):
-            raise ValueError("There is no default input device set on this machine.")
-
-        self.__close_audio_player()
-
-        self.__audio_player = self._audio_player_generator.open(format=pyaudio.paInt16, channels=default_input_device_info["maxInputChannels"],
-                                                                rate=int(default_input_device_info["defaultSampleRate"]), input=True)
-
-        self.__audio_player.stop_stream()
-
-    def __close_audio_player(self):
-        if (self.__audio_player):
-            self.__audio_player.close()
-            self.__audio_player = None
-
     def __set_audio_paused_state(self):
         SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
-        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.PAUSE_AUDIO_BUTTON)
-        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.RESUME_AUDIO_BUTTON)
+        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
+        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)
         LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
 
         SETTINGS_BUTTON.enabled = True
@@ -193,8 +174,8 @@ class AudioInController:
 
     def __set_audio_playing_state(self):
         SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
-        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.PAUSE_AUDIO_BUTTON)
-        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.RESUME_AUDIO_BUTTON)
+        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
+        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)
         LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
 
         SETTINGS_BUTTON.enabled = False
@@ -226,9 +207,8 @@ class AudioInController:
 
         return group_index_to_led_range
 
-    def __get_led_strip(self):
+    def __create_grouped_leds(self) -> GroupedLeds:
         LED_STRIP_COMBO = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
-
         LED_RANGE = (self.__settings.start_led, self.__settings.end_led)
 
         if (LED_STRIP_COMBO.value == 'Serial LED Strip'):
@@ -238,39 +218,13 @@ class AudioInController:
             READ_TIMEOUT = 1
             WRITE_TIMEOUT = 0
 
-            serial = ProductionSerial(self.__settings.serial_port, self.__settings.serial_baudrate,
-                                      PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
+            self.__serial.open(self.__settings.serial_port, self.__settings.serial_baudrate,
+                               PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
 
-            serial_grouped_leds = SerialGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(),
-                                                    serial, self.__settings.brightness)
+            return SerialGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(),
+                                     self.__serial, self.__settings.brightness)
 
-            return ProductionLedStrip(serial_grouped_leds)
+        self.__led_strip_gui.open()
 
-        if (LED_STRIP_COMBO.value == 'Graphic LED Strip'):
-            WIDTH = 1350
-            HEIGHT = 600
-
-            gui = ProductionCanvasGui(WIDTH, HEIGHT)
-            gui.update()
-
-            graphic_grouped_leds = GraphicGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(), gui)
-
-            return ProductionLedStrip(graphic_grouped_leds)
-
-    def __init_spectrogram(self):
-        self.__delete_spectrogram()
-
-        FREQUENCY_RANGE = (self.__settings.minimum_frequency,
-                           self.__settings.maximum_frequency)
-        self.__led_strip = self.__get_led_strip()
-
-        self.__spectrogram = Spectrogram(FREQUENCY_RANGE, self.__settings.amplitude_rgbs)
-
-    def __delete_spectrogram(self):
-        if (self.__led_strip is not None):
-            del self.__led_strip
-            self.__led_strip = None
-
-        if (self.__spectrogram is not None):
-            del self.__spectrogram
-            self.__spectrogram = None
+        return GraphicGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(),
+                                  self.__led_strip_gui)

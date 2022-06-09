@@ -66,7 +66,8 @@ class GroupedLeds(ABC):
 
 
 class ProductionGroupedLeds(GroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]]):
+    def __init__(self, led_range: Tuple[int, int] = (0, 0),
+                 group_led_ranges: List[Tuple[int, int]] = []):
         start, end = led_range
 
         self.__led_range = NonNegativeIntegerRange(start, end)
@@ -132,17 +133,12 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         super().__init__(led_range, group_led_ranges)
 
         self.__gui = gui
+        self.__gui.update()
+
         self.__led_diameter = led_diameter
 
         self.__led_element_ids: Dict[int, int] = dict()
         self.__draw_and_store_leds()
-
-    def __del__(self):
-        try:
-            self.__gui.close()
-
-        except AttributeError:
-            pass
 
     @property
     def led_diameter(self) -> int:
@@ -213,18 +209,6 @@ class SerialGroupedLeds(ProductionGroupedLeds):
             raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial.number_of_leds} (exclusive), but this LedStrip ranges from {self.start_led} (inclusive) to {self.end_led} (exclusive).")
 
         self.__configure_serial()
-
-    def __del__(self):
-        try:
-            group_rgbs = []
-            for group in range(self.number_of_groups):
-                group_rgbs.append((group, (0, 0, 0)))
-
-            self.set_group_rgbs(group_rgbs)
-            self.__serial.close()
-
-        except AttributeError:
-            pass
 
     def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
         self.__send_bytes(len(group_rgbs).to_bytes(length=1, byteorder="big"))
