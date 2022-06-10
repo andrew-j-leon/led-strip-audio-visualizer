@@ -310,7 +310,7 @@ class SettingsCollection:
 
                     collection[name] = Settings(**settings)
 
-                except json.decoder.JSONDecodeError:
+                except (json.decoder.JSONDecodeError, PermissionError):
                     pass
 
         for name, settings in collection.items():
@@ -352,7 +352,7 @@ class SettingsCollection:
                 try:
                     save_file.unlink()
 
-                except IsADirectoryError:
+                except (IsADirectoryError, PermissionError):
                     pass
 
             for save_file in temporary_save_directory.iterdir():
