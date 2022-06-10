@@ -107,13 +107,12 @@ class AudioInController:
             self.__serial.close()
             self.__audio_in_stream.close()
 
-            self.__set_audio_paused_state()
+            self.__set_audio_paused_gui_state()
 
         elif (event == Element.PLAY_AUDIO_BUTTON):
             self.__audio_in_stream.open()
 
-            input_source = self.__audio_in_stream.input_source
-            CURRENT_INPUT_SOURCE = f"Input Source : {input_source}"
+            CURRENT_INPUT_SOURCE = f"Input Source : {self.__audio_in_stream.input_source}"
 
             CURRENT_INPUT_SOURCE_TEXT = self.__widget_gui.get_widget(Element.CURRENT_INPUT_SOURCE_MESSAGE)
             CURRENT_INPUT_SOURCE_TEXT.value = CURRENT_INPUT_SOURCE
@@ -128,7 +127,7 @@ class AudioInController:
 
             self.__spectrogram.set_led_strip(self.__led_strip)
 
-            self.__set_audio_playing_state()
+            self.__set_audio_playing_gui_state()
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__widget_gui.close()
@@ -156,7 +155,7 @@ class AudioInController:
         self.__widget_gui.set_layout(LAYOUT)
         self.__widget_gui.display_layout()
 
-    def __set_audio_paused_state(self):
+    def __set_audio_paused_gui_state(self):
         SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
         PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
         RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)
@@ -172,7 +171,7 @@ class AudioInController:
         self.__widget_gui.update_widget(RESUME_BUTTON)
         self.__widget_gui.update_widget(LED_STRIP_COMBO)
 
-    def __set_audio_playing_state(self):
+    def __set_audio_playing_gui_state(self):
         SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
         PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
         RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)

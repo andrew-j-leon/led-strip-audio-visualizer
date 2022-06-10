@@ -92,11 +92,25 @@ class SettingsController:
 
         if (event == Element.SAVE_BUTTON):
             self.__save_settings()
+
+            try:
+                self.__settings_collection.save_to_files()
+
+            except ValueError:
+                pass
+
             self.__update_widgets()
 
         elif (event == Element.DELETE_BUTTON):
             try:
                 del self.__settings_collection[SELECTED_SETTINGS_NAME]
+
+                try:
+                    self.__settings_collection.save_to_files()
+
+                except ValueError:
+                    pass
+
                 self.__update_widgets()
 
             except KeyError:

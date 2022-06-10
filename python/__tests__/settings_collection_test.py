@@ -1,3 +1,4 @@
+from pathlib import Path
 import unittest
 
 from util import Settings, SettingsCollection
@@ -11,7 +12,22 @@ class SettingsCollectionTestCase(unittest.TestCase):
     NON_EXISTENT_NAME = 'non_existant_settings_name'
 
     def setUp(self):
-        self.current_settings = Settings()
+        START_LED = 100
+        END_LED = 300
+        MILLISECONDS_PER_AUDIO_CHUNK = 55
+        SERIAL_PORT = 'COM1'
+        SERIAL_BAUDRATE = 9600
+        BRIGHTNESS = 10
+        MINIMUM_FREQUENCY = 100
+        MAXIMUM_FREQUENCY = 1000
+        SHOULD_REVERSE_LEDS = True
+        NUMBER_OF_GROUPS = 50
+        AMPLITUDE_RGBS = [(0, 0, 0), (1, 1, 1), (2, 3, 4)]
+
+        self.current_settings = Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK,
+                                         SERIAL_PORT, SERIAL_BAUDRATE, BRIGHTNESS, MINIMUM_FREQUENCY,
+                                         MAXIMUM_FREQUENCY, SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
+
         self.non_current_settings = Settings()
 
         self.collection = {self.CURRENT_NAME: self.current_settings,
@@ -258,3 +274,45 @@ class TestDeleteSettings(SettingsCollectionTestCase):
 
         EXPECTED_LENGTH = 0
         self.assertEqual(len(self.settings_collection), EXPECTED_LENGTH)
+
+
+class TestSavingAndLoadingFromFile(SettingsCollectionTestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.save_directory = Path('./test_saves')
+
+        self.save_directory.mkdir(exist_ok=True)
+
+        self.settings_collection.set_save_directory(self.save_directory)
+
+    def tearDown(self):
+        super().tearDown()
+
+        for file in self.save_directory.iterdir():
+            file.unlink()
+
+        self.save_directory.rmdir()
+
+    def test_can_load_the_same_collection_after_saving(self):
+        START_LED = 20
+        END_LED = 200
+
+        NEW_NAME = 'new_name'
+        NEW_SETTINGS = Settings(START_LED, END_LED)
+
+        self.settings_collection[NEW_NAME] = NEW_SETTINGS
+        self.settings_collection.current_name = NEW_NAME
+
+        self.settings_collection.save_to_files()
+
+        new_settings_collection = SettingsCollection()
+        new_settings_collection.load_from_directory(self.save_directory)
+
+        self.assertEqual(self.settings_collection, new_settings_collection)
+
+    def test_save_when_no_save_directory_set(self):
+        settings_collection = SettingsCollection()
+
+        with self.assertRaises(ValueError):
+            settings_collection.save_to_files()

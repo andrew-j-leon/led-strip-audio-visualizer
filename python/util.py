@@ -1,6 +1,8 @@
 from __future__ import annotations
+import json
 
 import os
+from pathlib import Path
 from typing import Any, Dict, Hashable, Iterable, List, Tuple
 
 
@@ -240,6 +242,9 @@ class Settings:
 
     @amplitude_rgbs.setter
     def amplitude_rgbs(self, amplitude_rgbs: List[Iterable[int]]):
+
+        new_amplitude_rgbs: List[Tuple[int, int, int]] = []
+
         for i in range(len(amplitude_rgbs)):
             try:
                 red, green, blue = amplitude_rgbs[i]
@@ -253,6 +258,8 @@ class Settings:
                 if (blue < 0 or blue > 255):
                     raise ValueError(f'The blue value for the rgb at index {i}, {amplitude_rgbs[i]}, was not >= 0 and <= 255.')
 
+                new_amplitude_rgbs.append((red, green, blue))
+
             except ValueError as error:
                 error_message = str(error).casefold()
 
@@ -261,15 +268,101 @@ class Settings:
 
                 raise error
 
-        self.__amplitude_rgbs = amplitude_rgbs
+        self.__amplitude_rgbs = new_amplitude_rgbs
 
 
 class SettingsCollection:
-    def __init__(self, collection: Dict[Hashable, Settings] = dict()):
-        self.__collection: Dict[Hashable, Settings] = dict()
+
+    class SettingsEncoder(json.JSONEncoder):
+        def default(self, o: Any) -> Any:
+            if (type(o) is Settings):
+                return dict(start_led=o.start_led,
+                            end_led=o.end_led,
+                            milliseconds_per_audio_chunk=o.milliseconds_per_audio_chunk,
+                            serial_port=o.serial_port,
+                            serial_baudrate=o.serial_baudrate,
+                            brightness=o.brightness,
+                            minimum_frequency=o.minimum_frequency,
+                            maximum_frequency=o.maximum_frequency,
+                            should_reverse_leds=o.should_reverse_leds,
+                            number_of_groups=o.number_of_groups,
+                            amplitude_rgbs=o.amplitude_rgbs)
+
+            return super().default(o)
+
+    def __init__(self, collection: Dict[str, Settings] = dict()):
+        self.__collection: Dict[str, Settings] = dict()
+
+        self.load_from_dictionary(collection)
+
+    def load_from_dictionary(self, collection: Dict[str, Settings]):
+        for name, settings in collection.items():
+            self[name] = settings
+
+    def load_from_directory(self, directory: Path):
+        collection: Dict[str, Settings] = dict()
+
+        for save_file in directory.iterdir():
+            with save_file.open() as file:
+                try:
+                    settings = json.load(file)
+                    name = save_file.name
+
+                    collection[name] = Settings(**settings)
+
+                except json.decoder.JSONDecodeError:
+                    pass
 
         for name, settings in collection.items():
             self[name] = settings
+
+        current_name_file = directory.joinpath('.current_name')
+
+        try:
+            with current_name_file.open('r') as file:
+                self.current_name = file.read().strip()
+
+        except (FileNotFoundError, ValueError):
+            pass
+
+    def set_save_directory(self, directory: Path):
+        self.__save_directory = directory
+
+    def save_to_files(self):
+        try:
+            temporary_save_directory = self.__save_directory.joinpath('temp')
+            temporary_save_directory.mkdir(exist_ok=True)
+
+            for name, settings in self.__collection.items():
+                save_file = temporary_save_directory.joinpath(name)
+
+                with save_file.open('w') as file:
+                    json.dump(settings, file, cls=self.SettingsEncoder, indent=4)
+
+            try:
+                current_name_save_file = temporary_save_directory.joinpath('.current_name')
+
+                with current_name_save_file.open('w') as file:
+                    file.write(self.current_name)
+
+            except AttributeError:
+                pass
+
+            for save_file in self.__save_directory.iterdir():
+                try:
+                    save_file.unlink()
+
+                except IsADirectoryError:
+                    pass
+
+            for save_file in temporary_save_directory.iterdir():
+                new_file_name = self.__save_directory.joinpath(save_file.name)
+                save_file.rename(new_file_name)
+
+            temporary_save_directory.rmdir()
+
+        except AttributeError:
+            raise ValueError(f'No save directory is set for this SettingsCollection.')
 
     @property
     def current_settings(self):
@@ -296,6 +389,19 @@ class SettingsCollection:
 
     def names(self):
         return self.__collection.keys()
+
+    def __eq__(self, other: Any) -> bool:
+        if (isinstance(other, SettingsCollection)):
+
+            if (self.names() == other.names() and self.current_name == other.current_name
+                    and self.current_settings == other.current_settings):
+                for name in self.names():
+                    if (self[name] != other[name]):
+                        return False
+
+                return True
+
+        return False
 
     def __len__(self):
         return len(self.__collection)

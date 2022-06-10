@@ -6,23 +6,10 @@ from libraries.serial import ProductionSerial, Serial
 from libraries.widget_gui import ProductionWidgetGui, WidgetGuiEvent
 from util import Settings, SettingsCollection
 
-
-def create_serial_connection() -> Serial:
-    return ProductionSerial()
+from pathlib import Path
 
 
-def create_canvas_gui() -> CanvasGui:
-    WIDTH = 1350
-    HEIGHT = 600
-
-    return ProductionCanvasGui(WIDTH, HEIGHT)
-
-
-def create_audio_in_stream() -> AudioInStream:
-    return ProductionAudioInStream()
-
-
-if __name__ == '__main__':
+def create_default_settings():
     START_LED = 0
     END_LED = 300
     MILLISECONDS_PER_AUDIO_CHUNK = 50
@@ -40,15 +27,37 @@ if __name__ == '__main__':
                       + [(165, 165, 13)] * 5
                       + [(165, 13, 13)] * 100)
 
-    DEFAULT_SETTINGS = Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT,
-                                SERIAL_BAUDRATE, BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY,
-                                SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
+    return Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT,
+                    SERIAL_BAUDRATE, BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY,
+                    SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
 
-    DEFAULT_SETTINGS_NAME = 'default'
 
-    COLLECTION = {DEFAULT_SETTINGS_NAME: DEFAULT_SETTINGS}
+def create_serial_connection() -> Serial:
+    return ProductionSerial()
 
-    SETTINGS_COLLECTION = SettingsCollection(COLLECTION)
+
+def create_canvas_gui() -> CanvasGui:
+    WIDTH = 1350
+    HEIGHT = 600
+
+    return ProductionCanvasGui(WIDTH, HEIGHT)
+
+
+def create_audio_in_stream() -> AudioInStream:
+    return ProductionAudioInStream()
+
+
+if __name__ == '__main__':
+    DEFAULT_SETTINGS = create_default_settings()
+    DEFAULT_SETTINGS_COLLECTION = {'default': DEFAULT_SETTINGS}
+
+    SETTINGS_COLLECTION = SettingsCollection(DEFAULT_SETTINGS_COLLECTION)
+
+    SAVE_DIRECTORY = Path('./saved_settings')
+    SAVE_DIRECTORY.mkdir(exist_ok=True)
+
+    SETTINGS_COLLECTION.load_from_directory(SAVE_DIRECTORY)
+    SETTINGS_COLLECTION.set_save_directory(SAVE_DIRECTORY)
 
     AUDIO_IN_GUI_TITLE = 'Audio In Music Visualizer'
     SETTINGS_GUI_TITLE = 'Settings'

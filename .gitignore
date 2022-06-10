@@ -1,10 +1,7 @@
-experiments/
-*.wav
-__pycache__/
-arduino_secrets.h
-tones/
-.vscode/
-*.odg
-.venv_3_10/
-.idea/
-venv/
+__pycache__
+[.]vscode
+[.]idea
+venv
+htmlcov
+[.]coverage
+saved_settings
