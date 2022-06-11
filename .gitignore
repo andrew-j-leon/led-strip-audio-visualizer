@@ -5,3 +5,4 @@ venv
 htmlcov
 [.]coverage
 saved_settings
+playground.py

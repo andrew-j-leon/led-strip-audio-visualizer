@@ -3,9 +3,9 @@ from collections import Counter
 from typing import Any, Dict, Hashable, List, Tuple
 
 from controller.settings_controller import Element, Event, SettingsController
+from libraries.widget import Button, Combo, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
-from libraries.widget import Widget, Button, Combo
-from util import Settings, SettingsCollection
+from util import Settings, SettingsCollection, convert_to_hex
 
 
 class FakeWidgetGui(WidgetGui):
@@ -169,8 +169,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         SHOULD_REVERSE_LEDS = settings.should_reverse_leds
         NUMBER_OF_GROUPS = str(settings.number_of_groups)
 
-        AMPLITUDE_RGBS = create_amplitude_rgbs_widget_value(settings.amplitude_rgbs)
-
         self.assertNotEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
         self.assertNotEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
         self.assertNotEqual(MILLISECONDS_PER_AUDIO_CHUNK, get_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT))
@@ -181,7 +179,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.assertNotEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
         self.assertNotEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
         self.assertNotEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
-        self.assertNotEqual(AMPLITUDE_RGBS, get_widget_value(Element.AMPLITUDE_RGBS_MULTILINE))
 
     def check_widget_gui_matches_settings(self, widget_gui: WidgetGui, settings: Settings):
         def get_widget_value(element: Element):
@@ -199,8 +196,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         SHOULD_REVERSE_LEDS = settings.should_reverse_leds
         NUMBER_OF_GROUPS = str(settings.number_of_groups)
 
-        AMPLITUDE_RGBS = create_amplitude_rgbs_widget_value(settings.amplitude_rgbs)
-
         self.assertEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
         self.assertEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
         self.assertEqual(MILLISECONDS_PER_AUDIO_CHUNK, get_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT))
@@ -211,7 +206,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.assertEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
         self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
         self.assertEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
-        self.assertEqual(AMPLITUDE_RGBS, get_widget_value(Element.AMPLITUDE_RGBS_MULTILINE))
 
     def set_settings_name_combo_values(self, values: List[str]):
         OLD_QUEUED_COMBO: Combo = self.widget_gui.queued_widgets[Element.SETTINGS_NAME_COMBO]
@@ -365,8 +359,30 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.set_widget_value(Element.REVERSE_LEDS_CHECK_BOX, self.NON_CURRENT_SHOULD_REVERSE_LEDS)
         self.set_widget_value(Element.NUMBER_OF_GROUPS_INPUT, self.NON_CURRENT_NUMBER_OF_GROUPS)
 
-        AMPLITUDE_RGBS = create_amplitude_rgbs_widget_value(self.NON_CURRENT_AMPLITUDE_RGBS)
-        self.set_widget_value(Element.AMPLITUDE_RGBS_MULTILINE, AMPLITUDE_RGBS)
+        RGB_1 = (1, 1, 1)
+        RGB_2 = (2, 2, 2)
+        RGB_3 = (3, 3, 3)
+
+        RGB_1_COUNT = 1
+        RGB_2_COUNT = 20
+        RGB_3_COUNT = 5
+
+        self.non_current_settings.amplitude_rgbs = ([RGB_1] * RGB_1_COUNT
+                                                    + [RGB_2] * RGB_2_COUNT
+                                                    + [RGB_3] * RGB_3_COUNT)
+
+        HEX_1 = convert_to_hex(*RGB_1)
+        HEX_2 = convert_to_hex(*RGB_2)
+        HEX_3 = convert_to_hex(*RGB_3)
+
+        self.set_widget_value(Element.DECIBEL_INPUT_1, RGB_1_COUNT)
+        self.set_widget_value(Element.COLOR_PICKER_1, HEX_1)
+
+        self.set_widget_value(Element.DECIBEL_INPUT_2, RGB_2_COUNT)
+        self.set_widget_value(Element.COLOR_PICKER_2, HEX_2)
+
+        self.set_widget_value(Element.DECIBEL_INPUT_3, RGB_3_COUNT)
+        self.set_widget_value(Element.COLOR_PICKER_3, HEX_3)
 
         self.settings_controller.handle_event(Element.SAVE_BUTTON)
 

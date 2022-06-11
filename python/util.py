@@ -1,6 +1,6 @@
 from __future__ import annotations
-import json
 
+import json
 import os
 from pathlib import Path
 from typing import Any, Dict, Hashable, Iterable, List, Tuple
@@ -457,6 +457,16 @@ def convert_to_hex(red: int, green: int, blue: int) -> str:
                     an RGB of (3, 14, 210) returns "#0314D2"
     '''
     return "#{:02x}{:02x}{:02x}".format(red, green, blue)
+
+
+def convert_to_rgb(hex: str) -> Tuple[int, int, int]:
+    BASE_16 = 16
+
+    RED_HEXADECIMAL = int(hex[1:3], BASE_16)
+    GREEN_HEXADECIMAL = int(hex[3:5], BASE_16)
+    BLUE_HEXADECIMAL = int(hex[5:7], BASE_16)
+
+    return (RED_HEXADECIMAL, GREEN_HEXADECIMAL, BLUE_HEXADECIMAL)
 
 
 def join_paths(parent_path: str, relative_path: str) -> str:

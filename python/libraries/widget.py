@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from copy import copy
-from typing import Hashable, Any, List, Tuple
+from typing import Any, Hashable, List, Tuple
 
 from util import Font
 
@@ -111,6 +112,34 @@ class CheckBox(Widget):
                 and self.font == other.font
                 and self.value == other.value
                 and self.enabled == other.enabled)
+
+
+class ColorPicker(Widget):
+    def __init__(self, key: Hashable, color: str = '#000000'):
+        super().__init__(key)
+
+        self.value = color
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        IS_VALID_COLOR_HEX = bool(re.match(r'^#[0-9A-Fa-f]{6}$', value))
+
+        if (not IS_VALID_COLOR_HEX):
+            raise ValueError(f'The value {value} does not represent a properly formatted hexadecimal color.')
+
+        self.__value = value
+
+    def __repr__(self):
+        return f'ColorPicker(key={self.key}, color={self.value})'
+
+    def __eq__(self, other):
+        return (super().__eq__(other)
+                and type(other) is ColorPicker
+                and self.value == other.value)
 
 
 class Combo(Widget):

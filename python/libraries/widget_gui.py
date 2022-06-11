@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Dict, Hashable, List, Tuple, Union
+from typing import Any, Dict, Hashable, Iterable, List, Tuple, Union
 
-import PySimpleGUI as sg
-from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
-
-from libraries.widget import Widget, Button, CheckBox, Combo, Input, Multiline, Text
+import libraries.PySimpleGUI as sg
+from libraries.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
+from libraries.widget import Button, CheckBox, ColorPicker, Combo, Input, Multiline, Text, Widget
 from util import Font
 
 
@@ -42,72 +41,86 @@ class WidgetGui(ABC):
         pass
 
 
-class ProductionWidgetGui(WidgetGui):
-    @classmethod
-    def _create_font(cls, font: Font) -> Tuple[str, int, str]:
-        return (font.name, font.size, font.style)
+def _create_font(font: Font) -> Tuple[int, int, int]:
+    return (font.name, font.size, font.style)
 
-    @classmethod
-    def _create_element(cls, widget: Widget) -> sg.Element:
 
-        KEY = None if (not hasattr(widget, 'key')) else widget.key
+def _create_color_picker_button_key(color_picker_key: str) -> str:
+    return f'{color_picker_key}-button'
 
-        if (type(widget) is Button):
-            FONT = cls._create_font(widget.font)
 
-            return sg.Button(key=KEY,
-                             button_text=widget.value,
-                             font=FONT,
-                             disabled=not widget.enabled)
+def _create_elements(widget: Widget) -> Iterable[sg.Element]:
+    KEY = None if (not hasattr(widget, 'key')) else widget.key
 
-        elif (type(widget) is CheckBox):
-            FONT = cls._create_font(widget.font)
+    if (type(widget) is Button):
+        FONT = _create_font(widget.font)
 
-            return sg.Checkbox(key=KEY,
-                               text=widget.text,
-                               font=FONT,
-                               default=widget.value,
-                               disabled=not widget.enabled)
+        return [sg.Button(key=KEY,
+                          button_text=widget.value,
+                          font=FONT,
+                          disabled=not widget.enabled)]
 
-        elif (type(widget) is Combo):
-            def create_default_value():
-                try:
-                    return widget.value
+    elif (type(widget) is CheckBox):
+        FONT = _create_font(widget.font)
 
-                except AttributeError:
-                    return None
-
-            DEFAULT_VALUE = create_default_value()
-            FONT = cls._create_font(widget.font)
-
-            return sg.Combo(key=KEY,
-                            values=widget.values,
-                            default_value=DEFAULT_VALUE,
+        return [sg.Checkbox(key=KEY,
+                            text=widget.text,
                             font=FONT,
-                            size=widget.size,
-                            disabled=not widget.enabled)
+                            default=widget.value,
+                            disabled=not widget.enabled)]
 
-        elif (type(widget) is Input):
-            return sg.Input(key=KEY,
-                            default_text=widget.value,
-                            disabled=not widget.enabled)
+    elif (type(widget) is ColorPicker):
+        INPUT = sg.Input(key=widget.key, default_text=widget.value, disabled=True, text_color='#6b6b6a')
 
-        elif (type(widget) is Multiline):
-            return sg.Multiline(key=KEY,
-                                default_text=widget.value,
-                                size=widget.size,
-                                autoscroll=widget.auto_scroll,
-                                disabled=not widget.enabled)
+        BUTTON_KEY = _create_color_picker_button_key(widget.key)
 
-        elif (type(widget) is Text):
-            FONT = cls._create_font(widget.font)
+        COLUMN_DISPLACEMENT_RELATIVE_TO_ELEMENTS_COLUMN = 1
+        INPUT_LOCATION = (sg.ThisRow, COLUMN_DISPLACEMENT_RELATIVE_TO_ELEMENTS_COLUMN)
+        BUTTON = sg.ColorChooserButton('', key=BUTTON_KEY, target=INPUT_LOCATION, button_color=widget.value)
 
-            return sg.Text(key=KEY,
-                           text=widget.value,
-                           font=FONT)
+        return [BUTTON, INPUT]
 
-        raise TypeError(f'widget ({widget}) of type {type(widget)} is not a recognized Widget type.')
+    elif (type(widget) is Combo):
+        def create_default_value():
+            try:
+                return widget.value
 
+            except AttributeError:
+                return None
+
+        DEFAULT_VALUE = create_default_value()
+        FONT = _create_font(widget.font)
+
+        return [sg.Combo(key=KEY,
+                         values=widget.values,
+                         default_value=DEFAULT_VALUE,
+                         font=FONT,
+                         size=widget.size,
+                         disabled=not widget.enabled)]
+
+    elif (type(widget) is Input):
+        return [sg.Input(key=KEY,
+                         default_text=widget.value,
+                         disabled=not widget.enabled)]
+
+    elif (type(widget) is Multiline):
+        return [sg.Multiline(key=KEY,
+                             default_text=widget.value,
+                             size=widget.size,
+                             autoscroll=widget.auto_scroll,
+                             disabled=not widget.enabled)]
+
+    elif (type(widget) is Text):
+        FONT = _create_font(widget.font)
+
+        return [sg.Text(key=KEY,
+                        text=widget.value,
+                        font=FONT)]
+
+    raise TypeError(f'widget ({widget}) of type {type(widget)} is not a recognized Widget type.')
+
+
+class ProductionWidgetGui(WidgetGui):
     def __init__(self, title: str = '', is_modal: bool = False, resizable: bool = True,
                  element_padding: Tuple[int, int] = (0, 0), margins: Tuple[int, int] = (0, 0),
                  titlebar_background_color: str = "#000917", titlebar_text_color: str = "#8a8a8a"):
@@ -158,26 +171,28 @@ class ProductionWidgetGui(WidgetGui):
         layout: List[List[sg.Element]] = []
 
         for row in self.__layout:
-
             new_row: List[sg.Element] = []
 
             for widget in row:
-                element = self._create_element(widget)
-                new_row.append(element)
+                element = _create_elements(widget)
+                new_row.extend(element)
 
             layout.append(new_row)
 
         self.__window.close()
 
         self.__window = sg.Window(self.title, layout=layout, modal=self.is_modal,
-                                  resizable=self.resizable, element_padding=self.element_padding, margins=self.margins,
-                                  titlebar_background_color=self.titlebar_background_color, titlebar_text_color=self.titlebar_text_color)
+                                  resizable=self.resizable, element_padding=self.element_padding,
+                                  margins=self.margins, titlebar_background_color=self.titlebar_background_color,
+                                  titlebar_text_color=self.titlebar_text_color)
 
         self.__window.read(timeout=0)
 
     def read_event_and_update_gui(self) -> Union[Hashable, WidgetGuiEvent]:
         event, values = self.__window.read(timeout=0)
-        self.__synchronize_widgets_with_elements(values)
+
+        if (values is not None):
+            self.__synchronize_widgets_with_elements(values)
 
         if (event == TIMEOUT_EVENT):
             return WidgetGuiEvent.TIMEOUT
@@ -188,18 +203,30 @@ class ProductionWidgetGui(WidgetGui):
         return event
 
     def __synchronize_widgets_with_elements(self, element_values: Dict[Hashable, Any]):
-        try:
-            for widget_key, value in element_values.items():
-                widget = self.__widgets[widget_key]
+        for widget_key, value in element_values.items():
+            widget = self.__widgets[widget_key]
 
-                if (isinstance(widget, Combo)):
-                    widget.add_value(value)
+            if (isinstance(widget, Combo)):
+                widget.add_value(value)
 
+            try:
                 widget.value = value
 
-        except AttributeError as error:
-            if (element_values is not None):
-                raise error
+                if (isinstance(widget, ColorPicker)):
+                    input: sg.Input = self.__window.find_element(widget.key)
+                    input.update(value=widget.value)
+
+                    BUTTON_KEY = _create_color_picker_button_key(widget.key)
+                    button: sg.Button = self.__window.find_element(BUTTON_KEY)
+                    button.update(button_color=widget.value)
+
+            except ValueError as error:
+                if (isinstance(widget, ColorPicker)):
+                    input: sg.Input = self.__window.find_element(widget.key)
+                    input.update(value=widget.value)
+
+                else:
+                    raise error
 
     def get_widget(self, widget_key) -> Widget:
         try:
@@ -209,28 +236,34 @@ class ProductionWidgetGui(WidgetGui):
             raise KeyError(f'There is no Widget with the key {widget_key}.')
 
     def update_widget(self, widget: Widget):
-        WIDGET_KEY = widget.key
+        if (widget.key not in self.__widgets):
+            raise KeyError(f'There is no Widget with the key {widget.key}.')
 
-        if (WIDGET_KEY not in self.__widgets):
-            raise KeyError(f'There is no Widget with the key {WIDGET_KEY}.')
-
-        self.__widgets[WIDGET_KEY] = widget
-
-        element: sg.Element = self.__window.find_element(WIDGET_KEY)
+        self.__widgets[widget.key] = widget
 
         if (type(widget) is Button):
-            element: sg.Button
+            element: sg.Button = self.__window.find_element(widget.key)
             element.update(text=widget.value,
                            disabled=not widget.enabled)
 
         elif (type(widget) is CheckBox):
-            element: sg.Checkbox
+            element: sg.Checkbox = self.__window.find_element(widget.key)
             element.update(value=widget.value,
                            text=widget.text,
                            disabled=not widget.enabled)
 
+        elif (type(widget) is ColorPicker):
+            INPUT_KEY = widget.key
+            BUTTON_KEY = _create_color_picker_button_key(widget.key)
+
+            input: sg.Input = self.__window.find_element(INPUT_KEY)
+            button: sg.Button = self.__window.find_element(BUTTON_KEY)
+
+            input.update(value=widget.value)
+            button.update(button_color=widget.value)
+
         elif (type(widget) is Combo):
-            element: sg.Combo
+            element: sg.Combo = self.__window.find_element(widget.key)
 
             def create_default_value():
                 try:
@@ -240,7 +273,7 @@ class ProductionWidgetGui(WidgetGui):
                     return None
 
             VALUE = create_default_value()
-            FONT = self._create_font(widget.font)
+            FONT = _create_font(widget.font)
 
             element.update(values=widget.values,
                            value=VALUE,
@@ -249,19 +282,19 @@ class ProductionWidgetGui(WidgetGui):
                            disabled=not widget.enabled)
 
         elif (type(widget) is Input):
-            element: sg.Input
+            element: sg.Input = self.__window.find_element(widget.key)
             element.update(value=widget.value,
                            disabled=not widget.enabled)
 
         elif (type(widget) is Multiline):
-            element: sg.Multiline
+            element: sg.Multiline = self.__window.find_element(widget.key)
             element.update(value=widget.value,
                            autoscroll=widget.auto_scroll,
                            disabled=not widget.enabled)
 
         elif (type(widget) is Text):
-            element: sg.Text
-            FONT = self._create_font(widget.font)
+            element: sg.Text = self.__window.find_element(widget.key)
+            FONT = _create_font(widget.font)
 
             element.update(value=widget.value,
                            font=FONT)

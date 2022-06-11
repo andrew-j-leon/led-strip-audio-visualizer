@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter import TclError
 from typing import List
 
-import PySimpleGUI as sg
+import libraries.PySimpleGUI as sg
 from util import Font
 
 

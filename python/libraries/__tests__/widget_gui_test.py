@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from libraries.widget_gui import Font, ProductionWidgetGui, WidgetGuiEvent
+from libraries.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
 from libraries.widget import Button, CheckBox, Combo, Input, Multiline, Text
-from PySimpleGUI.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
+from libraries.widget_gui import Font, ProductionWidgetGui, WidgetGuiEvent
 
 
 class WidgetGuiTestCase(unittest.TestCase):
@@ -16,7 +16,7 @@ class WidgetGuiTestCase(unittest.TestCase):
     TITLEBAR_TEXT_COLOR = '#100100'
 
     def setUp(self):
-        self.__window_patch = patch('PySimpleGUI.Window')
+        self.__window_patch = patch('libraries.PySimpleGUI.Window')
 
         self.addCleanup(self.__window_patch.stop)
 
@@ -51,12 +51,12 @@ class WidgetGuiTestCaseWithLayout(WidgetGuiTestCase):
     def setUp(self):
         super().setUp()
 
-        self.__button_patch = patch('PySimpleGUI.Button', spec=Button)
-        self.__checkbox_patch = patch('PySimpleGUI.Checkbox', spec=CheckBox)
-        self.__combo_patch = patch('PySimpleGUI.Combo', spec=Combo)
-        self.__input_patch = patch('PySimpleGUI.Input', spec=Input)
-        self.__multiline_patch = patch('PySimpleGUI.Multiline', spec=Multiline)
-        self.__text_patch = patch('PySimpleGUI.Text', spec=Text)
+        self.__button_patch = patch('libraries.PySimpleGUI.Button', spec=Button)
+        self.__checkbox_patch = patch('libraries.PySimpleGUI.Checkbox', spec=CheckBox)
+        self.__combo_patch = patch('libraries.PySimpleGUI.Combo', spec=Combo)
+        self.__input_patch = patch('libraries.PySimpleGUI.Input', spec=Input)
+        self.__multiline_patch = patch('libraries.PySimpleGUI.Multiline', spec=Multiline)
+        self.__text_patch = patch('libraries.PySimpleGUI.Text', spec=Text)
 
         self.addCleanup(self.__button_patch.stop)
         self.addCleanup(self.__checkbox_patch.stop)

@@ -1,11 +1,11 @@
 
 from collections import Counter
 from enum import Enum, auto
-from typing import Any, Dict, Union
+from typing import Any, Dict, Hashable, List, Tuple, Union
 
+from libraries.widget import Button, CheckBox, ColorPicker, Combo, Input, Text, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
-from libraries.widget import Widget, Button, CheckBox, Combo, Input, Multiline, Text
-from util import Font, Settings, SettingsCollection
+from util import Font, Settings, SettingsCollection, convert_to_hex, convert_to_rgb
 
 
 class Element(Enum):
@@ -22,7 +22,21 @@ class Element(Enum):
     MINIMUM_FREQUENCY_INPUT = auto()
     MAXIMUM_FREQUENCY_INPUT = auto()
     REVERSE_LEDS_CHECK_BOX = auto()
-    AMPLITUDE_RGBS_MULTILINE = auto()
+
+    DECIBEL_INPUT_1 = auto()
+    COLOR_PICKER_1 = auto()
+
+    DECIBEL_INPUT_2 = auto()
+    COLOR_PICKER_2 = auto()
+
+    DECIBEL_INPUT_3 = auto()
+    COLOR_PICKER_3 = auto()
+
+    DECIBEL_INPUT_4 = auto()
+    COLOR_PICKER_4 = auto()
+
+    DECIBEL_INPUT_5 = auto()
+    COLOR_PICKER_5 = auto()
 
 
 class Event(Enum):
@@ -187,7 +201,20 @@ class SettingsController:
 
         REVERSE_LEDS_CHECK_BOX = get_widget(Element.REVERSE_LEDS_CHECK_BOX)
 
-        AMPLITUDE_RGBS_MULTILINE = get_widget(Element.AMPLITUDE_RGBS_MULTILINE)
+        DECIBEL_INPUT_1 = get_widget(Element.DECIBEL_INPUT_1)
+        COLOR_PICKER_1 = get_widget(Element.COLOR_PICKER_1)
+
+        DECIBEL_INPUT_2 = get_widget(Element.DECIBEL_INPUT_2)
+        COLOR_PICKER_2 = get_widget(Element.COLOR_PICKER_2)
+
+        DECIBEL_INPUT_3 = get_widget(Element.DECIBEL_INPUT_3)
+        COLOR_PICKER_3 = get_widget(Element.COLOR_PICKER_3)
+
+        DECIBEL_INPUT_4 = get_widget(Element.DECIBEL_INPUT_4)
+        COLOR_PICKER_4 = get_widget(Element.COLOR_PICKER_4)
+
+        DECIBEL_INPUT_5 = get_widget(Element.DECIBEL_INPUT_5)
+        COLOR_PICKER_5 = get_widget(Element.COLOR_PICKER_5)
 
         FONT = Font("Courier New", 14)
 
@@ -200,6 +227,10 @@ class SettingsController:
         NUMBER_OF_GROUPS_LABEL = Text(text="Number of Groups:", font=FONT)
         MINIMUM_FREQUENCY_LABEL = Text(text="Minimum Frequency:", font=FONT)
         MAXIMUM_FREQUENCY_LABEL = Text(text="Maximum Frequency:", font=FONT)
+
+        FIRST_TEXT = Text(text='First', font=FONT)
+        NEXT_TEXT = Text(text='next', font=FONT)
+        DECIBELS_TEXT = Text(text='decibels (dB) are')
 
         LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON],
 
@@ -221,7 +252,11 @@ class SettingsController:
 
                   [REVERSE_LEDS_CHECK_BOX],
 
-                  [AMPLITUDE_RGBS_MULTILINE]]
+                  [FIRST_TEXT, DECIBEL_INPUT_1, DECIBELS_TEXT, COLOR_PICKER_1],
+                  [NEXT_TEXT, DECIBEL_INPUT_2, DECIBELS_TEXT, COLOR_PICKER_2],
+                  [NEXT_TEXT, DECIBEL_INPUT_3, DECIBELS_TEXT, COLOR_PICKER_3],
+                  [NEXT_TEXT, DECIBEL_INPUT_4, DECIBELS_TEXT, COLOR_PICKER_4],
+                  [NEXT_TEXT, DECIBEL_INPUT_5, DECIBELS_TEXT, COLOR_PICKER_5]]
 
         self.__widget_gui.set_layout(LAYOUT)
         self.__widget_gui.display_layout()
@@ -254,17 +289,35 @@ class SettingsController:
 
             return combo
 
-        def create_amplitude_rgbs_multiline():
+        def create_amplitude_rgbs_widgets() -> List[Widget]:
             COUNTER = Counter(SETTINGS.amplitude_rgbs)
+            INPUT_KEYS = [Element.DECIBEL_INPUT_1, Element.DECIBEL_INPUT_2,
+                          Element.DECIBEL_INPUT_3, Element.DECIBEL_INPUT_4,
+                          Element.DECIBEL_INPUT_5]
 
-            text = ''
+            COLOR_PICKER_KEYS = [Element.COLOR_PICKER_1, Element.COLOR_PICKER_2,
+                                 Element.COLOR_PICKER_3, Element.COLOR_PICKER_4,
+                                 Element.COLOR_PICKER_5]
+
+            widgets = []
+
+            i = -1
             for rgb, count in COUNTER.items():
+                i += 1
+
+                input_key = INPUT_KEYS[i]
+                color_picker_key = COLOR_PICKER_KEYS[i]
 
                 red, green, blue = rgb
+                widgets += [Input(input_key, count), ColorPicker(color_picker_key, convert_to_hex(red, green, blue))]
 
-                text += f'{red}, {green}, {blue}, {count}\n'
+            for j in range(i + 1, len(INPUT_KEYS)):
+                input_key = INPUT_KEYS[j]
+                color_picker_key = COLOR_PICKER_KEYS[j]
 
-            return Multiline(Element.AMPLITUDE_RGBS_MULTILINE, text.strip())
+                widgets += [Input(input_key, '0'), ColorPicker(color_picker_key)]
+
+            return widgets
 
         FONT = Font("Courier New", 14)
         SETTINGS = self.settings
@@ -294,29 +347,19 @@ class SettingsController:
         REVERSE_LEDS_CHECK_BOX = CheckBox(Element.REVERSE_LEDS_CHECK_BOX,
                                           "Reverse LEDs", FONT, SETTINGS.should_reverse_leds)
 
-        AMPLITUDE_RGBS_MULTILINE = create_amplitude_rgbs_multiline()
+        def create_widgets(*widgets: Widget) -> Dict[Hashable, Widget]:
+            result = dict()
 
-        widgets = dict()
+            for widget in widgets:
+                result[widget.key] = widget
 
-        def add_widget(widget: Widget):
-            widgets[widget.key] = widget
+            return result
 
-        add_widget(SETTINGS_NAMES_COMBO)
-        add_widget(SAVE_BUTTON)
-        add_widget(DELETE_BUTTON)
-        add_widget(START_LED_INPUT)
-        add_widget(END_LED_INPUT)
-        add_widget(MILLISECONDS_PER_AUDIO_CHUNK_INPUT)
-        add_widget(SERIAL_PORT_INPUT)
-        add_widget(BAUDRATES_COMBO)
-        add_widget(BRIGHTNESS_INPUT)
-        add_widget(NUMBER_OF_GROUPS_INPUT)
-        add_widget(MINIMUM_FREQUENCY_INPUT)
-        add_widget(MAXIMUM_FREQUENCY_INPUT)
-        add_widget(REVERSE_LEDS_CHECK_BOX)
-        add_widget(AMPLITUDE_RGBS_MULTILINE)
-
-        return widgets
+        return create_widgets(SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, START_LED_INPUT,
+                              END_LED_INPUT, MILLISECONDS_PER_AUDIO_CHUNK_INPUT, SERIAL_PORT_INPUT,
+                              BAUDRATES_COMBO, BRIGHTNESS_INPUT, NUMBER_OF_GROUPS_INPUT,
+                              MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX,
+                              *create_amplitude_rgbs_widgets())
 
     def __save_settings(self):
         START_LED = self.__get_setting_from_wiget_gui(Element.START_LED_INPUT)
@@ -329,7 +372,8 @@ class SettingsController:
         MAXIMUM_FREQUENCY = self.__get_setting_from_wiget_gui(Element.MAXIMUM_FREQUENCY_INPUT)
         SHOULD_REVERSE_LEDS = self.__get_setting_from_wiget_gui(Element.REVERSE_LEDS_CHECK_BOX)
         NUMBER_OF_GROUPS = self.__get_setting_from_wiget_gui(Element.NUMBER_OF_GROUPS_INPUT)
-        AMPLITUDE_RGBS = self.__get_setting_from_wiget_gui(Element.AMPLITUDE_RGBS_MULTILINE)
+
+        AMPLITUDE_RGBS = self.__get_amplitude_rgbs_from_gui()
 
         settings = Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT, SERIAL_BAUDRATE,
                             BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY, SHOULD_REVERSE_LEDS,
@@ -341,6 +385,25 @@ class SettingsController:
         self.__settings_collection[SETTINGS_NAME] = settings
         self.__settings_collection.current_name = SETTINGS_NAME
 
+    def __get_amplitude_rgbs_from_gui(self) -> List[Tuple[int, int, int]]:
+        NUMBER_OF_DECIBELS_1 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_1)
+        NUMBER_OF_DECIBELS_2 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_2)
+        NUMBER_OF_DECIBELS_3 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_3)
+        NUMBER_OF_DECIBELS_4 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_4)
+        NUMBER_OF_DECIBELS_5 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_5)
+
+        COLOR_PICKER_1 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_1)
+        COLOR_PICKER_2 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_2)
+        COLOR_PICKER_3 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_3)
+        COLOR_PICKER_4 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_4)
+        COLOR_PICKER_5 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_5)
+
+        return ([convert_to_rgb(COLOR_PICKER_1)] * NUMBER_OF_DECIBELS_1
+                + [convert_to_rgb(COLOR_PICKER_2)] * NUMBER_OF_DECIBELS_2
+                + [convert_to_rgb(COLOR_PICKER_3)] * NUMBER_OF_DECIBELS_3
+                + [convert_to_rgb(COLOR_PICKER_4)] * NUMBER_OF_DECIBELS_4
+                + [convert_to_rgb(COLOR_PICKER_5)] * NUMBER_OF_DECIBELS_5)
+
     def __get_setting_from_wiget_gui(self, setting_element: Element) -> Any:
         INTEGER_SETTINGS = {Element.START_LED_INPUT,
                             Element.END_LED_INPUT,
@@ -349,35 +412,17 @@ class SettingsController:
                             Element.BRIGHTNESS_INPUT,
                             Element.MINIMUM_FREQUENCY_INPUT,
                             Element.MAXIMUM_FREQUENCY_INPUT,
-                            Element.NUMBER_OF_GROUPS_INPUT}
+                            Element.NUMBER_OF_GROUPS_INPUT,
+                            Element.DECIBEL_INPUT_1,
+                            Element.DECIBEL_INPUT_2,
+                            Element.DECIBEL_INPUT_3,
+                            Element.DECIBEL_INPUT_4,
+                            Element.DECIBEL_INPUT_5}
 
         WIDGET = self.__widget_gui.get_widget(setting_element)
         WIDGET_VALUE = WIDGET.value
 
         if (setting_element in INTEGER_SETTINGS):
             return int(WIDGET_VALUE)
-
-        elif (setting_element == Element.AMPLITUDE_RGBS_MULTILINE):
-            rgb_counts = WIDGET_VALUE.strip().split('\n')
-
-            amplitude_rgbs = list()
-
-            for i in range(len(rgb_counts)):
-
-                rgb_count = rgb_counts[i]
-
-                try:
-                    red, green, blue, count = (int(string) for string in rgb_count.split(','))
-                    amplitude_rgbs += [(red, green, blue)] * count
-
-                except ValueError:
-                    if (rgb_count != ''):
-                        raise ValueError(f'Line {i} of the amplitude rgbs multiline ({rgb_count}) '
-                                         'was not formatted correctly. The expected formatting was : red, '
-                                         'green, blue, next_n_amplitude_values. For example: 10, 20, '
-                                         '30, 8 would specify the RGB color (10, 20, 30) for the next 8 '
-                                         'amplitude integers.')
-
-            return amplitude_rgbs
 
         return WIDGET_VALUE

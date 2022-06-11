@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from controller.audio_in_controller import AudioInController
 from controller.settings_controller import SettingsController
 from libraries.audio_in_stream import AudioInStream, ProductionAudioInStream
@@ -5,8 +7,6 @@ from libraries.canvas_gui import CanvasGui, ProductionCanvasGui
 from libraries.serial import ProductionSerial, Serial
 from libraries.widget_gui import ProductionWidgetGui, WidgetGuiEvent
 from util import Settings, SettingsCollection
-
-from pathlib import Path
 
 
 def create_default_settings():

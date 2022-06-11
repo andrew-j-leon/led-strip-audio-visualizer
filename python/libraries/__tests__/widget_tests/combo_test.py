@@ -2,7 +2,7 @@ import unittest
 from collections import Counter
 from typing import Iterable
 
-from libraries.widget import Widget, Combo
+from libraries.widget import Combo, Widget
 from util import Font
 
 

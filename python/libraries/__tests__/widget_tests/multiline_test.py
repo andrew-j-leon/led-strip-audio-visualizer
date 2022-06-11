@@ -1,7 +1,7 @@
 import unittest
 from typing import Iterable
 
-from libraries.widget import Widget, Multiline
+from libraries.widget import Multiline, Widget
 
 
 class MultilineTestCase(unittest.TestCase):

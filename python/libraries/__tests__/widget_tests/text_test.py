@@ -1,7 +1,7 @@
 import unittest
 from typing import Iterable
 
-from libraries.widget import Widget, Text
+from libraries.widget import Text, Widget
 from util import Font
 
 

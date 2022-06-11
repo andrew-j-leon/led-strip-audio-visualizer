@@ -108,8 +108,8 @@ class TestConstructor(unittest.TestCase):
 
 class ProductionCanvasGuiTestCase(unittest.TestCase):
     def setUp(self):
-        self.__canvas_patch = patch('PySimpleGUI.Canvas')
-        self.__window_patch = patch('PySimpleGUI.Window')
+        self.__canvas_patch = patch('libraries.PySimpleGUI.Canvas')
+        self.__window_patch = patch('libraries.PySimpleGUI.Window')
 
         self.addCleanup(self.__canvas_patch.stop)
         self.addCleanup(self.__window_patch.stop)
