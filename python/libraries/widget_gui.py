@@ -76,7 +76,11 @@ def _create_elements(widget: Widget) -> Iterable[sg.Element]:
 
         COLUMN_DISPLACEMENT_RELATIVE_TO_ELEMENTS_COLUMN = 1
         INPUT_LOCATION = (sg.ThisRow, COLUMN_DISPLACEMENT_RELATIVE_TO_ELEMENTS_COLUMN)
-        BUTTON = sg.ColorChooserButton('', key=BUTTON_KEY, target=INPUT_LOCATION, button_color=widget.value)
+
+        WIDTH = 3
+        HEIGHT = 1
+        SIZE = (WIDTH, HEIGHT)
+        BUTTON = sg.ColorChooserButton('', key=BUTTON_KEY, target=INPUT_LOCATION, button_color=widget.value, size=SIZE)
 
         return [BUTTON, INPUT]
 

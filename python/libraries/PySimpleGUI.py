@@ -31,7 +31,7 @@ import urllib.request
 import warnings
 from functools import wraps
 from math import fabs, floor
-from tkinter import ttk
+from tkinter import colorchooser, ttk
 from urllib import request
 
 version = __version__ = "4.60.1 Released 22-May-2022"
@@ -4734,7 +4734,7 @@ class Button(Element):
             else:           # if "cancel" button clicked, don't generate an event
                 should_submit_window = False
         elif self.BType == BUTTON_TYPE_COLOR_CHOOSER:
-            color = tk.colorchooser.askcolor(parent=self.ParentForm.TKroot)  # show the 'get file' dialog box
+            color = colorchooser.askcolor(parent=self.ParentForm.TKroot)  # show the 'get file' dialog box
             color = color[1]  # save only the #RRGGBB portion
             strvar.set(color)
             self.TKStringVar.set(color)
