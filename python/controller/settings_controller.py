@@ -12,6 +12,10 @@ from util import Font, Settings, SettingsCollection, convert_to_hex, convert_to_
 class Element(Enum):
     SAVE_BUTTON = auto()
     DELETE_BUTTON = auto()
+
+    CYCLE_BETWEEN_SETTINGS_CHECKBOX = auto()
+    SECONDS_BETWEEN_CYCLES_INPUT = auto()
+
     SETTINGS_NAME_COMBO = auto()
     START_LED_INPUT = auto()
     END_LED_INPUT = auto()
@@ -193,6 +197,8 @@ class SettingsController:
         SETTINGS_NAMES_COMBO = get_widget(Element.SETTINGS_NAME_COMBO)
         SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON = get_widget(Element.DELETE_BUTTON)
+        CYCLE_BETWEEN_SETTINGS_CHECKBOX = get_widget(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX)
+        SECONDS_BETWEEN_CYCLES_INPUT = get_widget(Element.SECONDS_BETWEEN_CYCLES_INPUT)
 
         START_LED_INPUT = get_widget(Element.START_LED_INPUT)
         END_LED_INPUT = get_widget(Element.END_LED_INPUT)
@@ -244,7 +250,7 @@ class SettingsController:
         NEXT_TEXT = Text(text='next', font=FONT)
         DECIBELS_TEXT = Text(text='decibels (dB) are')
 
-        LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON],
+        LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, CYCLE_BETWEEN_SETTINGS_CHECKBOX, SECONDS_BETWEEN_CYCLES_INPUT],
 
                   [START_LED_LABEL, START_LED_INPUT],
                   [END_LED_LABEL, END_LED_INPUT],
@@ -338,6 +344,11 @@ class SettingsController:
         SETTINGS_NAMES_COMBO = create_settings_names_combo()
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)
         DELETE_BUTTON = Button(Element.DELETE_BUTTON, "Delete", FONT, True)
+        CYCLE_BETWEEN_SETTINGS_CHECKBOX = CheckBox(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX,
+                                                   'Cycle between settings',
+                                                   value=self.__settings_collection.should_cycle_between_settings)
+        SECONDS_BETWEEN_CYCLES_INPUT = Input(Element.SECONDS_BETWEEN_CYCLES_INPUT,
+                                             str(self.__settings_collection.seconds_between_cycles))
 
         START_LED_INPUT = Input(Element.START_LED_INPUT, str(SETTINGS.start_led))
         END_LED_INPUT = Input(Element.END_LED_INPUT, str(SETTINGS.end_led))
@@ -368,7 +379,8 @@ class SettingsController:
 
             return result
 
-        return create_widgets(SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, START_LED_INPUT,
+        return create_widgets(SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, CYCLE_BETWEEN_SETTINGS_CHECKBOX,
+                              SECONDS_BETWEEN_CYCLES_INPUT, START_LED_INPUT,
                               END_LED_INPUT, MILLISECONDS_PER_AUDIO_CHUNK_INPUT, SERIAL_PORT_INPUT,
                               BAUDRATES_COMBO, BRIGHTNESS_INPUT, NUMBER_OF_GROUPS_INPUT,
                               MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX,
@@ -397,6 +409,12 @@ class SettingsController:
 
         self.__settings_collection[SETTINGS_NAME] = settings
         self.__settings_collection.current_name = SETTINGS_NAME
+
+        SHOULD_CYCLE_BETWEEN_SETTINGS = self.__get_setting_from_wiget_gui(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX)
+        SECONDS_BETWEEN_CYCLES = self.__get_setting_from_wiget_gui(Element.SECONDS_BETWEEN_CYCLES_INPUT)
+
+        self.__settings_collection.set_should_cycle_between_settings(SHOULD_CYCLE_BETWEEN_SETTINGS)
+        self.__settings_collection.set_seconds_between_cycles(SECONDS_BETWEEN_CYCLES)
 
     def __get_amplitude_rgbs_from_gui(self) -> List[Tuple[int, int, int]]:
         NUMBER_OF_DECIBELS_1 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_1)
@@ -430,7 +448,8 @@ class SettingsController:
                             Element.DECIBEL_INPUT_2,
                             Element.DECIBEL_INPUT_3,
                             Element.DECIBEL_INPUT_4,
-                            Element.DECIBEL_INPUT_5}
+                            Element.DECIBEL_INPUT_5,
+                            Element.SECONDS_BETWEEN_CYCLES_INPUT}
 
         WIDGET = self.__gui.get_widget(setting_element)
         WIDGET_VALUE = WIDGET.value

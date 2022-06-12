@@ -291,14 +291,31 @@ class SettingsCollection:
             return super().default(o)
 
     def __init__(self, collection: Dict[str, Settings] = dict(),
-                 should_cycle_through_settings: bool = False,
+                 should_cycle_between_settings: bool = False,
                  seconds_between_cycles: int = 60):
         self.__collection: Dict[str, Settings] = dict()
 
-        self.__should_cycle_through_settings = should_cycle_through_settings
+        self.__should_cycle_between_settings = should_cycle_between_settings
         self.__seconds_between_cycles = seconds_between_cycles
 
         self.load_from_dictionary(collection)
+
+    @property
+    def should_cycle_between_settings(self) -> bool:
+        return self.__should_cycle_between_settings
+
+    @property
+    def seconds_between_cycles(self) -> int:
+        return self.__seconds_between_cycles
+
+    def set_should_cycle_between_settings(self, should_cycle: bool):
+        self.__should_cycle_between_settings = should_cycle
+
+    def set_seconds_between_cycles(self, seconds: int):
+        if (seconds < 0):
+            raise ValueError(f'seconds must be >= 0, but was {seconds}.')
+
+        self.__seconds_between_cycles = seconds
 
     def load_from_dictionary(self, collection: Dict[str, Settings]):
         for name, settings in collection.items():
@@ -327,7 +344,7 @@ class SettingsCollection:
             general_settings = json.load(file)
 
             self.current_name = general_settings['current_name']
-            self.__should_cycle_through_settings = general_settings['should_cycle_through_settings']
+            self.__should_cycle_between_settings = general_settings['should_cycle_between_settings']
             self.__seconds_between_cycles = general_settings['seconds_between_cycles']
 
     def set_save_directory(self, directory: Path):
@@ -355,7 +372,7 @@ class SettingsCollection:
                 except AttributeError:
                     general_settings['current_name'] = ''
 
-                general_settings['should_cycle_through_settings'] = self.__should_cycle_through_settings
+                general_settings['should_cycle_between_settings'] = self.__should_cycle_between_settings
                 general_settings['seconds_between_cycles'] = self.__seconds_between_cycles
 
                 json.dump(general_settings, file, indent=4)
