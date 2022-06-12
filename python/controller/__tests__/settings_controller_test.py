@@ -151,7 +151,10 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.settings_collection = SettingsCollection(collection)
         self.widget_gui = FakeWidgetGui()
 
-        self.settings_controller = SettingsController(self.widget_gui, self.settings_collection)
+        def create_widget_gui():
+            return self.widget_gui
+
+        self.settings_controller = SettingsController(create_widget_gui, self.settings_collection)
 
     def check_widget_gui_does_not_match_settings(self, widget_gui: WidgetGui, settings: Settings):
         def get_widget_value(element: Element):
@@ -222,12 +225,13 @@ class SettingsControllerTestCase(unittest.TestCase):
 
 class TestConstructor(SettingsControllerTestCase):
     def test_with_empty_collection(self):
-        widget_gui = FakeWidgetGui()
+        def create_widget_gui():
+            return FakeWidgetGui()
 
         collection = dict()
         settings_collection = SettingsCollection(collection)
 
-        settings_controller = SettingsController(widget_gui, settings_collection)
+        settings_controller = SettingsController(create_widget_gui, settings_collection)
 
         EXPECTED_SETTINGS = Settings()
 
@@ -241,7 +245,7 @@ class TestConstructor(SettingsControllerTestCase):
 
 class TestDisplay(SettingsControllerTestCase):
     def test_display(self):
-        self.settings_controller.display()
+        self.settings_controller._display()
 
         SETTINGS_1 = self.settings_collection[self.CURRENT_SETTINGS_NAME]
         SETTINGS_2 = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
@@ -262,7 +266,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
     def setUp(self):
         super().setUp()
 
-        self.settings_controller.display()
+        self.settings_controller._display()
         self.widget_gui.number_of_read_event_and_update_gui_calls = 0
 
     def test_read_an_event(self):
@@ -270,7 +274,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
 
         self.widget_gui.event = EVENT
 
-        event = self.settings_controller.read_event_and_update_gui()
+        event = self.settings_controller._read_event_and_update_gui()
 
         self.assertEqual(event, EVENT)
 
@@ -281,7 +285,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
     def test_read_select_current_settings_name_event(self):
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
-        event = self.settings_controller.read_event_and_update_gui()
+        event = self.settings_controller._read_event_and_update_gui()
 
         self.assertEqual(event, Event.SELECT_CURRENT_SETTINGS_NAME)
 
@@ -295,7 +299,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
-        event = self.settings_controller.read_event_and_update_gui()
+        event = self.settings_controller._read_event_and_update_gui()
 
         self.assertEqual(event, Event.CLEAR_SETTINGS_NAME)
 
@@ -309,7 +313,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
-        event = self.settings_controller.read_event_and_update_gui()
+        event = self.settings_controller._read_event_and_update_gui()
 
         self.assertEqual(event, Event.ENTER_NEW_SETTINGS_NAME)
 
@@ -323,7 +327,7 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
-        event = self.settings_controller.read_event_and_update_gui()
+        event = self.settings_controller._read_event_and_update_gui()
 
         self.assertEqual(event, Event.SELECT_NON_CURRENT_SETTINGS_NAME)
 
@@ -336,7 +340,7 @@ class TestHandleEvent(SettingsControllerTestCase):
     def setUp(self):
         super().setUp()
 
-        self.settings_controller.display()
+        self.settings_controller._display()
 
         self.widget_gui.number_of_read_event_and_update_gui_calls = 0
 
@@ -384,7 +388,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.set_widget_value(Element.DECIBEL_INPUT_3, RGB_3_COUNT)
         self.set_widget_value(Element.COLOR_PICKER_3, HEX_3)
 
-        self.settings_controller.handle_event(Element.SAVE_BUTTON)
+        self.settings_controller._handle_event(Element.SAVE_BUTTON)
 
         PREVIOUS_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
         CURRENT_SETTINGS = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
@@ -396,7 +400,7 @@ class TestHandleEvent(SettingsControllerTestCase):
     def test_delete_a_settings_when_there_are_two_settings_in_the_collection(self):
         self.set_widget_value(Element.SETTINGS_NAME_COMBO, self.CURRENT_SETTINGS_NAME)
 
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
+        self.settings_controller._handle_event(Element.DELETE_BUTTON)
 
         SETTINGS_NAMES = list(self.settings_collection.names())
         EXPECTED_SETTINGS_NAMES = [self.NON_CURRENT_SETTINGS_NAME]
@@ -410,8 +414,8 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_2)
 
     def test_delete_all_settings_in_the_collection(self):
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
+        self.settings_controller._handle_event(Element.DELETE_BUTTON)
+        self.settings_controller._handle_event(Element.DELETE_BUTTON)
 
         self.assertTrue(len(self.settings_collection) == 0)
 
@@ -421,11 +425,11 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.assertEqual(DEFAULT_SETTINGS, self.settings_controller.settings)
 
     def test_delete_when_there_are_no_settings_remaining(self):
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
-        self.settings_controller.handle_event(Element.DELETE_BUTTON)
+        self.settings_controller._handle_event(Element.DELETE_BUTTON)
+        self.settings_controller._handle_event(Element.DELETE_BUTTON)
 
         with self.assertRaises(ValueError):
-            self.settings_controller.handle_event(Element.DELETE_BUTTON)
+            self.settings_controller._handle_event(Element.DELETE_BUTTON)
 
         self.assertTrue(len(self.settings_collection) == 0)
 
@@ -435,7 +439,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.assertEqual(DEFAULT_SETTINGS, self.settings_controller.settings)
 
     def test_close_window(self):
-        self.settings_controller.handle_event(WidgetGuiEvent.CLOSE_WINDOW)
+        self.settings_controller._handle_event(WidgetGuiEvent.CLOSE_WINDOW)
 
         self.assertFalse(self.widget_gui.open)
 
@@ -449,7 +453,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         VALUES = [self.NON_CURRENT_SETTINGS_NAME]
         self.set_settings_name_combo_values(VALUES)
 
-        self.settings_controller.handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
+        self.settings_controller._handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
 
         EXPECTED_SETTINGS = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
 
@@ -461,7 +465,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.set_settings_name_combo_values(VALUES)
 
         with self.assertRaises(ValueError):
-            self.settings_controller.handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
+            self.settings_controller._handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
 
         EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
 
@@ -469,7 +473,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
 
     def test_clear_settings_name(self):
-        self.settings_controller.handle_event(Event.CLEAR_SETTINGS_NAME)
+        self.settings_controller._handle_event(Event.CLEAR_SETTINGS_NAME)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
@@ -478,7 +482,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.assertFalse(DELETE_BUTTON.enabled)
 
     def test_enter_new_settings_name(self):
-        self.settings_controller.handle_event(Event.ENTER_NEW_SETTINGS_NAME)
+        self.settings_controller._handle_event(Event.ENTER_NEW_SETTINGS_NAME)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
@@ -490,7 +494,7 @@ class TestHandleEvent(SettingsControllerTestCase):
         UNRECOGNIZED_EVENT = 'unrecognized event'
 
         with self.assertRaises(ValueError):
-            self.settings_controller.handle_event(UNRECOGNIZED_EVENT)
+            self.settings_controller._handle_event(UNRECOGNIZED_EVENT)
 
         EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
 

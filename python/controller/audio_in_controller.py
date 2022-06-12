@@ -40,10 +40,11 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, widget_gui: WidgetGui, settings_controller: SettingsController,
-                 create_serial_connection: Callable[[], Serial], create_led_strip_canvas_gui: Callable[[], CanvasGui],
+    def __init__(self, create_gui: Callable[[], WidgetGui], settings_controller: SettingsController,
+                 create_serial_connection: Callable[[], Serial],
+                 create_led_strip_gui: Callable[[], CanvasGui],
                  create_audio_in_stream: Callable[[], AudioInStream]):
-        self.__widget_gui = widget_gui
+        self.__gui = create_gui()
 
         self.__settings_controller = settings_controller
 
@@ -51,7 +52,7 @@ class AudioInController:
         self.__spectrogram = Spectrogram(self.__led_strip)
 
         self.__serial = create_serial_connection()
-        self.__led_strip_gui = create_led_strip_canvas_gui()
+        self.__led_strip_gui = create_led_strip_gui()
         self.__audio_in_stream = create_audio_in_stream()
 
     @property
@@ -72,24 +73,28 @@ class AudioInController:
         self.__serial.close()
         self.__led_strip_gui.close()
 
-    def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent]:
-        EVENT = self.__widget_gui.read_event_and_update_gui()
+    def run(self):
+        self._display()
+
+        event = self._read_event_and_update_gui()
+
+        while (event != WidgetGuiEvent.CLOSE_WINDOW):
+            self._handle_event(event)
+            event = self._read_event_and_update_gui()
+
+        self._handle_event(event)
+
+    def _read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent]:
+        EVENT = self.__gui.read_event_and_update_gui()
 
         if (EVENT == WidgetGuiEvent.TIMEOUT and self.__audio_in_stream.is_open()):
             return Event.PLAYING
 
         return EVENT
 
-    def handle_event(self, event: Union[Element, WidgetGuiEvent]):
+    def _handle_event(self, event: Union[Element, WidgetGuiEvent]):
         if (event == Element.SETTINGS_BUTTON):
-            self.__settings_controller.display()
-            settings_event = self.__settings_controller.read_event_and_update_gui()
-
-            while (settings_event != WidgetGuiEvent.CLOSE_WINDOW):
-                self.__settings_controller.handle_event(settings_event)
-                settings_event = self.__settings_controller.read_event_and_update_gui()
-
-            self.__settings_controller.handle_event(settings_event)
+            self.__settings_controller.run()
 
         elif (event == Event.PLAYING):
             MILLISECONDS_PER_SECOND = 1000
@@ -114,9 +119,9 @@ class AudioInController:
 
             CURRENT_INPUT_SOURCE = f"Input Source : {self.__audio_in_stream.input_source}"
 
-            CURRENT_INPUT_SOURCE_TEXT = self.__widget_gui.get_widget(Element.CURRENT_INPUT_SOURCE_MESSAGE)
+            CURRENT_INPUT_SOURCE_TEXT = self.__gui.get_widget(Element.CURRENT_INPUT_SOURCE_MESSAGE)
             CURRENT_INPUT_SOURCE_TEXT.value = CURRENT_INPUT_SOURCE
-            self.__widget_gui.update_widget(CURRENT_INPUT_SOURCE_TEXT)
+            self.__gui.update_widget(CURRENT_INPUT_SOURCE_TEXT)
 
             self.__spectrogram.set_amplitude_rgbs(self.__settings.amplitude_rgbs)
             self.__spectrogram.set_frequency_range(self.__settings.minimum_frequency,
@@ -130,12 +135,12 @@ class AudioInController:
             self.__set_audio_playing_gui_state()
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
-            self.__widget_gui.close()
+            self.__gui.close()
 
         elif (event != WidgetGuiEvent.TIMEOUT):
             raise ValueError(f'The event {event} is not a recognized event.')
 
-    def display(self):
+    def _display(self):
         TITLE_TEXT = Font("Courier New", 20)
         FONT = Font("Courier New", 14)
 
@@ -152,40 +157,40 @@ class AudioInController:
                   [Text(Element.SELECT_VISUALIZER_TYPE_LABEL, text="LED Strip Type : ", font=FONT),
                    LED_STRIP_COMBO]]
 
-        self.__widget_gui.set_layout(LAYOUT)
-        self.__widget_gui.display_layout()
+        self.__gui.set_layout(LAYOUT)
+        self.__gui.display_layout()
 
     def __set_audio_paused_gui_state(self):
-        SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
-        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
-        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)
-        LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
+        SETTINGS_BUTTON: Button = self.__gui.get_widget(Element.SETTINGS_BUTTON)
+        PAUSE_BUTTON: Button = self.__gui.get_widget(Element.STOP_AUDIO_BUTTON)
+        RESUME_BUTTON: Button = self.__gui.get_widget(Element.PLAY_AUDIO_BUTTON)
+        LED_STRIP_COMBO: Combo = self.__gui.get_widget(Element.LED_STRIP_COMBO)
 
         SETTINGS_BUTTON.enabled = True
         PAUSE_BUTTON.enabled = False
         RESUME_BUTTON.enabled = True
         LED_STRIP_COMBO.enabled = True
 
-        self.__widget_gui.update_widget(SETTINGS_BUTTON)
-        self.__widget_gui.update_widget(PAUSE_BUTTON)
-        self.__widget_gui.update_widget(RESUME_BUTTON)
-        self.__widget_gui.update_widget(LED_STRIP_COMBO)
+        self.__gui.update_widget(SETTINGS_BUTTON)
+        self.__gui.update_widget(PAUSE_BUTTON)
+        self.__gui.update_widget(RESUME_BUTTON)
+        self.__gui.update_widget(LED_STRIP_COMBO)
 
     def __set_audio_playing_gui_state(self):
-        SETTINGS_BUTTON: Button = self.__widget_gui.get_widget(Element.SETTINGS_BUTTON)
-        PAUSE_BUTTON: Button = self.__widget_gui.get_widget(Element.STOP_AUDIO_BUTTON)
-        RESUME_BUTTON: Button = self.__widget_gui.get_widget(Element.PLAY_AUDIO_BUTTON)
-        LED_STRIP_COMBO: Combo = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
+        SETTINGS_BUTTON: Button = self.__gui.get_widget(Element.SETTINGS_BUTTON)
+        PAUSE_BUTTON: Button = self.__gui.get_widget(Element.STOP_AUDIO_BUTTON)
+        RESUME_BUTTON: Button = self.__gui.get_widget(Element.PLAY_AUDIO_BUTTON)
+        LED_STRIP_COMBO: Combo = self.__gui.get_widget(Element.LED_STRIP_COMBO)
 
         SETTINGS_BUTTON.enabled = False
         PAUSE_BUTTON.enabled = True
         RESUME_BUTTON.enabled = False
         LED_STRIP_COMBO.enabled = True
 
-        self.__widget_gui.update_widget(SETTINGS_BUTTON)
-        self.__widget_gui.update_widget(PAUSE_BUTTON)
-        self.__widget_gui.update_widget(RESUME_BUTTON)
-        self.__widget_gui.update_widget(LED_STRIP_COMBO)
+        self.__gui.update_widget(SETTINGS_BUTTON)
+        self.__gui.update_widget(PAUSE_BUTTON)
+        self.__gui.update_widget(RESUME_BUTTON)
+        self.__gui.update_widget(LED_STRIP_COMBO)
 
     def __get_group_index_to_led_range(self) -> List[Tuple[int, int]]:
         def get_number_of_leds() -> int:
@@ -207,7 +212,7 @@ class AudioInController:
         return group_index_to_led_range
 
     def __create_grouped_leds(self) -> GroupedLeds:
-        LED_STRIP_COMBO = self.__widget_gui.get_widget(Element.LED_STRIP_COMBO)
+        LED_STRIP_COMBO = self.__gui.get_widget(Element.LED_STRIP_COMBO)
         LED_RANGE = (self.__settings.start_led, self.__settings.end_led)
 
         if (LED_STRIP_COMBO.value == 'Serial LED Strip'):

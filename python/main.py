@@ -5,7 +5,7 @@ from controller.settings_controller import SettingsController
 from libraries.audio_in_stream import AudioInStream, ProductionAudioInStream
 from libraries.canvas_gui import CanvasGui, ProductionCanvasGui
 from libraries.serial import ProductionSerial, Serial
-from libraries.widget_gui import ProductionWidgetGui, WidgetGuiEvent
+from libraries.widget_gui import ProductionWidgetGui, WidgetGui
 from util import Settings, SettingsCollection
 
 
@@ -36,7 +36,7 @@ def create_serial_connection() -> Serial:
     return ProductionSerial()
 
 
-def create_canvas_gui() -> CanvasGui:
+def create_led_strip_gui() -> CanvasGui:
     WIDTH = 1350
     HEIGHT = 600
 
@@ -45,6 +45,16 @@ def create_canvas_gui() -> CanvasGui:
 
 def create_audio_in_stream() -> AudioInStream:
     return ProductionAudioInStream()
+
+
+def create_audio_in_controller_gui() -> WidgetGui:
+    AUDIO_IN_GUI_TITLE = 'Audio In Music Visualizer'
+    return ProductionWidgetGui(AUDIO_IN_GUI_TITLE)
+
+
+def create_settings_controller_gui() -> WidgetGui:
+    SETTINGS_GUI_TITLE = 'Settings'
+    return ProductionWidgetGui(SETTINGS_GUI_TITLE)
 
 
 if __name__ == '__main__':
@@ -59,24 +69,10 @@ if __name__ == '__main__':
     SETTINGS_COLLECTION.load_from_directory(SAVE_DIRECTORY)
     SETTINGS_COLLECTION.set_save_directory(SAVE_DIRECTORY)
 
-    AUDIO_IN_GUI_TITLE = 'Audio In Music Visualizer'
-    SETTINGS_GUI_TITLE = 'Settings'
+    with SettingsController(create_settings_controller_gui, SETTINGS_COLLECTION) as settings_controller:
 
-    with (ProductionWidgetGui(AUDIO_IN_GUI_TITLE) as audio_in_controller_widget_gui,
-          ProductionWidgetGui(SETTINGS_GUI_TITLE) as settings_controller_widget_gui):
+        with AudioInController(create_audio_in_controller_gui,
+                               settings_controller, create_serial_connection,
+                               create_led_strip_gui, create_audio_in_stream) as audio_in_controller:
 
-        settings_controller = SettingsController(settings_controller_widget_gui,
-                                                 SETTINGS_COLLECTION)
-
-        with AudioInController(audio_in_controller_widget_gui, settings_controller,
-                               create_serial_connection, create_canvas_gui, create_audio_in_stream) as audio_in_controller:
-
-            audio_in_controller.display()
-
-            event = audio_in_controller.read_event_and_update_gui()
-
-            while (event != WidgetGuiEvent.CLOSE_WINDOW):
-                audio_in_controller.handle_event(event)
-                event = audio_in_controller.read_event_and_update_gui()
-
-            audio_in_controller.handle_event(event)
+            audio_in_controller.run()

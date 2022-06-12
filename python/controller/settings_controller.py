@@ -1,7 +1,8 @@
+from __future__ import annotations
 
 from collections import Counter
 from enum import Enum, auto
-from typing import Any, Dict, Hashable, List, Tuple, Union
+from typing import Any, Callable, Dict, Hashable, List, Tuple, Union
 
 from libraries.widget import Button, CheckBox, ColorPicker, Combo, Input, Text, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
@@ -47,8 +48,8 @@ class Event(Enum):
 
 
 class SettingsController:
-    def __init__(self, widget_gui: WidgetGui, settings_collection: SettingsCollection = SettingsCollection()):
-        self.__widget_gui = widget_gui
+    def __init__(self, create_gui: Callable[[], WidgetGui], settings_collection: SettingsCollection = SettingsCollection()):
+        self.__gui = create_gui()
         self.__settings_collection = settings_collection
 
     @property
@@ -59,16 +60,32 @@ class SettingsController:
         except AttributeError:
             return Settings()
 
+    def __enter__(self) -> SettingsController:
+        return self
+
+    def __exit__(self, *args):
+        self.__gui.close()
+
+    def run(self):
+        self._display()
+        settings_event = self._read_event_and_update_gui()
+
+        while (settings_event != WidgetGuiEvent.CLOSE_WINDOW):
+            self._handle_event(settings_event)
+            settings_event = self._read_event_and_update_gui()
+
+        self._handle_event(settings_event)
+
     def __get_selected_settings_name(self) -> str:
         try:
-            COMBO = self.__widget_gui.get_widget(Element.SETTINGS_NAME_COMBO)
+            COMBO = self.__gui.get_widget(Element.SETTINGS_NAME_COMBO)
             return COMBO.value
 
         except AttributeError:
             return ''
 
-    def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent, Event]:
-        EVENT = self.__widget_gui.read_event_and_update_gui()
+    def _read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent, Event]:
+        EVENT = self.__gui.read_event_and_update_gui()
 
         if (EVENT == WidgetGuiEvent.TIMEOUT):
             SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
@@ -101,7 +118,7 @@ class SettingsController:
         except AttributeError:
             return False
 
-    def handle_event(self, event: Union[Element, WidgetGuiEvent]):
+    def _handle_event(self, event: Union[Element, WidgetGuiEvent]):
         SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
 
         if (event == Element.SAVE_BUTTON):
@@ -131,18 +148,18 @@ class SettingsController:
                 raise ValueError(f'There is no Settings with the name {SELECTED_SETTINGS_NAME} to delete.')
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
-            self.__widget_gui.close()
+            self.__gui.close()
 
         elif (event != WidgetGuiEvent.TIMEOUT):
-            SAVE_BUTTON: Button = self.__widget_gui.get_widget(Element.SAVE_BUTTON)
-            DELETE_BUTTON: Button = self.__widget_gui.get_widget(Element.DELETE_BUTTON)
+            SAVE_BUTTON: Button = self.__gui.get_widget(Element.SAVE_BUTTON)
+            DELETE_BUTTON: Button = self.__gui.get_widget(Element.DELETE_BUTTON)
 
             if (event == Event.SELECT_CURRENT_SETTINGS_NAME):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = True
 
-                self.__widget_gui.update_widget(SAVE_BUTTON)
-                self.__widget_gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widget(SAVE_BUTTON)
+                self.__gui.update_widget(DELETE_BUTTON)
 
             elif (event == Event.SELECT_NON_CURRENT_SETTINGS_NAME):
                 try:
@@ -159,20 +176,20 @@ class SettingsController:
                 SAVE_BUTTON.enabled = False
                 DELETE_BUTTON.enabled = False
 
-                self.__widget_gui.update_widget(SAVE_BUTTON)
-                self.__widget_gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widget(SAVE_BUTTON)
+                self.__gui.update_widget(DELETE_BUTTON)
 
             elif (event == Event.ENTER_NEW_SETTINGS_NAME):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = False
 
-                self.__widget_gui.update_widget(SAVE_BUTTON)
-                self.__widget_gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widget(SAVE_BUTTON)
+                self.__gui.update_widget(DELETE_BUTTON)
 
             else:
                 raise ValueError(f'This SettingsController does not recognize the event {event}.')
 
-    def display(self):
+    def _display(self):
         def get_widget(widget_key: Element) -> Widget:
             return WIDGETS[widget_key]
 
@@ -258,14 +275,14 @@ class SettingsController:
                   [NEXT_TEXT, DECIBEL_INPUT_4, DECIBELS_TEXT, COLOR_PICKER_4],
                   [NEXT_TEXT, DECIBEL_INPUT_5, DECIBELS_TEXT, COLOR_PICKER_5]]
 
-        self.__widget_gui.set_layout(LAYOUT)
-        self.__widget_gui.display_layout()
+        self.__gui.set_layout(LAYOUT)
+        self.__gui.display_layout()
 
     def __update_widgets(self):
         WIDGETS = self.__create_widgets()
 
         for widget in WIDGETS.values():
-            self.__widget_gui.update_widget(widget)
+            self.__gui.update_widget(widget)
 
     def __create_widgets(self) -> Dict[Element, Widget]:
         def create_settings_names_combo():
@@ -379,7 +396,7 @@ class SettingsController:
                             BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY, SHOULD_REVERSE_LEDS,
                             NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
 
-        SETTINGS_NAME_COMBO = self.__widget_gui.get_widget(Element.SETTINGS_NAME_COMBO)
+        SETTINGS_NAME_COMBO = self.__gui.get_widget(Element.SETTINGS_NAME_COMBO)
         SETTINGS_NAME = SETTINGS_NAME_COMBO.value
 
         self.__settings_collection[SETTINGS_NAME] = settings
@@ -419,7 +436,7 @@ class SettingsController:
                             Element.DECIBEL_INPUT_4,
                             Element.DECIBEL_INPUT_5}
 
-        WIDGET = self.__widget_gui.get_widget(setting_element)
+        WIDGET = self.__gui.get_widget(setting_element)
         WIDGET_VALUE = WIDGET.value
 
         if (setting_element in INTEGER_SETTINGS):
