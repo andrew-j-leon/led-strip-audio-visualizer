@@ -290,8 +290,13 @@ class SettingsCollection:
 
             return super().default(o)
 
-    def __init__(self, collection: Dict[str, Settings] = dict()):
+    def __init__(self, collection: Dict[str, Settings] = dict(),
+                 should_cycle_through_settings: bool = False,
+                 seconds_between_cycles: int = 60):
         self.__collection: Dict[str, Settings] = dict()
+
+        self.__should_cycle_through_settings = should_cycle_through_settings
+        self.__seconds_between_cycles = seconds_between_cycles
 
         self.load_from_dictionary(collection)
 
@@ -310,20 +315,20 @@ class SettingsCollection:
 
                     collection[name] = Settings(**settings)
 
-                except (json.decoder.JSONDecodeError, PermissionError):
+                except (json.decoder.JSONDecodeError, PermissionError, TypeError):
                     pass
 
         for name, settings in collection.items():
             self[name] = settings
 
-        current_name_file = directory.joinpath('.current_name')
+        general_settings_file = directory.joinpath('.general_settings')
 
-        try:
-            with current_name_file.open('r') as file:
-                self.current_name = file.read().strip()
+        with general_settings_file.open('r') as file:
+            general_settings = json.load(file)
 
-        except (FileNotFoundError, ValueError):
-            pass
+            self.current_name = general_settings['current_name']
+            self.__should_cycle_through_settings = general_settings['should_cycle_through_settings']
+            self.__seconds_between_cycles = general_settings['seconds_between_cycles']
 
     def set_save_directory(self, directory: Path):
         self.__save_directory = directory
@@ -339,14 +344,21 @@ class SettingsCollection:
                 with save_file.open('w') as file:
                     json.dump(settings, file, cls=self.SettingsEncoder, indent=4)
 
-            try:
-                current_name_save_file = temporary_save_directory.joinpath('.current_name')
+            general_settings_file = temporary_save_directory.joinpath('.general_settings')
 
-                with current_name_save_file.open('w') as file:
-                    file.write(self.current_name)
+            with general_settings_file.open('w') as file:
+                general_settings = dict()
 
-            except AttributeError:
-                pass
+                try:
+                    general_settings['current_name'] = self.current_name
+
+                except AttributeError:
+                    general_settings['current_name'] = ''
+
+                general_settings['should_cycle_through_settings'] = self.__should_cycle_through_settings
+                general_settings['seconds_between_cycles'] = self.__seconds_between_cycles
+
+                json.dump(general_settings, file, indent=4)
 
             for save_file in self.__save_directory.iterdir():
                 try:
