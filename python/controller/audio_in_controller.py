@@ -151,6 +151,8 @@ class AudioInController:
 
             self.__set_audio_playing_gui_state()
 
+            self.__settings_collection.reset_time_of_last_cycle()
+
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__gui.close()
 

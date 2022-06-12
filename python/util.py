@@ -303,6 +303,9 @@ class SettingsCollection:
 
         self.load_from_dictionary(collection)
 
+    def reset_time_of_last_cycle(self):
+        self.__time_of_last_cycle = time.time()
+
     @property
     def should_cycle_between_settings(self) -> bool:
         return self.__should_cycle_between_settings
