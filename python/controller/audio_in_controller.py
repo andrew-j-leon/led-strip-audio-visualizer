@@ -105,6 +105,15 @@ class AudioInController:
             self.__settings_controller.run()
 
         elif (event == Event.PLAYING):
+            try:
+                self.__settings_collection.cycle_between_settings()
+
+                self.__spectrogram.set_amplitude_rgbs(self.__settings.amplitude_rgbs)
+                self.__spectrogram.set_frequency_range(self.__settings.minimum_frequency, self.__settings.maximum_frequency)
+
+            except ValueError:
+                pass
+
             MILLISECONDS_PER_SECOND = 1000
             FRAMES_PER_MILLISECOND = self.__audio_in_stream.sample_rate / MILLISECONDS_PER_SECOND
             NUMBER_OF_FRAMES = int(FRAMES_PER_MILLISECOND * self.__settings.milliseconds_per_audio_chunk)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any, Dict, Hashable, Iterable, List, Tuple
 
@@ -295,8 +296,10 @@ class SettingsCollection:
                  seconds_between_cycles: int = 60):
         self.__collection: Dict[str, Settings] = dict()
 
-        self.__should_cycle_between_settings = should_cycle_between_settings
-        self.__seconds_between_cycles = seconds_between_cycles
+        self.should_cycle_between_settings = should_cycle_between_settings
+        self.seconds_between_cycles = seconds_between_cycles
+
+        self.__time_of_last_cycle = time.time()
 
         self.load_from_dictionary(collection)
 
@@ -308,14 +311,43 @@ class SettingsCollection:
     def seconds_between_cycles(self) -> int:
         return self.__seconds_between_cycles
 
-    def set_should_cycle_between_settings(self, should_cycle: bool):
+    @should_cycle_between_settings.setter
+    def should_cycle_between_settings(self, should_cycle: bool):
         self.__should_cycle_between_settings = should_cycle
 
-    def set_seconds_between_cycles(self, seconds: int):
+    @seconds_between_cycles.setter
+    def seconds_between_cycles(self, seconds: int):
         if (seconds < 0):
             raise ValueError(f'seconds must be >= 0, but was {seconds}.')
 
         self.__seconds_between_cycles = seconds
+
+    def cycle_between_settings(self):
+        if (not self.should_cycle_between_settings):
+            raise ValueError('Cycling between settings is not enabled. Use '
+                             'set_should_cycle_between_settings to set this flag to True.')
+
+        TIME_UNTIL_NEXT_CYCLE_IS_ALLOWED = self.__time_of_last_cycle + self.seconds_between_cycles
+
+        if (TIME_UNTIL_NEXT_CYCLE_IS_ALLOWED > time.time()):
+            raise ValueError(f'It has not been {self.seconds_between_cycles} seconds since the last cycle.')
+
+        SETTINGS_NAMES = list(self.__collection.keys())
+        try:
+            CURRENT_INDEX = SETTINGS_NAMES.index(self.current_name)
+
+            NEXT_INDEX = CURRENT_INDEX + 1
+
+            self.current_name = SETTINGS_NAMES[NEXT_INDEX]
+
+        except AttributeError:
+            pass
+
+        except IndexError:
+            self.current_name = SETTINGS_NAMES[0]
+
+        finally:
+            self.__time_of_last_cycle = time.time()
 
     def load_from_dictionary(self, collection: Dict[str, Settings]):
         for name, settings in collection.items():
@@ -344,8 +376,8 @@ class SettingsCollection:
             general_settings = json.load(file)
 
             self.current_name = general_settings['current_name']
-            self.__should_cycle_between_settings = general_settings['should_cycle_between_settings']
-            self.__seconds_between_cycles = general_settings['seconds_between_cycles']
+            self.should_cycle_between_settings = general_settings['should_cycle_between_settings']
+            self.seconds_between_cycles = general_settings['seconds_between_cycles']
 
     def set_save_directory(self, directory: Path):
         self.__save_directory = directory
@@ -372,8 +404,8 @@ class SettingsCollection:
                 except AttributeError:
                     general_settings['current_name'] = ''
 
-                general_settings['should_cycle_between_settings'] = self.__should_cycle_between_settings
-                general_settings['seconds_between_cycles'] = self.__seconds_between_cycles
+                general_settings['should_cycle_between_settings'] = self.should_cycle_between_settings
+                general_settings['seconds_between_cycles'] = self.seconds_between_cycles
 
                 json.dump(general_settings, file, indent=4)
 

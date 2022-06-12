@@ -413,8 +413,8 @@ class SettingsController:
         SHOULD_CYCLE_BETWEEN_SETTINGS = self.__get_setting_from_wiget_gui(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX)
         SECONDS_BETWEEN_CYCLES = self.__get_setting_from_wiget_gui(Element.SECONDS_BETWEEN_CYCLES_INPUT)
 
-        self.__settings_collection.set_should_cycle_between_settings(SHOULD_CYCLE_BETWEEN_SETTINGS)
-        self.__settings_collection.set_seconds_between_cycles(SECONDS_BETWEEN_CYCLES)
+        self.__settings_collection.should_cycle_between_settings = SHOULD_CYCLE_BETWEEN_SETTINGS
+        self.__settings_collection.seconds_between_cycles = SECONDS_BETWEEN_CYCLES
 
     def __get_amplitude_rgbs_from_gui(self) -> List[Tuple[int, int, int]]:
         NUMBER_OF_DECIBELS_1 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_1)
