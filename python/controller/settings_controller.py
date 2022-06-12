@@ -52,13 +52,8 @@ class SettingsController:
         self.__gui = create_gui()
         self.__settings_collection = settings_collection
 
-    @property
-    def settings(self) -> Settings:
-        try:
-            return self.__settings_collection.current_settings
-
-        except AttributeError:
-            return Settings()
+    def set_settings_collection(self, settings_collection: SettingsCollection):
+        self.__settings_collection = settings_collection
 
     def __enter__(self) -> SettingsController:
         return self
@@ -337,7 +332,8 @@ class SettingsController:
             return widgets
 
         FONT = Font("Courier New", 14)
-        SETTINGS = self.settings
+        SETTINGS = (Settings() if (not hasattr(self.__settings_collection, 'current_settings'))
+                    else self.__settings_collection.current_settings)
 
         SETTINGS_NAMES_COMBO = create_settings_names_combo()
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)

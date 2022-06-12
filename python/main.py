@@ -69,10 +69,10 @@ if __name__ == '__main__':
     SETTINGS_COLLECTION.load_from_directory(SAVE_DIRECTORY)
     SETTINGS_COLLECTION.set_save_directory(SAVE_DIRECTORY)
 
-    with SettingsController(create_settings_controller_gui, SETTINGS_COLLECTION) as settings_controller:
+    with SettingsController(create_settings_controller_gui) as settings_controller:
 
-        with AudioInController(create_audio_in_controller_gui,
-                               settings_controller, create_serial_connection,
+        with AudioInController(SETTINGS_COLLECTION, settings_controller,
+                               create_audio_in_controller_gui, create_serial_connection,
                                create_led_strip_gui, create_audio_in_stream) as audio_in_controller:
 
             audio_in_controller.run()

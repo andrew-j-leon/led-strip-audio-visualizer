@@ -223,26 +223,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.widget_gui.displayed_widgets[Element.SETTINGS_NAME_COMBO] = NEW_DISPLAYED_COMBO
 
 
-class TestConstructor(SettingsControllerTestCase):
-    def test_with_empty_collection(self):
-        def create_widget_gui():
-            return FakeWidgetGui()
-
-        collection = dict()
-        settings_collection = SettingsCollection(collection)
-
-        settings_controller = SettingsController(create_widget_gui, settings_collection)
-
-        EXPECTED_SETTINGS = Settings()
-
-        self.assertEqual(settings_controller.settings, EXPECTED_SETTINGS)
-
-    def test_with_non_empty_collection(self):
-        SETTINGS_1 = self.settings_collection[self.CURRENT_SETTINGS_NAME]
-
-        self.assertEqual(self.settings_controller.settings, SETTINGS_1)
-
-
 class TestDisplay(SettingsControllerTestCase):
     def test_display(self):
         self.settings_controller._display()
@@ -422,7 +402,6 @@ class TestHandleEvent(SettingsControllerTestCase):
         DEFAULT_SETTINGS = Settings()
 
         self.check_widget_gui_matches_settings(self.widget_gui, DEFAULT_SETTINGS)
-        self.assertEqual(DEFAULT_SETTINGS, self.settings_controller.settings)
 
     def test_delete_when_there_are_no_settings_remaining(self):
         self.settings_controller._handle_event(Element.DELETE_BUTTON)
@@ -436,7 +415,6 @@ class TestHandleEvent(SettingsControllerTestCase):
         DEFAULT_SETTINGS = Settings()
 
         self.check_widget_gui_matches_settings(self.widget_gui, DEFAULT_SETTINGS)
-        self.assertEqual(DEFAULT_SETTINGS, self.settings_controller.settings)
 
     def test_close_window(self):
         self.settings_controller._handle_event(WidgetGuiEvent.CLOSE_WINDOW)
@@ -457,7 +435,6 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         EXPECTED_SETTINGS = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
 
-        self.assertIs(self.settings_controller.settings, EXPECTED_SETTINGS)
         self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
 
     def test_select_non_current_settings_name_not_valid(self):
@@ -469,7 +446,6 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
 
-        self.assertIs(self.settings_controller.settings, EXPECTED_SETTINGS)
         self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
 
     def test_clear_settings_name(self):
@@ -498,5 +474,4 @@ class TestHandleEvent(SettingsControllerTestCase):
 
         EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
 
-        self.assertIs(self.settings_controller.settings, EXPECTED_SETTINGS)
         self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)

@@ -12,7 +12,7 @@ from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Se
 from libraries.widget import Button, Combo, Text
 from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
 from spectrogram import Spectrogram
-from util import Font, Settings
+from util import Font, Settings, SettingsCollection
 
 
 class Element(Enum):
@@ -40,13 +40,17 @@ class State(Enum):
 
 
 class AudioInController:
-    def __init__(self, create_gui: Callable[[], WidgetGui], settings_controller: SettingsController,
+    def __init__(self, settings_collection: SettingsCollection,
+                 settings_controller: SettingsController,
+                 create_gui: Callable[[], WidgetGui],
                  create_serial_connection: Callable[[], Serial],
                  create_led_strip_gui: Callable[[], CanvasGui],
                  create_audio_in_stream: Callable[[], AudioInStream]):
         self.__gui = create_gui()
+        self.__settings_collection = settings_collection
 
         self.__settings_controller = settings_controller
+        self.__settings_controller.set_settings_collection(self.__settings_collection)
 
         self.__led_strip: LedStrip = ProductionLedStrip()
         self.__spectrogram = Spectrogram(self.__led_strip)
@@ -54,10 +58,6 @@ class AudioInController:
         self.__serial = create_serial_connection()
         self.__led_strip_gui = create_led_strip_gui()
         self.__audio_in_stream = create_audio_in_stream()
-
-    @property
-    def __settings(self) -> Settings:
-        return self.__settings_controller.settings
 
     def __enter__(self) -> AudioInController:
         return self
@@ -91,6 +91,14 @@ class AudioInController:
             return Event.PLAYING
 
         return EVENT
+
+    @property
+    def __settings(self) -> Settings:
+        try:
+            return self.__settings_collection.current_settings
+
+        except AttributeError:
+            return Settings()
 
     def _handle_event(self, event: Union[Element, WidgetGuiEvent]):
         if (event == Element.SETTINGS_BUTTON):
