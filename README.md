@@ -32,7 +32,7 @@ You will also need an **A-Male to B-Male USB cord** to connect (and power) the A
 
 You will also need a **power supply** (to power your LED strip), along with a **resistor**, **capacitor**, and some **jumper wire cables** to safely connect the LED strip to your Arduino. Read through Adafruit's [guide on NeoPixels (WS2812B LED strips)](https://learn.adafruit.com/adafruit-neopixel-uberguide/the-magic-of-neopixels) to pick out the correct parts. Pay extra close attention to the guide's [basic connections](https://learn.adafruit.com/adafruit-neopixel-uberguide/basic-connections) section, as you will need this knowledge to connect your LED strip to your Arduino.
 
-## Step 2: Download this Repository:
+## Step 2: Download this Repository
 
 Either download this project as a zip file and extract it or use git clone:
 
