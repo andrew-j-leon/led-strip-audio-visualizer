@@ -6,3 +6,5 @@ htmlcov
 [.]coverage
 saved_settings
 playground.py
+/diagrams
+/saves

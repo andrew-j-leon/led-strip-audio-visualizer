@@ -37,31 +37,31 @@ class FakeGroupedLeds(GroupedLeds):
             self.__group_colors[group] = RGB(*rgb)
 
 
-class TestConstructor(unittest.TestCase):
-    def test_constructor(self):
-        ProductionLedStrip(FakeGroupedLeds())
-
-
-class TestNumberOfGroupes(unittest.TestCase):
-    def test_number_of_groups(self):
-        leds = FakeGroupedLeds()
-
-        led_strip = ProductionLedStrip(leds)
-
-        self.assertEqual(leds.number_of_groups, led_strip.number_of_groups)
-
-
-class TestNumberOfQueuedColors(unittest.TestCase):
+class TestProductionLedStrip(unittest.TestCase):
     NUMBER_OF_GROUPS = 1
 
     def setUp(self) -> None:
         self.leds = FakeGroupedLeds(self.NUMBER_OF_GROUPS)
         self.led_strip = ProductionLedStrip(self.leds)
 
+    def test_number_of_groups(self):
+        self.assertEqual(self.leds.number_of_groups,
+                         self.led_strip.number_of_groups)
+
+    def test_turn_off(self):
+        self.led_strip.turn_off()
+
+        for group in range(self.leds.number_of_groups):
+
+            with self.subTest(f'group {group} is black.'):
+
+                self.assertTrue(self.leds.get_group_rgb(group) == (0, 0, 0))
+                self.assertTrue(self.led_strip.group_is_rgb(group, (0, 0, 0)))
+
     def test_number_of_queued_colors(self):
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
-    def test_one_queued_color(self):
+    def test_enqueue_one_color(self):
         GROUP = 0
         RGB = (10, 20, 30)
 
@@ -69,7 +69,7 @@ class TestNumberOfQueuedColors(unittest.TestCase):
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 1)
 
-    def test_many_queued_colors(self):
+    def test_enqueue_several_colors(self):
         GROUP = 0
         RGB = (10, 20, 30)
 

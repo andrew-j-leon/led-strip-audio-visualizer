@@ -1,4 +1,4 @@
 #!/bin/bash
 
-coverage run -m unittest discover -s ./python -p "*_test.py" -v
+coverage run --omit=python/libraries/PySimpleGUI.py,*/__init__.py,*_test.py -m unittest discover -s ./python -p "*_test.py" -v
 coverage html

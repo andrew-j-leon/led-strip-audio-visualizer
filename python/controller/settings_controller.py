@@ -1,22 +1,20 @@
 from __future__ import annotations
 
-from collections import Counter
 from enum import Enum, auto
-from typing import Any, Callable, Dict, Hashable, List, Tuple, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, Hashable, Union
 
-from libraries.widget import Button, CheckBox, ColorPicker, Combo, Input, Text, Widget
+from controller.controller import Controller
+from libraries.widget import Button, CheckBox, Combo, Input, Text, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
-from util import Font, Settings, SettingsCollection, convert_to_hex, convert_to_rgb
+from settings import Settings
+from settings import save as save_settings
+from util import Font
 
 
 class Element(Enum):
     SAVE_BUTTON = auto()
-    DELETE_BUTTON = auto()
 
-    CYCLE_BETWEEN_SETTINGS_CHECKBOX = auto()
-    SECONDS_BETWEEN_CYCLES_INPUT = auto()
-
-    SETTINGS_NAME_COMBO = auto()
     START_LED_INPUT = auto()
     END_LED_INPUT = auto()
     MILLISECONDS_PER_AUDIO_CHUNK_INPUT = auto()
@@ -28,177 +26,43 @@ class Element(Enum):
     MAXIMUM_FREQUENCY_INPUT = auto()
     REVERSE_LEDS_CHECK_BOX = auto()
 
-    DECIBEL_INPUT_1 = auto()
-    COLOR_PICKER_1 = auto()
 
-    DECIBEL_INPUT_2 = auto()
-    COLOR_PICKER_2 = auto()
-
-    DECIBEL_INPUT_3 = auto()
-    COLOR_PICKER_3 = auto()
-
-    DECIBEL_INPUT_4 = auto()
-    COLOR_PICKER_4 = auto()
-
-    DECIBEL_INPUT_5 = auto()
-    COLOR_PICKER_5 = auto()
-
-
-class Event(Enum):
-    SELECT_CURRENT_SETTINGS_NAME = auto()
-    SELECT_NON_CURRENT_SETTINGS_NAME = auto()
-    CLEAR_SETTINGS_NAME = auto()
-    ENTER_NEW_SETTINGS_NAME = auto()
-
-
-class SettingsController:
-    def __init__(self, create_gui: Callable[[], WidgetGui], settings_collection: SettingsCollection = SettingsCollection()):
+class SettingsController(Controller):
+    def __init__(self, create_gui: Callable[[], WidgetGui],
+                 save_directory: Path, settings=Settings()):
         self.__gui = create_gui()
-        self.__settings_collection = settings_collection
+        self.__gui.title = 'Settings'
 
-    def set_settings_collection(self, settings_collection: SettingsCollection):
-        self.__settings_collection = settings_collection
+        self.__save_directory = save_directory
+        self.__settings = settings
 
-    def __enter__(self) -> SettingsController:
-        return self
-
-    def __exit__(self, *args):
+    def close(self):
         self.__gui.close()
 
-    def run(self):
-        self._display()
-        settings_event = self._read_event_and_update_gui()
-
-        while (settings_event != WidgetGuiEvent.CLOSE_WINDOW):
-            self._handle_event(settings_event)
-            settings_event = self._read_event_and_update_gui()
-
-        self._handle_event(settings_event)
-
-    def __get_selected_settings_name(self) -> str:
-        try:
-            COMBO = self.__gui.get_widget(Element.SETTINGS_NAME_COMBO)
-            return COMBO.value
-
-        except AttributeError:
-            return ''
-
-    def _read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent, Event]:
+    def read_event_and_update_gui(self) -> Union[Element, WidgetGuiEvent]:
         EVENT = self.__gui.read_event_and_update_gui()
-
-        if (EVENT == WidgetGuiEvent.TIMEOUT):
-            SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
-
-            if (self.__the_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
-                return Event.SELECT_CURRENT_SETTINGS_NAME
-
-            elif (self.__a_non_current_settings_name_is_selected(SELECTED_SETTINGS_NAME)):
-                return Event.SELECT_NON_CURRENT_SETTINGS_NAME
-
-            elif (SELECTED_SETTINGS_NAME == ''):
-                return Event.CLEAR_SETTINGS_NAME
-
-            return Event.ENTER_NEW_SETTINGS_NAME
 
         return EVENT
 
-    def __the_current_settings_name_is_selected(self, settings_name: str):
-        try:
-            return settings_name == self.__settings_collection.current_name
-
-        except AttributeError:
-            return False
-
-    def __a_non_current_settings_name_is_selected(self, settings_name: str):
-        try:
-            return (settings_name != self.__settings_collection.current_name
-                    and settings_name in self.__settings_collection)
-
-        except AttributeError:
-            return False
-
-    def _handle_event(self, event: Union[Element, WidgetGuiEvent]):
-        SELECTED_SETTINGS_NAME = self.__get_selected_settings_name()
-
+    def handle_event(self, event: Union[Element, WidgetGuiEvent]):
         if (event == Element.SAVE_BUTTON):
             self.__save_settings()
-
-            try:
-                self.__settings_collection.save_to_files()
-
-            except ValueError:
-                pass
-
+            save_settings(self.__settings, self.__save_directory)
             self.__update_widgets()
-
-        elif (event == Element.DELETE_BUTTON):
-            try:
-                del self.__settings_collection[SELECTED_SETTINGS_NAME]
-
-                try:
-                    self.__settings_collection.save_to_files()
-
-                except ValueError:
-                    pass
-
-                self.__update_widgets()
-
-            except KeyError:
-                raise ValueError(f'There is no Settings with the name {SELECTED_SETTINGS_NAME} to delete.')
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__gui.close()
 
         elif (event != WidgetGuiEvent.TIMEOUT):
-            SAVE_BUTTON: Button = self.__gui.get_widget(Element.SAVE_BUTTON)
-            DELETE_BUTTON: Button = self.__gui.get_widget(Element.DELETE_BUTTON)
+            raise ValueError(f'This SettingsController does not recognize the event {event}.')
 
-            if (event == Event.SELECT_CURRENT_SETTINGS_NAME):
-                SAVE_BUTTON.enabled = True
-                DELETE_BUTTON.enabled = True
-
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
-
-            elif (event == Event.SELECT_NON_CURRENT_SETTINGS_NAME):
-                try:
-                    self.__settings_collection.current_name = SELECTED_SETTINGS_NAME
-                    self.__update_widgets()
-
-                except ValueError as error:
-                    if (SELECTED_SETTINGS_NAME not in self.__settings_collection):
-                        raise ValueError(f"The selected settings name {SELECTED_SETTINGS_NAME} is not in this SettingsController's SettingsCollection.")
-
-                    raise error
-
-            elif (event == Event.CLEAR_SETTINGS_NAME):
-                SAVE_BUTTON.enabled = False
-                DELETE_BUTTON.enabled = False
-
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
-
-            elif (event == Event.ENTER_NEW_SETTINGS_NAME):
-                SAVE_BUTTON.enabled = True
-                DELETE_BUTTON.enabled = False
-
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
-
-            else:
-                raise ValueError(f'This SettingsController does not recognize the event {event}.')
-
-    def _display(self):
+    def display(self):
         def get_widget(widget_key: Element) -> Widget:
             return WIDGETS[widget_key]
 
         WIDGETS = self.__create_widgets()
 
-        SETTINGS_NAMES_COMBO = get_widget(Element.SETTINGS_NAME_COMBO)
         SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
-        DELETE_BUTTON = get_widget(Element.DELETE_BUTTON)
-        CYCLE_BETWEEN_SETTINGS_CHECKBOX = get_widget(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX)
-        SECONDS_BETWEEN_CYCLES_INPUT = get_widget(Element.SECONDS_BETWEEN_CYCLES_INPUT)
 
         START_LED_INPUT = get_widget(Element.START_LED_INPUT)
         END_LED_INPUT = get_widget(Element.END_LED_INPUT)
@@ -219,21 +83,6 @@ class SettingsController:
 
         REVERSE_LEDS_CHECK_BOX = get_widget(Element.REVERSE_LEDS_CHECK_BOX)
 
-        DECIBEL_INPUT_1 = get_widget(Element.DECIBEL_INPUT_1)
-        COLOR_PICKER_1 = get_widget(Element.COLOR_PICKER_1)
-
-        DECIBEL_INPUT_2 = get_widget(Element.DECIBEL_INPUT_2)
-        COLOR_PICKER_2 = get_widget(Element.COLOR_PICKER_2)
-
-        DECIBEL_INPUT_3 = get_widget(Element.DECIBEL_INPUT_3)
-        COLOR_PICKER_3 = get_widget(Element.COLOR_PICKER_3)
-
-        DECIBEL_INPUT_4 = get_widget(Element.DECIBEL_INPUT_4)
-        COLOR_PICKER_4 = get_widget(Element.COLOR_PICKER_4)
-
-        DECIBEL_INPUT_5 = get_widget(Element.DECIBEL_INPUT_5)
-        COLOR_PICKER_5 = get_widget(Element.COLOR_PICKER_5)
-
         FONT = Font("Courier New", 14)
 
         START_LED_LABEL = Text(text="Start LED (inclusive):", font=FONT)
@@ -246,11 +95,7 @@ class SettingsController:
         MINIMUM_FREQUENCY_LABEL = Text(text="Minimum Frequency:", font=FONT)
         MAXIMUM_FREQUENCY_LABEL = Text(text="Maximum Frequency:", font=FONT)
 
-        FIRST_TEXT = Text(text='First', font=FONT)
-        NEXT_TEXT = Text(text='next', font=FONT)
-        DECIBELS_TEXT = Text(text='decibels (dB) are')
-
-        LAYOUT = [[SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, CYCLE_BETWEEN_SETTINGS_CHECKBOX, SECONDS_BETWEEN_CYCLES_INPUT],
+        LAYOUT = [[SAVE_BUTTON],
 
                   [START_LED_LABEL, START_LED_INPUT],
                   [END_LED_LABEL, END_LED_INPUT],
@@ -268,13 +113,7 @@ class SettingsController:
                   [MINIMUM_FREQUENCY_LABEL, MINIMUM_FREQUENCY_INPUT],
                   [MAXIMUM_FREQUENCY_LABEL, MAXIMUM_FREQUENCY_INPUT],
 
-                  [REVERSE_LEDS_CHECK_BOX],
-
-                  [FIRST_TEXT, DECIBEL_INPUT_1, DECIBELS_TEXT, COLOR_PICKER_1],
-                  [NEXT_TEXT, DECIBEL_INPUT_2, DECIBELS_TEXT, COLOR_PICKER_2],
-                  [NEXT_TEXT, DECIBEL_INPUT_3, DECIBELS_TEXT, COLOR_PICKER_3],
-                  [NEXT_TEXT, DECIBEL_INPUT_4, DECIBELS_TEXT, COLOR_PICKER_4],
-                  [NEXT_TEXT, DECIBEL_INPUT_5, DECIBELS_TEXT, COLOR_PICKER_5]]
+                  [REVERSE_LEDS_CHECK_BOX]]
 
         self.__gui.set_layout(LAYOUT)
         self.__gui.display_layout()
@@ -286,19 +125,6 @@ class SettingsController:
             self.__gui.update_widget(widget)
 
     def __create_widgets(self) -> Dict[Element, Widget]:
-        def create_settings_names_combo():
-            SETTINGS_NAMES = list(self.__settings_collection.names())
-            SETTINGS_NAMES_COMBO_SIZE = (40, 7)
-
-            combo = Combo(Element.SETTINGS_NAME_COMBO, SETTINGS_NAMES, size=SETTINGS_NAMES_COMBO_SIZE)
-
-            try:
-                combo.value = self.__settings_collection.current_name
-                return combo
-
-            except AttributeError:
-                return combo
-
         def create_baudrates_combo():
             BAUDRATES = [str(baudrate) for baudrate in Settings.SERIAL_BAUDRATES]
 
@@ -307,48 +133,10 @@ class SettingsController:
 
             return combo
 
-        def create_amplitude_rgbs_widgets() -> List[Widget]:
-            COUNTER = Counter(SETTINGS.amplitude_rgbs)
-            INPUT_KEYS = [Element.DECIBEL_INPUT_1, Element.DECIBEL_INPUT_2,
-                          Element.DECIBEL_INPUT_3, Element.DECIBEL_INPUT_4,
-                          Element.DECIBEL_INPUT_5]
-
-            COLOR_PICKER_KEYS = [Element.COLOR_PICKER_1, Element.COLOR_PICKER_2,
-                                 Element.COLOR_PICKER_3, Element.COLOR_PICKER_4,
-                                 Element.COLOR_PICKER_5]
-
-            widgets = []
-
-            i = -1
-            for rgb, count in COUNTER.items():
-                i += 1
-
-                input_key = INPUT_KEYS[i]
-                color_picker_key = COLOR_PICKER_KEYS[i]
-
-                red, green, blue = rgb
-                widgets += [Input(input_key, count), ColorPicker(color_picker_key, convert_to_hex(red, green, blue))]
-
-            for j in range(i + 1, len(INPUT_KEYS)):
-                input_key = INPUT_KEYS[j]
-                color_picker_key = COLOR_PICKER_KEYS[j]
-
-                widgets += [Input(input_key, '0'), ColorPicker(color_picker_key)]
-
-            return widgets
-
         FONT = Font("Courier New", 14)
-        SETTINGS = (Settings() if (not hasattr(self.__settings_collection, 'current_settings'))
-                    else self.__settings_collection.current_settings)
+        SETTINGS = self.__settings
 
-        SETTINGS_NAMES_COMBO = create_settings_names_combo()
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)
-        DELETE_BUTTON = Button(Element.DELETE_BUTTON, "Delete", FONT, True)
-        CYCLE_BETWEEN_SETTINGS_CHECKBOX = CheckBox(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX,
-                                                   'Cycle between settings',
-                                                   value=self.__settings_collection.should_cycle_between_settings)
-        SECONDS_BETWEEN_CYCLES_INPUT = Input(Element.SECONDS_BETWEEN_CYCLES_INPUT,
-                                             str(self.__settings_collection.seconds_between_cycles))
 
         START_LED_INPUT = Input(Element.START_LED_INPUT, str(SETTINGS.start_led))
         END_LED_INPUT = Input(Element.END_LED_INPUT, str(SETTINGS.end_led))
@@ -379,12 +167,11 @@ class SettingsController:
 
             return result
 
-        return create_widgets(SETTINGS_NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON, CYCLE_BETWEEN_SETTINGS_CHECKBOX,
-                              SECONDS_BETWEEN_CYCLES_INPUT, START_LED_INPUT,
+        return create_widgets(SAVE_BUTTON,
+                              START_LED_INPUT,
                               END_LED_INPUT, MILLISECONDS_PER_AUDIO_CHUNK_INPUT, SERIAL_PORT_INPUT,
                               BAUDRATES_COMBO, BRIGHTNESS_INPUT, NUMBER_OF_GROUPS_INPUT,
-                              MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX,
-                              *create_amplitude_rgbs_widgets())
+                              MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX)
 
     def __save_settings(self):
         START_LED = self.__get_setting_from_wiget_gui(Element.START_LED_INPUT)
@@ -398,42 +185,16 @@ class SettingsController:
         SHOULD_REVERSE_LEDS = self.__get_setting_from_wiget_gui(Element.REVERSE_LEDS_CHECK_BOX)
         NUMBER_OF_GROUPS = self.__get_setting_from_wiget_gui(Element.NUMBER_OF_GROUPS_INPUT)
 
-        AMPLITUDE_RGBS = self.__get_amplitude_rgbs_from_gui()
-
-        settings = Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT, SERIAL_BAUDRATE,
-                            BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY, SHOULD_REVERSE_LEDS,
-                            NUMBER_OF_GROUPS, AMPLITUDE_RGBS)
-
-        SETTINGS_NAME_COMBO = self.__gui.get_widget(Element.SETTINGS_NAME_COMBO)
-        SETTINGS_NAME = SETTINGS_NAME_COMBO.value
-
-        self.__settings_collection[SETTINGS_NAME] = settings
-        self.__settings_collection.current_name = SETTINGS_NAME
-
-        SHOULD_CYCLE_BETWEEN_SETTINGS = self.__get_setting_from_wiget_gui(Element.CYCLE_BETWEEN_SETTINGS_CHECKBOX)
-        SECONDS_BETWEEN_CYCLES = self.__get_setting_from_wiget_gui(Element.SECONDS_BETWEEN_CYCLES_INPUT)
-
-        self.__settings_collection.should_cycle_between_settings = SHOULD_CYCLE_BETWEEN_SETTINGS
-        self.__settings_collection.seconds_between_cycles = SECONDS_BETWEEN_CYCLES
-
-    def __get_amplitude_rgbs_from_gui(self) -> List[Tuple[int, int, int]]:
-        NUMBER_OF_DECIBELS_1 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_1)
-        NUMBER_OF_DECIBELS_2 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_2)
-        NUMBER_OF_DECIBELS_3 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_3)
-        NUMBER_OF_DECIBELS_4 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_4)
-        NUMBER_OF_DECIBELS_5 = self.__get_setting_from_wiget_gui(Element.DECIBEL_INPUT_5)
-
-        COLOR_PICKER_1 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_1)
-        COLOR_PICKER_2 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_2)
-        COLOR_PICKER_3 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_3)
-        COLOR_PICKER_4 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_4)
-        COLOR_PICKER_5 = self.__get_setting_from_wiget_gui(Element.COLOR_PICKER_5)
-
-        return ([convert_to_rgb(COLOR_PICKER_1)] * NUMBER_OF_DECIBELS_1
-                + [convert_to_rgb(COLOR_PICKER_2)] * NUMBER_OF_DECIBELS_2
-                + [convert_to_rgb(COLOR_PICKER_3)] * NUMBER_OF_DECIBELS_3
-                + [convert_to_rgb(COLOR_PICKER_4)] * NUMBER_OF_DECIBELS_4
-                + [convert_to_rgb(COLOR_PICKER_5)] * NUMBER_OF_DECIBELS_5)
+        self.__settings.start_led = START_LED
+        self.__settings.end_led = END_LED
+        self.__settings.milliseconds_per_audio_chunk = MILLISECONDS_PER_AUDIO_CHUNK
+        self.__settings.serial_port = SERIAL_PORT
+        self.__settings.serial_baudrate = SERIAL_BAUDRATE
+        self.__settings.brightness = BRIGHTNESS
+        self.__settings.minimum_frequency = MINIMUM_FREQUENCY
+        self.__settings.maximum_frequency = MAXIMUM_FREQUENCY
+        self.__settings.should_reverse_leds = SHOULD_REVERSE_LEDS
+        self.__settings.number_of_groups = NUMBER_OF_GROUPS
 
     def __get_setting_from_wiget_gui(self, setting_element: Element) -> Any:
         INTEGER_SETTINGS = {Element.START_LED_INPUT,
@@ -443,13 +204,7 @@ class SettingsController:
                             Element.BRIGHTNESS_INPUT,
                             Element.MINIMUM_FREQUENCY_INPUT,
                             Element.MAXIMUM_FREQUENCY_INPUT,
-                            Element.NUMBER_OF_GROUPS_INPUT,
-                            Element.DECIBEL_INPUT_1,
-                            Element.DECIBEL_INPUT_2,
-                            Element.DECIBEL_INPUT_3,
-                            Element.DECIBEL_INPUT_4,
-                            Element.DECIBEL_INPUT_5,
-                            Element.SECONDS_BETWEEN_CYCLES_INPUT}
+                            Element.NUMBER_OF_GROUPS_INPUT}
 
         WIDGET = self.__gui.get_widget(setting_element)
         WIDGET_VALUE = WIDGET.value

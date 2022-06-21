@@ -1,9 +1,10 @@
 import math
 from statistics import mean
-from typing import Any, Iterable, List, Union
+from typing import Iterable, List, Union
 
 import numpy
 from led_strip.led_strip import LedStrip
+from non_negative_int_range import NonNegativeIntRange
 from util import RGB
 
 # ================================================================== Some useful formulas ==================================================================
@@ -35,29 +36,6 @@ from util import RGB
 # ============================================================================================================================================================
 
 
-class NonNegativeRange:
-    def __init__(self, start=0, end=0):
-        if (start < 0):
-            raise ValueError(f'start ({start}) must be >= 0.')
-
-        if (end < 0):
-            raise ValueError(f'end ({end}) must be >= 0.')
-
-        if (start > end):
-            raise ValueError(f'start ({start}) must be <= end ({end}).')
-
-        self.__start = start
-        self.__end = end
-
-    @property
-    def start(self) -> Any:
-        return self.__start
-
-    @property
-    def end(self) -> Any:
-        return self.__end
-
-
 def _get_fft_amplitude(fft_value: complex, number_of_fft_values: int) -> float:
     hypotenuse = math.sqrt(fft_value.real**2 + fft_value.imag**2).real
 
@@ -73,21 +51,21 @@ def _get_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_f
 
 
 class Spectrogram:
-    def __init__(self, led_strip: LedStrip):
-        self.__led_strip: LedStrip = led_strip
-        self.__amplitude_rgbs = []
-        self.__frequency_range = NonNegativeRange()
+    def __init__(self, amplitude_rgbs: List[Iterable[int]] = [],
+                 start_frequency: int = 0, end_frequency: int = 0):
+        self.__amplitude_rgbs: List[RGB] = []
+        self.__frequency_range: NonNegativeIntRange = NonNegativeIntRange()
+
+        self.set_amplitude_rgbs(amplitude_rgbs)
+        self.set_frequency_range(start_frequency, end_frequency)
 
     def set_amplitude_rgbs(self, amplitude_rgbs: List[Iterable[int]]):
         self.__amplitude_rgbs = [RGB(red, green, blue) for red, green, blue in amplitude_rgbs]
 
-    def set_frequency_range(self, start_frequency: Union[int, float], end_frequency: Union[int, float]):
-        self.__frequency_range = NonNegativeRange(start_frequency, end_frequency)
+    def set_frequency_range(self, start_frequency: int, end_frequency: int):
+        self.__frequency_range = NonNegativeIntRange(start_frequency, end_frequency)
 
-    def set_led_strip(self, led_strip: LedStrip):
-        self.__led_strip = led_strip
-
-    def update_led_strip(self, audio_data: bytes, number_of_frames: int, sampling_rate: int):
+    def update_led_strip(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int):
         '''
             Args:
                 `audio_data (bytes)`: WAV audio data.
@@ -106,10 +84,10 @@ class Spectrogram:
         fft_end_at_max_freq: int = min(fft_length - 1,
                                        _get_fft_index(self.__frequency_range.end, sampling_rate, number_of_frames)) + 1
 
-        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // self.__led_strip.number_of_groups)
+        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // led_strip.number_of_groups)
 
         for fft_sublist_start, led_strip_group in zip(range(fft_start_at_min_freq, fft_end_at_max_freq, fft_sublist_length),
-                                                      range(self.__led_strip.number_of_groups)):
+                                                      range(led_strip.number_of_groups)):
 
             fft_sublist_end: int = min(fft_sublist_start + fft_sublist_length, fft_end_at_max_freq)
 
@@ -118,11 +96,11 @@ class Spectrogram:
 
             rgb = self.__get_rgb(fft_sublist_average_amplitude)
 
-            if (not self.__led_strip.group_is_rgb(led_strip_group, rgb)):
-                self.__led_strip.enqueue_rgb(led_strip_group, rgb)
+            if (not led_strip.group_is_rgb(led_strip_group, rgb)):
+                led_strip.enqueue_rgb(led_strip_group, rgb)
 
-        self.__led_strip.show_queued_colors()
-        self.__led_strip.clear_queued_colors()
+        led_strip.show_queued_colors()
+        led_strip.clear_queued_colors()
 
     def __get_rgb(self, amplitude: Union[int, float]) -> RGB:
         try:

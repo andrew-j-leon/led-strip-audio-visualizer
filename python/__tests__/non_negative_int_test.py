@@ -1,7 +1,7 @@
 import unittest
 from typing import Any, Callable, List, Tuple, Type
 
-from led_strip.non_negative_integer_range import NonNegativeInteger
+from non_negative_int_range import NonNegativeInt
 
 
 def get_error_message(callable: Callable) -> str:
@@ -44,22 +44,22 @@ class TestConstructor(unittest.TestCase):
     def check_valid_arguments(self, arguments: list):
         for argument in arguments:
 
-            with self.subTest(f'NonNegativeInteger({argument})'):
-                NonNegativeInteger(argument)
+            with self.subTest(f'NonNegativeInt({argument})'):
+                NonNegativeInt(argument)
 
     def check_arguments_less_than_zero_raise_value_error(self, arguments: list):
         for argument in arguments:
-            with self.subTest(f'NonNegativeInteger({argument})'):
+            with self.subTest(f'NonNegativeInt({argument})'):
 
                 with self.assertRaises(ValueError):
-                    NonNegativeInteger(argument)
+                    NonNegativeInt(argument)
 
     def check_cannot_convert_to_int(self, arguments: list):
         for argument in arguments:
-            with self.subTest(f'NonNegativeInteger({argument})'):
+            with self.subTest(f'NonNegativeInt({argument})'):
 
                 with self.assertRaises((TypeError, ValueError)):
-                    NonNegativeInteger(argument)
+                    NonNegativeInt(argument)
 
 
 class TestRepr(unittest.TestCase):
@@ -67,10 +67,10 @@ class TestRepr(unittest.TestCase):
         NON_NEGATIVE_INTS = [0, 1, 24]
 
         for NON_NEGATIVE_INT in NON_NEGATIVE_INTS:
-            with self.subTest(f'NonNegativeInteger({NON_NEGATIVE_INT})'):
+            with self.subTest(f'NonNegativeInt({NON_NEGATIVE_INT})'):
 
-                actual = NonNegativeInteger(NON_NEGATIVE_INT).__repr__()
-                expected = f'NonNegativeInteger({NON_NEGATIVE_INT})'
+                actual = NonNegativeInt(NON_NEGATIVE_INT).__repr__()
+                expected = f'NonNegativeInt({NON_NEGATIVE_INT})'
 
                 self.assertEqual(actual, expected)
 
@@ -81,7 +81,7 @@ class TestInt(unittest.TestCase):
 
         for NON_NEGATIVE_INT in NON_NEGATIVE_INTS:
 
-            non_negative_integer = NonNegativeInteger(NON_NEGATIVE_INT)
+            non_negative_integer = NonNegativeInt(NON_NEGATIVE_INT)
 
             with self.subTest(f'int({non_negative_integer})'):
 
@@ -109,9 +109,9 @@ class TestIndex(unittest.TestCase):
     def check_constructed_with(self, constructor_arguments: list):
         for argument in constructor_arguments:
 
-            non_negative_integer = NonNegativeInteger(argument)
+            non_negative_integer = NonNegativeInt(argument)
 
-            with self.subTest(f'NonNegativeInteger({repr(argument)}).__index__()'):
+            with self.subTest(f'NonNegativeInt({repr(argument)}).__index__()'):
 
                 actual = non_negative_integer.__index__()
                 expected = int(argument)
@@ -122,89 +122,89 @@ class TestIndex(unittest.TestCase):
 class TestEqual(unittest.TestCase):
 
     def test_non_negative_integer(self):
-        EQUAL_PAIRS = [(NonNegativeInteger(0),
-                        NonNegativeInteger(0)),
+        EQUAL_PAIRS = [(NonNegativeInt(0),
+                        NonNegativeInt(0)),
 
-                       (NonNegativeInteger(1),
-                        NonNegativeInteger(1)),
+                       (NonNegativeInt(1),
+                        NonNegativeInt(1)),
 
-                       (NonNegativeInteger(5834),
-                        NonNegativeInteger(5834))]
+                       (NonNegativeInt(5834),
+                        NonNegativeInt(5834))]
 
         self.check_equal(EQUAL_PAIRS)
 
-        UNEQUAL_PAIRS = [(NonNegativeInteger(0),
-                          NonNegativeInteger(1)),
+        UNEQUAL_PAIRS = [(NonNegativeInt(0),
+                          NonNegativeInt(1)),
 
-                         (NonNegativeInteger(15),
-                          NonNegativeInteger(1651)),
+                         (NonNegativeInt(15),
+                          NonNegativeInt(1651)),
 
-                         (NonNegativeInteger(99999),
-                          NonNegativeInteger(99998))]
+                         (NonNegativeInt(99999),
+                          NonNegativeInt(99998))]
 
         self.check_not_equal(UNEQUAL_PAIRS)
 
     def test_int(self):
-        EQUAL_PAIRS = [(0, NonNegativeInteger(0)),
+        EQUAL_PAIRS = [(0, NonNegativeInt(0)),
 
-                       (1, NonNegativeInteger(1)),
+                       (1, NonNegativeInt(1)),
 
-                       (5834, NonNegativeInteger(5834))]
+                       (5834, NonNegativeInt(5834))]
 
         self.check_equal(EQUAL_PAIRS)
 
-        UNEQUAL_PAIRS = [(0, NonNegativeInteger(1)),
+        UNEQUAL_PAIRS = [(0, NonNegativeInt(1)),
 
-                         (15, NonNegativeInteger(1651)),
+                         (15, NonNegativeInt(1651)),
 
-                         (999999, NonNegativeInteger(99998))]
+                         (999999, NonNegativeInt(99998))]
 
         self.check_not_equal(UNEQUAL_PAIRS)
 
     def test_float(self):
-        EQUAL_PAIRS = [(0.0, NonNegativeInteger(0)),
+        EQUAL_PAIRS = [(0.0, NonNegativeInt(0)),
 
-                       (1.0, NonNegativeInteger(1)),
+                       (1.0, NonNegativeInt(1)),
 
-                       (5834.0, NonNegativeInteger(5834)),
+                       (5834.0, NonNegativeInt(5834)),
 
-                       (0.0, NonNegativeInteger(-0.0)),
+                       (0.0, NonNegativeInt(-0.0)),
 
-                       (0.0, NonNegativeInteger(-0.0001)),
+                       (0.0, NonNegativeInt(-0.0001)),
 
-                       (0.0, NonNegativeInteger(-0.999999)),
+                       (0.0, NonNegativeInt(-0.999999)),
 
-                       (1.0, NonNegativeInteger(1.000001)),
+                       (1.0, NonNegativeInt(1.000001)),
 
-                       (1.0, NonNegativeInteger(1.5)),
+                       (1.0, NonNegativeInt(1.5)),
 
-                       (1.0, NonNegativeInteger(1.99999999)),
+                       (1.0, NonNegativeInt(1.99999999)),
 
-                       (10.0, NonNegativeInteger(10.0000001)),
+                       (10.0, NonNegativeInt(10.0000001)),
 
-                       (10.0, NonNegativeInteger(10.5)),
+                       (10.0, NonNegativeInt(10.5)),
 
-                       (10.0, NonNegativeInteger(10.9999999)),
+                       (10.0, NonNegativeInt(10.9999999)),
 
-                       (0.0, NonNegativeInteger(False)),
+                       (0.0, NonNegativeInt(False)),
 
-                       (1.0, NonNegativeInteger(True))]
+                       (1.0, NonNegativeInt(True))]
 
         self.check_equal(EQUAL_PAIRS)
 
-        UNEQUAL_PAIRS = [(0.9999, NonNegativeInteger(0.9999)),
+        UNEQUAL_PAIRS = [(0.9999, NonNegativeInt(0.9999)),
 
-                         (15.0, NonNegativeInteger(1651)),
+                         (15.0, NonNegativeInt(1651)),
 
-                         (999999.0, NonNegativeInteger(99998)),
+                         (999999.0, NonNegativeInt(99998)),
 
-                         (573.54, NonNegativeInteger(573)),
+                         (573.54, NonNegativeInt(573)),
 
-                         (-1, NonNegativeInteger(1)),
+                         (-1, NonNegativeInt(1)),
 
-                         (tuple(), NonNegativeInteger(10)),
+                         (tuple(), NonNegativeInt(10)),
 
-                         (list(), NonNegativeInteger(0))]
+                         (list(), NonNegativeInt(0))]
 
         self.check_not_equal(UNEQUAL_PAIRS)
 
@@ -223,33 +223,33 @@ class TestEqual(unittest.TestCase):
 
 class TestLessThan(unittest.TestCase):
     def test_less_than_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
 
         self.check_left_less_thans_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
         self.check_right_less_thans_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
 
         self.check_left_less_thans_are_valid(NON_NEGATIVE_INTEGERS, INTS)
         self.check_right_less_thans_are_valid(INTS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
 
         self.check_left_less_thans_are_valid(NON_NEGATIVE_INTEGERS, FLOATS)
         self.check_right_less_thans_are_valid(FLOATS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_less_than_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_less_than_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_less_thans_are_valid(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_less_thans_are_valid(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -260,7 +260,7 @@ class TestLessThan(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_right_less_thans_are_valid(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_less_thans_are_valid(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -271,7 +271,7 @@ class TestLessThan(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_left_less_than_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_less_than_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -280,7 +280,7 @@ class TestLessThan(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer < right_value
 
-    def check_right_less_than_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_less_than_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -292,33 +292,33 @@ class TestLessThan(unittest.TestCase):
 
 class TestLessThanOrEqualTo(unittest.TestCase):
     def test_less_than_or_equal_to_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
 
         self.check_left_less_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
         self.check_right_less_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_or_equal_to_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
 
         self.check_left_less_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, INTS)
         self.check_right_less_thans_or_equal_tos_are_valid(INTS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_or_equal_to_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
 
         self.check_left_less_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, FLOATS)
         self.check_right_less_thans_or_equal_tos_are_valid(FLOATS, NON_NEGATIVE_INTEGERS)
 
     def test_less_than_or_equal_to_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_less_than_or_equal_to_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_less_than_or_equal_to_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_less_thans_or_equal_tos_are_valid(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_less_thans_or_equal_tos_are_valid(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -329,7 +329,7 @@ class TestLessThanOrEqualTo(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_right_less_thans_or_equal_tos_are_valid(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_less_thans_or_equal_tos_are_valid(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -340,7 +340,7 @@ class TestLessThanOrEqualTo(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_left_less_than_or_equal_to_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_less_than_or_equal_to_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -349,7 +349,7 @@ class TestLessThanOrEqualTo(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer <= right_value
 
-    def check_right_less_than_or_equal_to_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_less_than_or_equal_to_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -361,33 +361,33 @@ class TestLessThanOrEqualTo(unittest.TestCase):
 
 class TestGreaterThan(unittest.TestCase):
     def test_greater_than_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
 
         self.check_left_greater_thans_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
         self.check_right_greater_thans_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
 
         self.check_left_greater_thans_are_valid(NON_NEGATIVE_INTEGERS, INTS)
         self.check_right_greater_thans_are_valid(INTS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
 
         self.check_left_greater_thans_are_valid(NON_NEGATIVE_INTEGERS, FLOATS)
         self.check_right_greater_thans_are_valid(FLOATS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_greater_than_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_greater_than_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_greater_thans_are_valid(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_greater_thans_are_valid(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -398,7 +398,7 @@ class TestGreaterThan(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_right_greater_thans_are_valid(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_greater_thans_are_valid(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -409,7 +409,7 @@ class TestGreaterThan(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_left_greater_than_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_greater_than_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -418,7 +418,7 @@ class TestGreaterThan(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer > right_value
 
-    def check_right_greater_than_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_greater_than_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -430,33 +430,33 @@ class TestGreaterThan(unittest.TestCase):
 
 class TestGreaterThanOrEqualTo(unittest.TestCase):
     def test_greater_than_or_equal_to_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
 
         self.check_left_greater_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
         self.check_right_greater_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_or_equal_to_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
 
         self.check_left_greater_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, INTS)
         self.check_right_greater_thans_or_equal_tos_are_valid(INTS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_or_equal_to_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
 
         self.check_left_greater_thans_or_equal_tos_are_valid(NON_NEGATIVE_INTEGERS, FLOATS)
         self.check_right_greater_thans_or_equal_tos_are_valid(FLOATS, NON_NEGATIVE_INTEGERS)
 
     def test_greater_than_or_equal_to_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_greater_than_or_equal_to_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_greater_than_or_equal_to_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_greater_thans_or_equal_tos_are_valid(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_greater_thans_or_equal_tos_are_valid(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -467,7 +467,7 @@ class TestGreaterThanOrEqualTo(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_right_greater_thans_or_equal_tos_are_valid(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_greater_thans_or_equal_tos_are_valid(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -478,7 +478,7 @@ class TestGreaterThanOrEqualTo(unittest.TestCase):
 
                     self.assertEqual(actual, expected)
 
-    def check_left_greater_than_or_equal_to_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_greater_than_or_equal_to_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -487,7 +487,7 @@ class TestGreaterThanOrEqualTo(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer >= right_value
 
-    def check_right_greater_than_or_equal_to_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_greater_than_or_equal_to_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -499,14 +499,14 @@ class TestGreaterThanOrEqualTo(unittest.TestCase):
 
 class TestAddition(unittest.TestCase):
     def test_add_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
-        EXPECTED_TYPE_OF_RESULT = NonNegativeInteger
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
+        EXPECTED_TYPE_OF_RESULT = NonNegativeInt
 
         self.check_left_additions_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
         self.check_right_additions_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_add_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
         EXPECTED_TYPE_OF_RESULT = int
 
@@ -514,7 +514,7 @@ class TestAddition(unittest.TestCase):
         self.check_right_additions_are_valid(INTS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_add_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
         EXPECTED_TYPE_OF_RESULT = float
 
@@ -522,13 +522,13 @@ class TestAddition(unittest.TestCase):
         self.check_right_additions_are_valid(FLOATS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_add_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_addition_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_addition_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_additions_are_valid(self, left_values: List[NonNegativeInteger], right_values: list, expected_type_of_result: Type[Any]):
+    def check_left_additions_are_valid(self, left_values: List[NonNegativeInt], right_values: list, expected_type_of_result: Type[Any]):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -540,7 +540,7 @@ class TestAddition(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_right_additions_are_valid(self, left_values: list, right_values: List[NonNegativeInteger], expected_type_of_result: Type[Any]):
+    def check_right_additions_are_valid(self, left_values: list, right_values: List[NonNegativeInt], expected_type_of_result: Type[Any]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -552,7 +552,7 @@ class TestAddition(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_left_addition_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_addition_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -561,7 +561,7 @@ class TestAddition(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer + right_value
 
-    def check_right_addition_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_addition_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -573,14 +573,14 @@ class TestAddition(unittest.TestCase):
 
 class TestSubtraction(unittest.TestCase):
     def test_subtract_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         EXPECTED_TYPE_OF_RESULT = int
 
         self.check_left_subtractions_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
         self.check_right_subtractions_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_subtract_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
         EXPECTED_TYPE_OF_RESULT = int
 
@@ -588,7 +588,7 @@ class TestSubtraction(unittest.TestCase):
         self.check_right_subtractions_are_valid(INTS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_subtract_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
         EXPECTED_TYPE_OF_RESULT = float
 
@@ -596,13 +596,13 @@ class TestSubtraction(unittest.TestCase):
         self.check_right_subtractions_are_valid(FLOATS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_subtract_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = ['hello', tuple(), list(), set(), dict(), None]
 
         self.check_left_subtraction_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_subtraction_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_subtractions_are_valid(self, left_values: List[NonNegativeInteger], right_values: list, expected_type_of_result: Type[Any]):
+    def check_left_subtractions_are_valid(self, left_values: List[NonNegativeInt], right_values: list, expected_type_of_result: Type[Any]):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -614,7 +614,7 @@ class TestSubtraction(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_right_subtractions_are_valid(self, left_values: list, right_values: List[NonNegativeInteger], expected_type_of_result: Type[Any]):
+    def check_right_subtractions_are_valid(self, left_values: list, right_values: List[NonNegativeInt], expected_type_of_result: Type[Any]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -626,7 +626,7 @@ class TestSubtraction(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_left_subtraction_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_subtraction_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -635,7 +635,7 @@ class TestSubtraction(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer - right_value
 
-    def check_right_subtraction_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_subtraction_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -647,14 +647,14 @@ class TestSubtraction(unittest.TestCase):
 
 class TestMultiplication(unittest.TestCase):
     def test_multiply_non_negative_integer(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
-        EXPECTED_TYPE_OF_RESULT = NonNegativeInteger
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
+        EXPECTED_TYPE_OF_RESULT = NonNegativeInt
 
         self.check_left_multiplications_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
         self.check_right_multiplications_are_valid(NON_NEGATIVE_INTEGERS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_multiply_int(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INTS = [-76, -1, 0, 1, 2168]
         EXPECTED_TYPE_OF_RESULT = int
 
@@ -662,7 +662,7 @@ class TestMultiplication(unittest.TestCase):
         self.check_right_multiplications_are_valid(INTS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_multiply_floats(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         FLOATS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
         EXPECTED_TYPE_OF_RESULT = float
 
@@ -670,13 +670,13 @@ class TestMultiplication(unittest.TestCase):
         self.check_right_multiplications_are_valid(FLOATS, NON_NEGATIVE_INTEGERS, EXPECTED_TYPE_OF_RESULT)
 
     def test_multiply_invalid_type(self):
-        NON_NEGATIVE_INTEGERS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(10)]
+        NON_NEGATIVE_INTEGERS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(10)]
         INVALID_TYPES = [dict(), None]
 
         self.check_left_multiplication_raises_type_error(NON_NEGATIVE_INTEGERS, INVALID_TYPES)
         self.check_right_multiplication_raises_type_error(INVALID_TYPES, NON_NEGATIVE_INTEGERS)
 
-    def check_left_multiplications_are_valid(self, left_values: List[NonNegativeInteger], right_values: list, expected_type_of_result: Type[Any]):
+    def check_left_multiplications_are_valid(self, left_values: List[NonNegativeInt], right_values: list, expected_type_of_result: Type[Any]):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -688,7 +688,7 @@ class TestMultiplication(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_right_multiplications_are_valid(self, left_values: list, right_values: List[NonNegativeInteger], expected_type_of_result: Type[Any]):
+    def check_right_multiplications_are_valid(self, left_values: list, right_values: List[NonNegativeInt], expected_type_of_result: Type[Any]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -700,7 +700,7 @@ class TestMultiplication(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_left_multiplication_raises_type_error(self, left_values: List[NonNegativeInteger], right_values: list):
+    def check_left_multiplication_raises_type_error(self, left_values: List[NonNegativeInt], right_values: list):
         for non_negative_integer in left_values:
             for right_value in right_values:
 
@@ -709,7 +709,7 @@ class TestMultiplication(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer * right_value
 
-    def check_right_multiplication_raises_type_error(self, left_values: list, right_values: List[NonNegativeInteger]):
+    def check_right_multiplication_raises_type_error(self, left_values: list, right_values: List[NonNegativeInt]):
         for left_value in left_values:
             for non_negative_integer in right_values:
 
@@ -722,15 +722,15 @@ class TestMultiplication(unittest.TestCase):
 class TestDivision(unittest.TestCase):
 
     def test_zero_division(self):
-        NUMERATORS = [0, NonNegativeInteger(0), 0.0,
-                      1, NonNegativeInteger(1), 1.0,
-                      5, NonNegativeInteger(5), 5.0,
-                      NonNegativeInteger(4.5), 4.5]
+        NUMERATORS = [0, NonNegativeInt(0), 0.0,
+                      1, NonNegativeInt(1), 1.0,
+                      5, NonNegativeInt(5), 5.0,
+                      NonNegativeInt(4.5), 4.5]
 
         self.check_zero_division_error(NUMERATORS)
 
     def check_zero_division_error(self, numerators: list):
-        DENOMINATORS = [0, 0.0, NonNegativeInteger(0), False]
+        DENOMINATORS = [0, 0.0, NonNegativeInt(0), False]
 
         for numerator in numerators:
             for DENOMINATOR in DENOMINATORS:
@@ -743,49 +743,49 @@ class TestDivision(unittest.TestCase):
     def test_divide_non_negative_integer(self):
         EXPECTED_TYPE_OF_RESULT = float
 
-        LEFT_DIVISION_NUMERATORS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(20)]
-        LEFT_DIVISION_DENOMINATORS = [NonNegativeInteger(1), NonNegativeInteger(20)]
+        LEFT_DIVISION_NUMERATORS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(20)]
+        LEFT_DIVISION_DENOMINATORS = [NonNegativeInt(1), NonNegativeInt(20)]
 
         self.check_left_divisions_are_valid(LEFT_DIVISION_NUMERATORS, LEFT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
-        RIGHT_DIVISION_NUMERATORS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(20)]
-        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInteger(1), NonNegativeInteger(20)]
+        RIGHT_DIVISION_NUMERATORS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(20)]
+        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInt(1), NonNegativeInt(20)]
 
         self.check_right_divisions_are_valid(RIGHT_DIVISION_NUMERATORS, RIGHT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
     def test_divide_int(self):
         EXPECTED_TYPE_OF_RESULT = float
 
-        LEFT_DIVISION_NUMERATORS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(20)]
+        LEFT_DIVISION_NUMERATORS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(20)]
         LEFT_DIVISION_DENOMINATORS = [-76, -1, 1, 2168]
         self.check_left_divisions_are_valid(LEFT_DIVISION_NUMERATORS, LEFT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
         RIGHT_DIVISION_NUMERATORS = [-76, -1, 0, 1, 2168]
-        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInteger(1), NonNegativeInteger(20)]
+        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInt(1), NonNegativeInt(20)]
         self.check_right_divisions_are_valid(RIGHT_DIVISION_NUMERATORS, RIGHT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
     def test_divide_floats(self):
         EXPECTED_TYPE_OF_RESULT = float
 
-        LEFT_DIVISION_NUMERATORS = [NonNegativeInteger(0), NonNegativeInteger(1), NonNegativeInteger(20)]
+        LEFT_DIVISION_NUMERATORS = [NonNegativeInt(0), NonNegativeInt(1), NonNegativeInt(20)]
         LEFT_DIVISION_DENOMINATORS = [-53.4, -1.0, -0.03, 0.02, 1.0, 42.67]
         self.check_left_divisions_are_valid(LEFT_DIVISION_NUMERATORS, LEFT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
         RIGHT_DIVISION_NUMERATORS = [-53.4, -1.0, -0.03, 0.0, 0.02, 1.0, 42.67]
-        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInteger(1), NonNegativeInteger(20)]
+        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInt(1), NonNegativeInt(20)]
         self.check_right_divisions_are_valid(RIGHT_DIVISION_NUMERATORS, RIGHT_DIVISION_DENOMINATORS, EXPECTED_TYPE_OF_RESULT)
 
     def test_divide_invalid_type(self):
-        LEFT_DIVISION_NUMERATORS = [NonNegativeInteger(0), NonNegativeInteger(10)]
+        LEFT_DIVISION_NUMERATORS = [NonNegativeInt(0), NonNegativeInt(10)]
         LEFT_DIVISION_DENOMINATORS = [dict(), None]
 
         self.check_left_division_raises_type_error(LEFT_DIVISION_NUMERATORS, LEFT_DIVISION_DENOMINATORS)
 
         RIGHT_DIVISION_NUMERATORS = [dict(), None]
-        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInteger(10)]
+        RIGHT_DIVISION_DENOMINATORS = [NonNegativeInt(10)]
         self.check_right_division_raises_type_error(RIGHT_DIVISION_NUMERATORS, RIGHT_DIVISION_DENOMINATORS)
 
-    def check_left_divisions_are_valid(self, numerators: List[NonNegativeInteger], denominators: list, expected_type_of_result: Type[Any]):
+    def check_left_divisions_are_valid(self, numerators: List[NonNegativeInt], denominators: list, expected_type_of_result: Type[Any]):
         for non_negative_integer in numerators:
             for denominator in denominators:
 
@@ -797,7 +797,7 @@ class TestDivision(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_right_divisions_are_valid(self, numerators: list, denominators: List[NonNegativeInteger], expected_type_of_result: Type[Any]):
+    def check_right_divisions_are_valid(self, numerators: list, denominators: List[NonNegativeInt], expected_type_of_result: Type[Any]):
         for numerator in numerators:
             for non_negative_integer in denominators:
 
@@ -809,7 +809,7 @@ class TestDivision(unittest.TestCase):
                     self.assertIs(type(actual), expected_type_of_result)
                     self.assertEqual(actual, expected)
 
-    def check_left_division_raises_type_error(self, numerators: List[NonNegativeInteger], denominators: list):
+    def check_left_division_raises_type_error(self, numerators: List[NonNegativeInt], denominators: list):
         for non_negative_integer in numerators:
             for denominator in denominators:
 
@@ -818,7 +818,7 @@ class TestDivision(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         non_negative_integer / denominator
 
-    def check_right_division_raises_type_error(self, numerators: list, denominators: List[NonNegativeInteger]):
+    def check_right_division_raises_type_error(self, numerators: list, denominators: List[NonNegativeInt]):
         for numerator in numerators:
             for non_negative_integer in denominators:
 

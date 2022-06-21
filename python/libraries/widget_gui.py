@@ -16,6 +16,17 @@ class WidgetGuiEvent(Enum):
 
 
 class WidgetGui(ABC):
+
+    @property
+    @abstractmethod
+    def title(self) -> str:
+        pass
+
+    @title.setter
+    @abstractmethod
+    def title(self, title: str):
+        pass
+
     @abstractmethod
     def close(self):
         pass
@@ -132,7 +143,7 @@ class ProductionWidgetGui(WidgetGui):
         self.__layout: List[List[Widget]] = [[]]
         self.__widgets: Dict[Hashable, Widget] = dict()
 
-        self.title = title
+        self.__title = title
         self.is_modal = is_modal
         self.resizable = resizable
         self.element_padding = element_padding
@@ -143,6 +154,14 @@ class ProductionWidgetGui(WidgetGui):
         self.__window = sg.Window(self.title, layout=self.__layout, modal=self.is_modal,
                                   resizable=self.resizable, element_padding=self.element_padding, margins=self.margins,
                                   titlebar_background_color=self.titlebar_background_color, titlebar_text_color=self.titlebar_text_color)
+
+    @property
+    def title(self) -> str:
+        return self.__title
+
+    @title.setter
+    def title(self, title: str):
+        self.__title = title
 
     def __enter__(self) -> ProductionWidgetGui:
         return self
@@ -225,7 +244,7 @@ class ProductionWidgetGui(WidgetGui):
                     button.update(button_color=widget.value)
 
             except ValueError as error:
-                if (isinstance(widget, ColorPicker)):
+                if (isinstance(widget, ColorPicker) and value is None):
                     input: sg.Input = self.__window.find_element(widget.key)
                     input.update(value=widget.value)
 

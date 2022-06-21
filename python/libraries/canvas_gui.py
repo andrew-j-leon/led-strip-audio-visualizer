@@ -76,7 +76,7 @@ class ProductionCanvasGui(CanvasGui):
 
         layout: List[List[sg.Element]] = [[canvas]]
 
-        self.__window = sg.Window(title='LED Strip Visualizer', layout=layout, resizable=True, element_padding=(0, 0),
+        self.__window = sg.Window(title='', layout=layout, resizable=True, element_padding=(0, 0),
                                   margins=(0, 0), titlebar_background_color="#000917", titlebar_text_color="#8a8a8a",
                                   disable_close=True, disable_minimize=False)
 
@@ -95,11 +95,8 @@ class ProductionCanvasGui(CanvasGui):
             return canvas_element.TKCanvas.create_text(center_x, center_y,
                                                        text=text, fill=fill_color, font=FONT)
 
-        except AttributeError:
-            raise ValueError('You must call self.update() before creating elements on a ProductionCanvasGui.')
-
-        except TclError:
-            raise ValueError(f'The canvas is closed. Make sure to call open.')
+        except (AttributeError, TclError):
+            raise ValueError('You must call self.open() before creating elements on a ProductionCanvasGui.')
 
     def create_oval(self, top_left_x: int, top_left_y: int, bottom_right_x: int, bottom_right_y: int, fill_color: str = '#000000') -> int:
         try:
@@ -109,11 +106,8 @@ class ProductionCanvasGui(CanvasGui):
                                                        (bottom_right_x, bottom_right_y),
                                                        fill=fill_color)
 
-        except AttributeError:
+        except (AttributeError, TclError):
             raise ValueError('You must call self.update() before creating elements on a ProductionCanvasGui.')
-
-        except TclError:
-            raise ValueError(f'The canvas is closed. Make sure to call open.')
 
     def set_element_fill_color(self, element_id: int, color: str):
         try:
@@ -121,8 +115,5 @@ class ProductionCanvasGui(CanvasGui):
 
             canvas_element.TKCanvas.itemconfig(element_id, fill=color)
 
-        except AttributeError:
+        except (AttributeError, TclError):
             raise ValueError('You must call self.update() before editting elements.')
-
-        except TclError:
-            raise ValueError(f'The canvas is closed. Make sure to call open.')

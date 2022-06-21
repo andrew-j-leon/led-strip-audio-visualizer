@@ -1,6 +1,6 @@
 import unittest
 
-from led_strip.non_negative_integer_range import NonNegativeInteger, NonNegativeIntegerRange
+from non_negative_int_range import NonNegativeInt, NonNegativeIntRange
 
 
 class TestConstructor(unittest.TestCase):
@@ -8,41 +8,41 @@ class TestConstructor(unittest.TestCase):
         VALID_ARGUMENTS = [(0, 0), (0, 1), (0, 2), (4, 472)]
 
         for start, end in VALID_ARGUMENTS:
-            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+            with self.subTest(f'NonNegativeIntRange({repr(start), repr(end)}'):
 
-                non_negative_integer_range = NonNegativeIntegerRange(start, end)
+                non_negative_integer_range = NonNegativeIntRange(start, end)
 
                 self.assertEqual(non_negative_integer_range.start, start)
                 self.assertEqual(non_negative_integer_range.end, end)
 
     def test_start_is_not_int(self):
-        INVALID_ARGUMENTS = [(NonNegativeInteger(0), 1),
+        INVALID_ARGUMENTS = [(NonNegativeInt(0), 1),
                              (0.0, 1)]
 
         for start, end in INVALID_ARGUMENTS:
-            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+            with self.subTest(f'NonNegativeIntRange({repr(start), repr(end)}'):
 
                 with self.assertRaises(TypeError):
-                    NonNegativeIntegerRange(start, end)
+                    NonNegativeIntRange(start, end)
 
     def test_end_is_not_int(self):
-        INVALID_ARGUMENTS = [(0, NonNegativeInteger(0)),
+        INVALID_ARGUMENTS = [(0, NonNegativeInt(0)),
                              (0, 1.0)]
 
         for start, end in INVALID_ARGUMENTS:
-            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+            with self.subTest(f'NonNegativeIntRange({repr(start), repr(end)}'):
 
                 with self.assertRaises(TypeError):
-                    NonNegativeIntegerRange(start, end)
+                    NonNegativeIntRange(start, end)
 
     def test_start_greater_than_end(self):
         START_GREATER_THAN_END_ARGUMENTS = [(1, 0), (546, 4)]
 
         for start, end in START_GREATER_THAN_END_ARGUMENTS:
-            with self.subTest(f'NonNegativeIntegerRange({repr(start), repr(end)}'):
+            with self.subTest(f'NonNegativeIntRange({repr(start), repr(end)}'):
 
                 with self.assertRaises(ValueError):
-                    NonNegativeIntegerRange(start, end)
+                    NonNegativeIntRange(start, end)
 
 
 class TestRepr(unittest.TestCase):
@@ -50,20 +50,25 @@ class TestRepr(unittest.TestCase):
         START = 0
         END = 10
 
-        non_negative_integer_range = NonNegativeIntegerRange(START, END)
+        non_negative_integer_range = NonNegativeIntRange(START, END)
 
         actual = repr(non_negative_integer_range)
-        EXPECTED = f'NonNegativeIntegerRange({START}, {END})'
+        EXPECTED = f'NonNegativeIntRange({START}, {END})'
 
         self.assertEqual(actual, EXPECTED)
 
 
 class TestContains(unittest.TestCase):
+    def test_empty_range(self):
+        range = NonNegativeIntRange()
+
+        self.assertFalse(0 in range)
+
     def test_int(self):
         START = 0
         END = 10
 
-        non_negative_integer_range = NonNegativeIntegerRange(START, END)
+        non_negative_integer_range = NonNegativeIntRange(START, END)
 
         IN_BOUNDS_VALUES = [0, 1, 5, 8, 9]
 
@@ -81,7 +86,7 @@ class TestContains(unittest.TestCase):
         START = 0
         END = 10
 
-        non_negative_integer_range = NonNegativeIntegerRange(START, END)
+        non_negative_integer_range = NonNegativeIntRange(START, END)
 
         IN_BOUNDS_VALUES = [0.0, 1.0, 0.5, 1.5, 5.7, 9.0, 8.9]
 
@@ -99,26 +104,26 @@ class TestContains(unittest.TestCase):
         START = 1
         END = 10
 
-        non_negative_integer_range = NonNegativeIntegerRange(START, END)
+        non_negative_integer_range = NonNegativeIntRange(START, END)
 
-        IN_BOUNDS_VALUES = [NonNegativeIntegerRange(1, 10),
-                            NonNegativeIntegerRange(1, 5),
-                            NonNegativeIntegerRange(5, 10),
-                            NonNegativeIntegerRange(2, 9),
-                            NonNegativeIntegerRange(0, 0),
-                            NonNegativeIntegerRange(10, 10),
-                            NonNegativeIntegerRange(11, 11),
-                            NonNegativeIntegerRange(20, 20)]
+        IN_BOUNDS_VALUES = [NonNegativeIntRange(1, 10),
+                            NonNegativeIntRange(1, 5),
+                            NonNegativeIntRange(5, 10),
+                            NonNegativeIntRange(2, 9),
+                            NonNegativeIntRange(0, 0),
+                            NonNegativeIntRange(10, 10),
+                            NonNegativeIntRange(11, 11),
+                            NonNegativeIntRange(20, 20)]
 
         for value in IN_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
                 self.assertTrue(value in non_negative_integer_range)
 
-        OUT_OF_BOUNDS_VALUES = [NonNegativeIntegerRange(0, 10),
-                                NonNegativeIntegerRange(0, 1),
-                                NonNegativeIntegerRange(10, 11),
-                                NonNegativeIntegerRange(9, 11),
-                                NonNegativeIntegerRange(20, 100)]
+        OUT_OF_BOUNDS_VALUES = [NonNegativeIntRange(0, 10),
+                                NonNegativeIntRange(0, 1),
+                                NonNegativeIntRange(10, 11),
+                                NonNegativeIntRange(9, 11),
+                                NonNegativeIntRange(20, 100)]
 
         for value in OUT_OF_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
@@ -131,7 +136,7 @@ class TestIter(unittest.TestCase):
 
         for start, end in ARGS:
 
-            non_negative_integer_range = NonNegativeIntegerRange(start, end)
+            non_negative_integer_range = NonNegativeIntRange(start, end)
 
             with self.subTest(repr(non_negative_integer_range)):
 

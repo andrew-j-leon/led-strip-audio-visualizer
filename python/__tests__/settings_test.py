@@ -1,7 +1,6 @@
 import unittest
-from typing import List, Tuple
 
-from util import Settings
+from settings import Settings
 
 
 class SettingsTestCase(unittest.TestCase):
@@ -15,19 +14,24 @@ class SettingsTestCase(unittest.TestCase):
     MAXIMUM_FREQUENCY = 2000
     SHOULD_REVERSE_LEDS = True
     NUMBER_OF_GROUPS = 50
-    AMPLITUDE_RGBS = [(0, 20, 30),
-                      (40, 50, 60),
-                      (100, 200, 255)]
 
     def setUp(self):
         self.settings = Settings(self.START_LED, self.END_LED, self.MILLISECONDS_PER_AUDIO_CHUNK,
                                  self.SERIAL_PORT, self.SERIAL_BAUDRATE, self.BRIGHTNESS, self.MINIMUM_FREQUENCY,
-                                 self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS, self.AMPLITUDE_RGBS)
+                                 self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS)
 
 
-class TestConstructor(unittest.TestCase):
-    def test_default_constructor(self):
-        Settings()
+class TestEquals(SettingsTestCase):
+    def test_does_equal(self):
+        settings = Settings(self.START_LED, self.END_LED, self.MILLISECONDS_PER_AUDIO_CHUNK,
+                            self.SERIAL_PORT, self.SERIAL_BAUDRATE, self.BRIGHTNESS, self.MINIMUM_FREQUENCY,
+                            self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS)
+
+        self.assertEqual(settings, self.settings)
+
+    def test_does_not_equal(self):
+        self.assertNotEqual(self.settings, Settings())
+        self.assertNotEqual(self.settings, None)
 
 
 class TestRepr(SettingsTestCase):
@@ -39,7 +43,7 @@ class TestRepr(SettingsTestCase):
                     f'serial_port = {self.settings.serial_port}, serial_baudrate = {self.settings.serial_baudrate}, '
                     f'brightness = {self.settings.brightness}, minimum_frequency = {self.settings.minimum_frequency}, '
                     f'maximum_frequency = {self.settings.maximum_frequency}, should_reverse_leds = {self.settings.should_reverse_leds}, '
-                    f'number_of_groups = {self.settings.number_of_groups}, amplitude_rgbs = {self.settings.amplitude_rgbs})')
+                    f'number_of_groups = {self.settings.number_of_groups})')
 
         self.assertEqual(actual, expected)
 
@@ -307,103 +311,3 @@ class TestNumberOfGroups(SettingsTestCase):
                 self.settings.number_of_groups = number_of_groups
 
                 self.assertEqual(self.settings.number_of_groups, number_of_groups)
-
-
-class TestAmplitudeRGBs(unittest.TestCase):
-
-    AMPLITUDE_RGBS = []
-
-    def setUp(self):
-        self.settings = Settings(amplitude_rgbs=self.AMPLITUDE_RGBS)
-
-    def test_invalid_red(self):
-
-        AMPLITUDE_RGBS_WITH_INVALID_RED = [[(-1, 0, 0)],
-                                           [(-100, 0, 0)],
-                                           [(256, 0, 0)],
-                                           [(300, 0, 0)]]
-
-        for amplitude_rgbs in AMPLITUDE_RGBS_WITH_INVALID_RED:
-
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-
-                with self.assertRaises(ValueError):
-                    self.settings.amplitude_rgbs = amplitude_rgbs
-
-                self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-    def test_invalid_green(self):
-        AMPLITUDE_RGBS_WITH_INVALID_GREEN = [[(0, -1, 0)],
-                                             [(0, -100, 0)],
-                                             [(0, 256, 0)],
-                                             [(0, 300, 0)]]
-
-        for amplitude_rgbs in AMPLITUDE_RGBS_WITH_INVALID_GREEN:
-
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-
-                with self.assertRaises(ValueError):
-                    self.settings.amplitude_rgbs = amplitude_rgbs
-
-                self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-    def test_invalid_blue(self):
-        AMPLITUDE_RGBS_WITH_INVALID_BLUE = [[(0, 0, -1)],
-                                            [(0, 0, -100)],
-                                            [(0, 0, 256)],
-                                            [(0, 0, 300)]]
-
-        for amplitude_rgbs in AMPLITUDE_RGBS_WITH_INVALID_BLUE:
-
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-
-                with self.assertRaises(ValueError):
-                    self.settings.amplitude_rgbs = amplitude_rgbs
-
-                self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-    def test_rgb_does_not_have_three_values(self):
-        AMPLITUDE_RGBS_WITH_RGBS_WITHOUT_THREE_VALUES = [[tuple()],
-                                                         [(0,)],
-                                                         [(0, 0)],
-                                                         [(0, 0, 0, 0)],
-                                                         [tuple(0 for i in range(100))]]
-
-        for amplitude_rgbs in AMPLITUDE_RGBS_WITH_RGBS_WITHOUT_THREE_VALUES:
-
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-
-                with self.assertRaises(ValueError):
-                    self.settings.amplitude_rgbs = amplitude_rgbs
-
-                self.assertEqual(self.settings.amplitude_rgbs, self.AMPLITUDE_RGBS)
-
-    def test_valid_value(self):
-        def create_amplitude_rgbs(color: str) -> List[List[Tuple[int, int, int]]]:
-            colors = {'red': 0, 'green': 0, 'blue': 0}
-
-            VALUES = [1, 100, 254, 255]
-
-            amplitude_rgbs = []
-
-            for value in VALUES:
-
-                colors[color] = value
-
-                amplitude_rgbs.append([(colors['red'], colors['green'], colors['blue'])])
-
-            return amplitude_rgbs
-
-        AMPLITUDE_RGBS = [[(0, 0, 0)],
-                          [(10, 20, 30), (0, 10, 30), (43, 145, 231)]]
-        AMPLITUDE_RGBS.extend(create_amplitude_rgbs('red'))
-        AMPLITUDE_RGBS.extend(create_amplitude_rgbs('green'))
-        AMPLITUDE_RGBS.extend(create_amplitude_rgbs('blue'))
-
-        for amplitude_rgbs in AMPLITUDE_RGBS:
-
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-
-                self.settings.amplitude_rgbs = amplitude_rgbs
-
-                self.assertEqual(self.settings.amplitude_rgbs, amplitude_rgbs)

@@ -1,15 +1,19 @@
-import unittest
+import shutil
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, Hashable, List, Tuple
 
-from controller.settings_controller import Element, Event, SettingsController
-from libraries.widget import Button, Combo, Widget
+import pyfakefs.fake_filesystem_unittest as fake_filesystem_unittest
+from controller.settings_controller import Element, SettingsController
+from libraries.widget import Button, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
-from util import Settings, SettingsCollection, convert_to_hex
+from settings import Settings
 
 
 class FakeWidgetGui(WidgetGui):
     def __init__(self):
+        self.__title = ''
+
         self.queued_widgets: Dict[Hashable, Widget] = dict()
         self.displayed_widgets: Dict[Hashable, Widget] = dict()
 
@@ -18,6 +22,14 @@ class FakeWidgetGui(WidgetGui):
 
         self.event = WidgetGuiEvent.TIMEOUT
         self.number_of_read_event_and_update_gui_calls = 0
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, title):
+        self.__title = title
 
     def close(self):
         self.open = False
@@ -89,7 +101,7 @@ def create_amplitude_rgbs_widget_value(amplitude_rgbs: List[Tuple[int, int, int]
     return result.strip()
 
 
-class SettingsControllerTestCase(unittest.TestCase):
+class SettingsControllerTestCase(fake_filesystem_unittest.TestCase):
     CURRENT_SETTINGS_NAME = 'current_settings_name'
 
     CURRENT_START_LED = 0
@@ -102,7 +114,6 @@ class SettingsControllerTestCase(unittest.TestCase):
     CURRENT_MAXIMUM_FREQUENCY = 1000
     CURRENT_SHOULD_REVERSE_LEDS = False
     CURRENT_NUMBER_OF_GROUPS = 60
-    CURRENT_AMPLITUDE_RGBS = []
 
     NON_CURRENT_SETTINGS_NAME = 'non_current_settings_name'
 
@@ -116,11 +127,12 @@ class SettingsControllerTestCase(unittest.TestCase):
     NON_CURRENT_MAXIMUM_FREQUENCY = 2000
     NON_CURRENT_SHOULD_REVERSE_LEDS = True
     NON_CURRENT_NUMBER_OF_GROUPS = 50
-    NON_CURRENT_AMPLITUDE_RGBS = [(10, 20, 30)]
 
     NON_EXISTENT_SETTINGS_NAME = 'I am not a Settings name in the SettingsCollection'
 
     def setUp(self):
+        self.setUpPyfakefs()
+
         self.current_settings = Settings(self.CURRENT_START_LED,
                                          self.CURRENT_END_LED,
                                          self.CURRENT_MILLISECONDS_PER_AUDIO_CHUNK,
@@ -130,8 +142,7 @@ class SettingsControllerTestCase(unittest.TestCase):
                                          self.CURRENT_MINIMUM_FREQUENCY,
                                          self.CURRENT_MAXIMUM_FREQUENCY,
                                          self.CURRENT_SHOULD_REVERSE_LEDS,
-                                         self.CURRENT_NUMBER_OF_GROUPS,
-                                         self.CURRENT_AMPLITUDE_RGBS)
+                                         self.CURRENT_NUMBER_OF_GROUPS)
 
         self.non_current_settings = Settings(self.NON_CURRENT_START_LED,
                                              self.NON_CURRENT_END_LED,
@@ -142,19 +153,20 @@ class SettingsControllerTestCase(unittest.TestCase):
                                              self.NON_CURRENT_MINIMUM_FREQUENCY,
                                              self.NON_CURRENT_MAXIMUM_FREQUENCY,
                                              self.NON_CURRENT_SHOULD_REVERSE_LEDS,
-                                             self.NON_CURRENT_NUMBER_OF_GROUPS,
-                                             self.NON_CURRENT_AMPLITUDE_RGBS)
+                                             self.NON_CURRENT_NUMBER_OF_GROUPS)
 
-        collection = {self.CURRENT_SETTINGS_NAME: self.current_settings,
-                      self.NON_CURRENT_SETTINGS_NAME: self.non_current_settings}
-
-        self.settings_collection = SettingsCollection(collection)
         self.widget_gui = FakeWidgetGui()
 
-        def create_widget_gui():
+        def create_gui():
             return self.widget_gui
 
-        self.settings_controller = SettingsController(create_widget_gui, self.settings_collection)
+        self.save_directory = Path('save_directory')
+        self.save_directory.mkdir()
+
+        self.settings_controller = SettingsController(create_gui, self.save_directory, self.current_settings)
+
+    def tearDown(self):
+        shutil.rmtree(str(self.save_directory), ignore_errors=True)
 
     def check_widget_gui_does_not_match_settings(self, widget_gui: WidgetGui, settings: Settings):
         def get_widget_value(element: Element):
@@ -170,7 +182,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         MINIMUM_FREQUENCY = str(settings.minimum_frequency)
         MAXIMUM_FREQUENCY = str(settings.maximum_frequency)
         SHOULD_REVERSE_LEDS = settings.should_reverse_leds
-        NUMBER_OF_GROUPS = str(settings.number_of_groups)
 
         self.assertNotEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
         self.assertNotEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
@@ -181,7 +192,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.assertNotEqual(MINIMUM_FREQUENCY, get_widget_value(Element.MINIMUM_FREQUENCY_INPUT))
         self.assertNotEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
         self.assertNotEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
-        self.assertNotEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
 
     def check_widget_gui_matches_settings(self, widget_gui: WidgetGui, settings: Settings):
         def get_widget_value(element: Element):
@@ -197,7 +207,6 @@ class SettingsControllerTestCase(unittest.TestCase):
         MINIMUM_FREQUENCY = str(settings.minimum_frequency)
         MAXIMUM_FREQUENCY = str(settings.maximum_frequency)
         SHOULD_REVERSE_LEDS = settings.should_reverse_leds
-        NUMBER_OF_GROUPS = str(settings.number_of_groups)
 
         self.assertEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
         self.assertEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
@@ -208,53 +217,40 @@ class SettingsControllerTestCase(unittest.TestCase):
         self.assertEqual(MINIMUM_FREQUENCY, get_widget_value(Element.MINIMUM_FREQUENCY_INPUT))
         self.assertEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
         self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
-        self.assertEqual(NUMBER_OF_GROUPS, get_widget_value(Element.NUMBER_OF_GROUPS_INPUT))
-
-    def set_settings_name_combo_values(self, values: List[str]):
-        OLD_QUEUED_COMBO: Combo = self.widget_gui.queued_widgets[Element.SETTINGS_NAME_COMBO]
-        NEW_QUEUED_COMBO = Combo(Element.SETTINGS_NAME_COMBO, values, OLD_QUEUED_COMBO.font,
-                                 OLD_QUEUED_COMBO.size, OLD_QUEUED_COMBO.enabled)
-
-        OLD_DISPLAYED_COMBO: Combo = self.widget_gui.displayed_widgets[Element.SETTINGS_NAME_COMBO]
-        NEW_DISPLAYED_COMBO = Combo(Element.SETTINGS_NAME_COMBO, values, OLD_DISPLAYED_COMBO.font,
-                                    OLD_DISPLAYED_COMBO.size, OLD_DISPLAYED_COMBO.enabled)
-
-        self.widget_gui.queued_widgets[Element.SETTINGS_NAME_COMBO] = NEW_QUEUED_COMBO
-        self.widget_gui.displayed_widgets[Element.SETTINGS_NAME_COMBO] = NEW_DISPLAYED_COMBO
 
 
 class TestDisplay(SettingsControllerTestCase):
     def test_display(self):
-        self.settings_controller._display()
+        self.settings_controller.display()
 
-        SETTINGS_1 = self.settings_collection[self.CURRENT_SETTINGS_NAME]
-        SETTINGS_2 = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
-
-        self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_1)
-        self.check_widget_gui_does_not_match_settings(self.widget_gui, SETTINGS_2)
+        self.check_widget_gui_matches_settings(self.widget_gui, self.current_settings)
+        self.check_widget_gui_does_not_match_settings(self.widget_gui, self.non_current_settings)
 
         self.assertTrue(self.widget_gui.open)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
-        DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
 
         self.assertTrue(SAVE_BUTTON.enabled)
-        self.assertTrue(DELETE_BUTTON.enabled)
 
 
-class TestReadEventAndUpdateGui(SettingsControllerTestCase):
+class TestSettingsController(SettingsControllerTestCase):
     def setUp(self):
         super().setUp()
 
-        self.settings_controller._display()
+        self.settings_controller.display()
         self.widget_gui.number_of_read_event_and_update_gui_calls = 0
+
+    def test_close(self):
+        self.settings_controller.close()
+
+        self.assertTrue(not self.widget_gui.open)
 
     def test_read_an_event(self):
         EVENT = 'some event'
 
         self.widget_gui.event = EVENT
 
-        event = self.settings_controller._read_event_and_update_gui()
+        event = self.settings_controller.read_event_and_update_gui()
 
         self.assertEqual(event, EVENT)
 
@@ -262,162 +258,32 @@ class TestReadEventAndUpdateGui(SettingsControllerTestCase):
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
                          EXPECTED_NUMBER_OF_CALLS)
 
-    def test_read_select_current_settings_name_event(self):
-        self.widget_gui.event = WidgetGuiEvent.TIMEOUT
-
-        event = self.settings_controller._read_event_and_update_gui()
-
-        self.assertEqual(event, Event.SELECT_CURRENT_SETTINGS_NAME)
-
-        EXPECTED_NUMBER_OF_CALLS = 1
-        self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
-                         EXPECTED_NUMBER_OF_CALLS)
-
-    def test_read_clear_settings_name_event(self):
-        VALUES = ['']
-        self.set_settings_name_combo_values(VALUES)
-
-        self.widget_gui.event = WidgetGuiEvent.TIMEOUT
-
-        event = self.settings_controller._read_event_and_update_gui()
-
-        self.assertEqual(event, Event.CLEAR_SETTINGS_NAME)
-
-        EXPECTED_NUMBER_OF_CALLS = 1
-        self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
-                         EXPECTED_NUMBER_OF_CALLS)
-
-    def test_read_enter_new_settings_name_event(self):
-        VALUES = [self.NON_EXISTENT_SETTINGS_NAME]
-        self.set_settings_name_combo_values(VALUES)
-
-        self.widget_gui.event = WidgetGuiEvent.TIMEOUT
-
-        event = self.settings_controller._read_event_and_update_gui()
-
-        self.assertEqual(event, Event.ENTER_NEW_SETTINGS_NAME)
-
-        EXPECTED_NUMBER_OF_CALLS = 1
-        self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
-                         EXPECTED_NUMBER_OF_CALLS)
-
-    def test_read_select_non_current_settings_name_event(self):
-        VALUES = [self.NON_CURRENT_SETTINGS_NAME]
-        self.set_settings_name_combo_values(VALUES)
-
-        self.widget_gui.event = WidgetGuiEvent.TIMEOUT
-
-        event = self.settings_controller._read_event_and_update_gui()
-
-        self.assertEqual(event, Event.SELECT_NON_CURRENT_SETTINGS_NAME)
-
-        EXPECTED_NUMBER_OF_CALLS = 1
-        self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
-                         EXPECTED_NUMBER_OF_CALLS)
-
-
-class TestHandleEvent(SettingsControllerTestCase):
-    def setUp(self):
-        super().setUp()
-
-        self.settings_controller._display()
-
-        self.widget_gui.number_of_read_event_and_update_gui_calls = 0
-
-    def set_widget_value(self, element: Element, value: Any):
-        widget = self.widget_gui.get_widget(element)
-        widget.value = value
-        self.widget_gui.update_widget(widget)
-
     def test_save(self):
-        self.set_widget_value(Element.START_LED_INPUT, self.NON_CURRENT_START_LED)
-        self.set_widget_value(Element.END_LED_INPUT, self.NON_CURRENT_END_LED)
-        self.set_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT, self.NON_CURRENT_MILLISECONDS_PER_AUDIO_CHUNK)
-        self.set_widget_value(Element.SERIAL_PORT_INPUT, self.NON_CURRENT_SERIAL_PORT)
+        def set_widget_value(element: Element, value: Any):
+            widget = self.widget_gui.get_widget(element)
+            widget.value = value
+            self.widget_gui.update_widget(widget)
 
-        self.set_widget_value(Element.SERIAL_BAUDRATE_COMBO, str(self.NON_CURRENT_SERIAL_BAUDRATE))
+        set_widget_value(Element.START_LED_INPUT, self.NON_CURRENT_START_LED)
+        set_widget_value(Element.END_LED_INPUT, self.NON_CURRENT_END_LED)
+        set_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT, self.NON_CURRENT_MILLISECONDS_PER_AUDIO_CHUNK)
+        set_widget_value(Element.SERIAL_PORT_INPUT, self.NON_CURRENT_SERIAL_PORT)
 
-        self.set_widget_value(Element.BRIGHTNESS_INPUT, self.NON_CURRENT_BRIGHTNESS)
-        self.set_widget_value(Element.MINIMUM_FREQUENCY_INPUT, self.NON_CURRENT_MINIMUM_FREQUENCY)
-        self.set_widget_value(Element.MAXIMUM_FREQUENCY_INPUT, self.NON_CURRENT_MAXIMUM_FREQUENCY)
-        self.set_widget_value(Element.REVERSE_LEDS_CHECK_BOX, self.NON_CURRENT_SHOULD_REVERSE_LEDS)
-        self.set_widget_value(Element.NUMBER_OF_GROUPS_INPUT, self.NON_CURRENT_NUMBER_OF_GROUPS)
+        set_widget_value(Element.SERIAL_BAUDRATE_COMBO, str(self.NON_CURRENT_SERIAL_BAUDRATE))
 
-        RGB_1 = (1, 1, 1)
-        RGB_2 = (2, 2, 2)
-        RGB_3 = (3, 3, 3)
+        set_widget_value(Element.BRIGHTNESS_INPUT, self.NON_CURRENT_BRIGHTNESS)
+        set_widget_value(Element.MINIMUM_FREQUENCY_INPUT, self.NON_CURRENT_MINIMUM_FREQUENCY)
+        set_widget_value(Element.MAXIMUM_FREQUENCY_INPUT, self.NON_CURRENT_MAXIMUM_FREQUENCY)
+        set_widget_value(Element.REVERSE_LEDS_CHECK_BOX, self.NON_CURRENT_SHOULD_REVERSE_LEDS)
+        set_widget_value(Element.NUMBER_OF_GROUPS_INPUT, self.NON_CURRENT_NUMBER_OF_GROUPS)
 
-        RGB_1_COUNT = 1
-        RGB_2_COUNT = 20
-        RGB_3_COUNT = 5
+        self.settings_controller.handle_event(Element.SAVE_BUTTON)
 
-        self.non_current_settings.amplitude_rgbs = ([RGB_1] * RGB_1_COUNT
-                                                    + [RGB_2] * RGB_2_COUNT
-                                                    + [RGB_3] * RGB_3_COUNT)
-
-        HEX_1 = convert_to_hex(*RGB_1)
-        HEX_2 = convert_to_hex(*RGB_2)
-        HEX_3 = convert_to_hex(*RGB_3)
-
-        self.set_widget_value(Element.DECIBEL_INPUT_1, RGB_1_COUNT)
-        self.set_widget_value(Element.COLOR_PICKER_1, HEX_1)
-
-        self.set_widget_value(Element.DECIBEL_INPUT_2, RGB_2_COUNT)
-        self.set_widget_value(Element.COLOR_PICKER_2, HEX_2)
-
-        self.set_widget_value(Element.DECIBEL_INPUT_3, RGB_3_COUNT)
-        self.set_widget_value(Element.COLOR_PICKER_3, HEX_3)
-
-        self.settings_controller._handle_event(Element.SAVE_BUTTON)
-
-        PREVIOUS_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
-        CURRENT_SETTINGS = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
-
-        self.check_widget_gui_matches_settings(self.widget_gui, PREVIOUS_SETTINGS)
-        self.check_widget_gui_matches_settings(self.widget_gui, CURRENT_SETTINGS)
-        self.assertEqual(PREVIOUS_SETTINGS, CURRENT_SETTINGS)
-
-    def test_delete_a_settings_when_there_are_two_settings_in_the_collection(self):
-        self.set_widget_value(Element.SETTINGS_NAME_COMBO, self.CURRENT_SETTINGS_NAME)
-
-        self.settings_controller._handle_event(Element.DELETE_BUTTON)
-
-        SETTINGS_NAMES = list(self.settings_collection.names())
-        EXPECTED_SETTINGS_NAMES = [self.NON_CURRENT_SETTINGS_NAME]
-        self.assertEqual(SETTINGS_NAMES, EXPECTED_SETTINGS_NAMES)
-
-        self.assertEqual(self.NON_CURRENT_SETTINGS_NAME, self.settings_collection.current_name)
-
-        SETTINGS_2 = self.settings_collection.current_settings
-
-        self.assertEqual(self.non_current_settings, SETTINGS_2)
-        self.check_widget_gui_matches_settings(self.widget_gui, SETTINGS_2)
-
-    def test_delete_all_settings_in_the_collection(self):
-        self.settings_controller._handle_event(Element.DELETE_BUTTON)
-        self.settings_controller._handle_event(Element.DELETE_BUTTON)
-
-        self.assertTrue(len(self.settings_collection) == 0)
-
-        DEFAULT_SETTINGS = Settings()
-
-        self.check_widget_gui_matches_settings(self.widget_gui, DEFAULT_SETTINGS)
-
-    def test_delete_when_there_are_no_settings_remaining(self):
-        self.settings_controller._handle_event(Element.DELETE_BUTTON)
-        self.settings_controller._handle_event(Element.DELETE_BUTTON)
-
-        with self.assertRaises(ValueError):
-            self.settings_controller._handle_event(Element.DELETE_BUTTON)
-
-        self.assertTrue(len(self.settings_collection) == 0)
-
-        DEFAULT_SETTINGS = Settings()
-
-        self.check_widget_gui_matches_settings(self.widget_gui, DEFAULT_SETTINGS)
+        self.check_widget_gui_matches_settings(self.widget_gui, self.non_current_settings)
+        self.check_widget_gui_matches_settings(self.widget_gui, self.current_settings)
 
     def test_close_window(self):
-        self.settings_controller._handle_event(WidgetGuiEvent.CLOSE_WINDOW)
+        self.settings_controller.handle_event(WidgetGuiEvent.CLOSE_WINDOW)
 
         self.assertFalse(self.widget_gui.open)
 
@@ -427,51 +293,8 @@ class TestHandleEvent(SettingsControllerTestCase):
         self.assertEqual(self.widget_gui.displayed_widgets, dict())
         self.assertEqual(self.widget_gui.queued_widgets, dict())
 
-    def test_select_non_current_settings_name_valid(self):
-        VALUES = [self.NON_CURRENT_SETTINGS_NAME]
-        self.set_settings_name_combo_values(VALUES)
-
-        self.settings_controller._handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
-
-        EXPECTED_SETTINGS = self.settings_collection[self.NON_CURRENT_SETTINGS_NAME]
-
-        self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
-
-    def test_select_non_current_settings_name_not_valid(self):
-        VALUES = [self.NON_EXISTENT_SETTINGS_NAME]
-        self.set_settings_name_combo_values(VALUES)
-
-        with self.assertRaises(ValueError):
-            self.settings_controller._handle_event(Event.SELECT_NON_CURRENT_SETTINGS_NAME)
-
-        EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
-
-        self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
-
-    def test_clear_settings_name(self):
-        self.settings_controller._handle_event(Event.CLEAR_SETTINGS_NAME)
-
-        SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
-        DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
-
-        self.assertFalse(SAVE_BUTTON.enabled)
-        self.assertFalse(DELETE_BUTTON.enabled)
-
-    def test_enter_new_settings_name(self):
-        self.settings_controller._handle_event(Event.ENTER_NEW_SETTINGS_NAME)
-
-        SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
-        DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
-
-        self.assertTrue(SAVE_BUTTON.enabled)
-        self.assertFalse(DELETE_BUTTON.enabled)
-
     def test_unrecognized_event(self):
         UNRECOGNIZED_EVENT = 'unrecognized event'
 
         with self.assertRaises(ValueError):
-            self.settings_controller._handle_event(UNRECOGNIZED_EVENT)
-
-        EXPECTED_SETTINGS = self.settings_collection[self.CURRENT_SETTINGS_NAME]
-
-        self.check_widget_gui_matches_settings(self.widget_gui, EXPECTED_SETTINGS)
+            self.settings_controller.handle_event(UNRECOGNIZED_EVENT)

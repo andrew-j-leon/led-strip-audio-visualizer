@@ -26,7 +26,7 @@ class TestColorPicker(unittest.TestCase):
                 self.assertEqual(self.color_picker.value, valid_hex_color)
 
     def test_setting_value_to_invalid_hex_color(self):
-        INVALID_HEX_COLORS = ['', '#12345', '#', '#1', '123456', '#12345G']
+        INVALID_HEX_COLORS = ['', '#12345', '#', '#1', '123456', '#12345G', None]
 
         for invalid_hex_color in INVALID_HEX_COLORS:
             with self.subTest(value=invalid_hex_color):

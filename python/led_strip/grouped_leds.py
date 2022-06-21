@@ -2,10 +2,10 @@ import math
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, List, Tuple
 
-from led_strip.non_negative_integer_range import NonNegativeIntegerRange
 from libraries.canvas_gui import CanvasGui
 from libraries.serial import Serial
-from util import RGB, Font, convert_to_hex
+from non_negative_int_range import NonNegativeIntRange
+from util import RGB, Font, rgb_to_hex
 
 
 class Point:
@@ -70,14 +70,14 @@ class ProductionGroupedLeds(GroupedLeds):
                  group_led_ranges: List[Tuple[int, int]] = []):
         start, end = led_range
 
-        self.__led_range = NonNegativeIntegerRange(start, end)
+        self.__led_range = NonNegativeIntRange(start, end)
 
-        self.__group_led_ranges: List[NonNegativeIntegerRange] = []
+        self.__group_led_ranges: List[NonNegativeIntRange] = []
 
         for i in range(len(group_led_ranges)):
             start, end = group_led_ranges[i]
 
-            non_negative_integer_range = NonNegativeIntegerRange(start, end)
+            non_negative_integer_range = NonNegativeIntRange(start, end)
 
             if (non_negative_integer_range not in self.__led_range):
                 raise ValueError(f'group_led_ranges[{i}]={(start, end)} is not within the bounds of led_range={led_range}.')
@@ -160,7 +160,7 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         for i in range(start, end):
             element_id = self.__led_element_ids[i]
 
-            self.__gui.set_element_fill_color(element_id, convert_to_hex(rgb.red, rgb.green, rgb.blue))
+            self.__gui.set_element_fill_color(element_id, rgb_to_hex(rgb.red, rgb.green, rgb.blue))
 
     def __draw_and_store_leds(self):
         FONT_NAME = 'Arial'

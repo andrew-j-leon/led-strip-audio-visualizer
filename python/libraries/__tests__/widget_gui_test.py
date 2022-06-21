@@ -1,9 +1,14 @@
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from libraries.PySimpleGUI import TIMEOUT_EVENT, WINDOW_CLOSED
-from libraries.widget import Button, CheckBox, Combo, Input, Multiline, Text
-from libraries.widget_gui import Font, ProductionWidgetGui, WidgetGuiEvent
+from libraries.widget import Button, CheckBox, ColorPicker, Combo, Input, Multiline, Text
+from libraries.widget_gui import ProductionWidgetGui, WidgetGuiEvent
+
+
+class UnrecognizedWidget:
+    def __init__(self, key):
+        self.key = key
 
 
 class WidgetGuiTestCase(unittest.TestCase):
@@ -39,14 +44,22 @@ class WidgetGuiTestCaseWithLayout(WidgetGuiTestCase):
     COMBO_VALUES = ['a', 'b', 'c']
     COMBO = Combo('combo_key', COMBO_VALUES)
 
+    COMBO_WITH_NO_VALUES = Combo('combo_with_no_values_key')
+
     INPUT = Input('input_key')
     MULTILINE = Multiline('multiline_key')
-    TEXT = Text('text_key')
+    TEXT_WITH_KEY = Text('text_key')
+    COLOR_PICKER = ColorPicker('color_picker_key')
+
+    TEXT_WITH_NO_KEY = Text(text='I have no key!')
 
     LAYOUT = [[BUTTON],
               [],
               [CHECK_BOX, COMBO, INPUT],
-              [MULTILINE, TEXT]]
+              [MULTILINE, TEXT_WITH_KEY],
+              [COLOR_PICKER],
+              [TEXT_WITH_NO_KEY],
+              [COMBO_WITH_NO_VALUES]]
 
     def setUp(self):
         super().setUp()
@@ -82,7 +95,10 @@ class WidgetGuiTestCaseWithLayout(WidgetGuiTestCase):
         self.MOCK_LAYOUT = [[self.button_instance_mock],
                             [],
                             [self.checkbox_instance_mock, self.combo_instance_mock, self.input_instance_mock],
-                            [self.multiline_instance_mock, self.text_instance_mock]]
+                            [self.multiline_instance_mock, self.text_instance_mock],
+                            [self.button_instance_mock, self.input_instance_mock],
+                            [self.text_instance_mock],
+                            [self.combo_instance_mock]]
 
         self.widget_gui.set_layout(self.LAYOUT)
         self.widget_gui.display_layout()
@@ -126,6 +142,15 @@ class TestClose(WidgetGuiTestCase):
         self.window_instance_mock.close.assert_called_once()
 
 
+class TestTitle(WidgetGuiTestCase):
+    def test_set_title(self):
+        TITLE = 'new_title'
+
+        self.widget_gui.title = TITLE
+
+        self.assertEqual(self.widget_gui.title, TITLE)
+
+
 class TestSetAndDisplayLayout(WidgetGuiTestCaseWithLayout):
     def test_set_layout_where_multiple_widgets_have_the_same_key(self):
         KEY = 'key'
@@ -150,74 +175,24 @@ class TestSetAndDisplayLayout(WidgetGuiTestCaseWithLayout):
         self.window_instance_mock.read.assert_called_once_with(timeout=0)
 
     def test_set_and_display_valid_layout(self):
-        def create_font(font: Font):
-            return (font.name, font.size, font.style)
-
-        BUTTON_KEY = 'button_key'
-        CHECK_BOX_KEY = 'check_box_key'
-        COMBO_KEY = 'combo_key'
-        INPUT_KEY = 'input_key'
-        MULTILINE_KEY = 'multiline_key'
-        TEXT_KEY = 'text_key'
-
-        BUTTON = Button(BUTTON_KEY)
-        CHECK_BOX = CheckBox(CHECK_BOX_KEY)
-
-        COMBO_VALUES = ['a', 'b', 'c']
-        COMBO = Combo(COMBO_KEY, COMBO_VALUES)
-
-        INPUT = Input(INPUT_KEY)
-        MULTILINE = Multiline(MULTILINE_KEY)
-        TEXT = Text(TEXT_KEY)
-
-        LAYOUT = [[BUTTON],
-                  [],
-                  [CHECK_BOX, COMBO, INPUT],
-                  [MULTILINE, TEXT]]
-
-        self.widget_gui.set_layout(LAYOUT)
+        self.widget_gui.set_layout(self.LAYOUT)
         self.widget_gui.display_layout()
 
-        BUTTON_FONT = create_font(BUTTON.font)
-        EXPECTED_BUTTON_MOCK_CALL = call(key=BUTTON.key, button_text=BUTTON.value,
-                                         font=BUTTON_FONT, disabled=not BUTTON.enabled)
-        self.assertEqual(self.button_mock.call_args, EXPECTED_BUTTON_MOCK_CALL)
-
-        CHECK_BOX_FONT = create_font(CHECK_BOX.font)
-        EXPECTED_CHECK_BOX_CALL = call(key=CHECK_BOX.key, text=CHECK_BOX.text, font=CHECK_BOX_FONT,
-                                       default=CHECK_BOX.value, disabled=not CHECK_BOX.enabled)
-        self.assertEqual(self.checkbox_mock.call_args, EXPECTED_CHECK_BOX_CALL)
-
-        COMBO_FONT = create_font(COMBO.font)
-        EXPECTED_COMBO_CALL = call(key=COMBO.key, values=COMBO.values, default_value=COMBO.value,
-                                   font=COMBO_FONT, size=COMBO.size, disabled=not COMBO.enabled)
-        self.assertEqual(self.combo_mock.call_args, EXPECTED_COMBO_CALL)
-
-        EXPECTED_INPUT_CALL = call(key=INPUT.key, default_text=INPUT.value, disabled=not INPUT.enabled)
-        self.assertEqual(self.input_mock.call_args, EXPECTED_INPUT_CALL)
-
-        EXPECTED_MULTILINE_CALL = call(key=MULTILINE.key, default_text=MULTILINE.value,
-                                       size=MULTILINE.size, autoscroll=MULTILINE.auto_scroll,
-                                       disabled=not MULTILINE.enabled)
-        self.assertEqual(self.multiline_mock.call_args, EXPECTED_MULTILINE_CALL)
-
-        TEXT_FONT = create_font(TEXT.font)
-        EXPECTED_TEXT_FONT = call(key=TEXT.key, text=TEXT.value, font=TEXT_FONT)
-        self.assertEqual(self.text_mock.call_args, EXPECTED_TEXT_FONT)
-
-        MOCK_LAYOUT = [[self.button_instance_mock],
-                       [],
-                       [self.checkbox_instance_mock, self.combo_instance_mock, self.input_instance_mock],
-                       [self.multiline_instance_mock, self.text_instance_mock]]
-
-        self.window_mock.assert_called_once_with(self.TITLE, layout=MOCK_LAYOUT, modal=self.IS_MODAL,
+        self.window_mock.assert_called_once_with(self.TITLE, layout=self.MOCK_LAYOUT, modal=self.IS_MODAL,
                                                  resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
                                                  margins=self.MARGINS,
                                                  titlebar_background_color=self.TITLEBAR_BACKGROUND_COLOR,
                                                  titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
-
         self.window_instance_mock.close.assert_called_once()
         self.window_instance_mock.read.assert_called_once_with(timeout=0)
+
+    def test_set_and_display_layout_with_unrecognized_widget(self):
+        LAYOUT = [[UnrecognizedWidget('some_key')]]
+
+        self.widget_gui.set_layout(LAYOUT)
+
+        with self.assertRaises(TypeError):
+            self.widget_gui.display_layout()
 
 
 class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
@@ -250,7 +225,9 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
         OLD_COMBO_VALUE = self.COMBO.value
         OLD_INPUT_VALUE = self.INPUT.value
         OLD_MULTILINE_VALUE = self.MULTILINE.value
-        OLD_TEXT_VALUE = self.TEXT.value
+        OLD_TEXT_WITH_KEY_VALUE = self.TEXT_WITH_KEY.value
+        OLD_COLOR_PICKER_VALUE = self.COLOR_PICKER.value
+        OLD_TEXT_WITH_NO_KEY_VALUE = self.TEXT_WITH_NO_KEY.value
 
         EVENT = None
         VALUES = None
@@ -264,7 +241,34 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
         self.assertEqual(self.COMBO.value, OLD_COMBO_VALUE)
         self.assertEqual(self.INPUT.value, OLD_INPUT_VALUE)
         self.assertEqual(self.MULTILINE.value, OLD_MULTILINE_VALUE)
-        self.assertEqual(self.TEXT.value, OLD_TEXT_VALUE)
+        self.assertEqual(self.TEXT_WITH_KEY.value, OLD_TEXT_WITH_KEY_VALUE)
+        self.assertEqual(self.COLOR_PICKER.value, OLD_COLOR_PICKER_VALUE)
+        self.assertEqual(self.TEXT_WITH_NO_KEY.value, OLD_TEXT_WITH_NO_KEY_VALUE)
+
+    def test_color_picker_widget_set_to_none(self):
+        EVENT = None
+        VALUES = {self.COLOR_PICKER.key: None}
+
+        self.window_instance_mock.read.return_value = [EVENT, VALUES]
+
+        OLD_COLOR_PICKER_VALUE = self.COLOR_PICKER.value
+
+        self.widget_gui.read_event_and_update_gui()
+
+        self.assertEqual(self.COLOR_PICKER.value, OLD_COLOR_PICKER_VALUE)
+
+    def test_widget_value_was_invalid(self):
+        EVENT = None
+        VALUES = {self.COLOR_PICKER.key: 'not_a_valid_hex'}
+
+        self.window_instance_mock.read.return_value = [EVENT, VALUES]
+
+        OLD_COLOR_PICKER_VALUE = self.COLOR_PICKER.value
+
+        with self.assertRaises(ValueError):
+            self.widget_gui.read_event_and_update_gui()
+
+        self.assertEqual(self.COLOR_PICKER.value, OLD_COLOR_PICKER_VALUE)
 
     def test_widget_values_updated(self):
         OLD_BUTTON_VALUE = self.BUTTON.value
@@ -272,14 +276,17 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
         OLD_COMBO_VALUE = self.COMBO.value
         OLD_INPUT_VALUE = self.INPUT.value
         OLD_MULTILINE_VALUE = self.MULTILINE.value
-        OLD_TEXT_VALUE = self.TEXT.value
+        OLD_TEXT_WITH_KEY_VALUE = self.TEXT_WITH_KEY.value
+        OLD_COLOR_PICKER_VALUE = self.COLOR_PICKER.value
+        OLD_TEXT_WITH_NO_KEY_VALUE = self.TEXT_WITH_NO_KEY.value
 
         NEW_BUTTON_VALUE = f'new {OLD_BUTTON_VALUE}'
         NEW_CHECK_BOX_VALUE = not OLD_CHECK_BOX_VALUE
         NEW_COMBO_VALUE = f'new {OLD_COMBO_VALUE}'
         NEW_INPUT_VALUE = f'new {OLD_INPUT_VALUE}'
         NEW_MULTILINE_VALUE = f'new {OLD_MULTILINE_VALUE}'
-        NEW_TEXT_VALUE = f'new {OLD_TEXT_VALUE}'
+        NEW_TEXT_VALUE = f'new {OLD_TEXT_WITH_KEY_VALUE}'
+        NEW_COLOR_PICKER_VALUE = '#ABCDEF' if ('#ABCDEF' != OLD_COLOR_PICKER_VALUE) else '#123456'
 
         EVENT = None
         VALUES = {self.BUTTON.key: NEW_BUTTON_VALUE,
@@ -287,7 +294,8 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
                   self.COMBO.key: NEW_COMBO_VALUE,
                   self.INPUT.key: NEW_INPUT_VALUE,
                   self.MULTILINE.key: NEW_MULTILINE_VALUE,
-                  self.TEXT.key: NEW_TEXT_VALUE}
+                  self.TEXT_WITH_KEY.key: NEW_TEXT_VALUE,
+                  self.COLOR_PICKER.key: NEW_COLOR_PICKER_VALUE}
 
         self.window_instance_mock.read.return_value = [EVENT, VALUES]
 
@@ -298,7 +306,9 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
         self.assertEqual(self.COMBO.value, NEW_COMBO_VALUE)
         self.assertEqual(self.INPUT.value, NEW_INPUT_VALUE)
         self.assertEqual(self.MULTILINE.value, NEW_MULTILINE_VALUE)
-        self.assertEqual(self.TEXT.value, NEW_TEXT_VALUE)
+        self.assertEqual(self.TEXT_WITH_KEY.value, NEW_TEXT_VALUE)
+        self.assertEqual(self.COLOR_PICKER.value, NEW_COLOR_PICKER_VALUE)
+        self.assertEqual(self.TEXT_WITH_NO_KEY.value, OLD_TEXT_WITH_NO_KEY_VALUE)
 
 
 class TestGetWidget(WidgetGuiTestCaseWithLayout):
@@ -312,17 +322,24 @@ class TestGetWidget(WidgetGuiTestCaseWithLayout):
         COMBO = self.widget_gui.get_widget(self.COMBO.key)
         INPUT = self.widget_gui.get_widget(self.INPUT.key)
         MULTILINE = self.widget_gui.get_widget(self.MULTILINE.key)
-        TEXT = self.widget_gui.get_widget(self.TEXT.key)
+        TEXT_WITH_KEY = self.widget_gui.get_widget(self.TEXT_WITH_KEY.key)
+        COLOR_PICKER = self.widget_gui.get_widget(self.COLOR_PICKER.key)
 
         self.assertIs(BUTTON, self.BUTTON)
         self.assertIs(CHECK_BOX, self.CHECK_BOX)
         self.assertIs(COMBO, self.COMBO)
         self.assertIs(INPUT, self.INPUT)
         self.assertIs(MULTILINE, self.MULTILINE)
-        self.assertIs(TEXT, self.TEXT)
+        self.assertIs(TEXT_WITH_KEY, self.TEXT_WITH_KEY)
+        self.assertIs(COLOR_PICKER, self.COLOR_PICKER)
 
 
 class TestUpdateWidget(WidgetGuiTestCaseWithLayout):
+    def test_unrecognized_widget(self):
+        with self.assertRaises(TypeError):
+            widget = UnrecognizedWidget(self.BUTTON.key)
+            self.widget_gui.update_widget(widget)
+
     def test_widget_does_not_have_a_key(self):
         text = Text()
 
@@ -344,7 +361,9 @@ class TestUpdateWidget(WidgetGuiTestCaseWithLayout):
 
         NEW_INPUT = Input(self.INPUT.key)
         NEW_MULTILINE = Multiline(self.MULTILINE.key)
-        NEW_TEXT = Text(self.TEXT.key)
+        NEW_TEXT = Text(self.TEXT_WITH_KEY.key)
+        NEW_COLOR_PICKER = ColorPicker(self.COLOR_PICKER.key)
+        NEW_COMBO_WITH_NO_VALUES = Combo(self.COMBO_WITH_NO_VALUES.key)
 
         self.widget_gui.update_widget(NEW_BUTTON)
         self.widget_gui.update_widget(NEW_CHECK_BOX)
@@ -352,6 +371,8 @@ class TestUpdateWidget(WidgetGuiTestCaseWithLayout):
         self.widget_gui.update_widget(NEW_INPUT)
         self.widget_gui.update_widget(NEW_MULTILINE)
         self.widget_gui.update_widget(NEW_TEXT)
+        self.widget_gui.update_widget(NEW_COLOR_PICKER)
+        self.widget_gui.update_widget(NEW_COMBO_WITH_NO_VALUES)
 
         self.assertIs(NEW_BUTTON, self.widget_gui.get_widget(NEW_BUTTON.key))
         self.assertIs(NEW_CHECK_BOX, self.widget_gui.get_widget(NEW_CHECK_BOX.key))
@@ -359,6 +380,8 @@ class TestUpdateWidget(WidgetGuiTestCaseWithLayout):
         self.assertIs(NEW_INPUT, self.widget_gui.get_widget(NEW_INPUT.key))
         self.assertIs(NEW_MULTILINE, self.widget_gui.get_widget(NEW_MULTILINE.key))
         self.assertIs(NEW_TEXT, self.widget_gui.get_widget(NEW_TEXT.key))
+        self.assertIs(NEW_COLOR_PICKER, self.widget_gui.get_widget(NEW_COLOR_PICKER.key))
+        self.assertIs(NEW_COMBO_WITH_NO_VALUES, self.widget_gui.get_widget(NEW_COMBO_WITH_NO_VALUES.key))
 
 
 class TestWidgetGui(WidgetGuiTestCase):
