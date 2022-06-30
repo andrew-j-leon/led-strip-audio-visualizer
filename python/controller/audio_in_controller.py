@@ -264,8 +264,8 @@ class AudioInController(Controller):
             PARITY = PARITY_NONE
             STOP_BITS = STOPBITS_ONE_POINT_FIVE
             BYTE_SIZE = EIGHTBITS
-            READ_TIMEOUT = 1
-            WRITE_TIMEOUT = 0
+            READ_TIMEOUT = 10
+            WRITE_TIMEOUT = 10
 
             self.__serial.open(self.__settings.serial_port, self.__settings.serial_baudrate,
                                PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)

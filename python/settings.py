@@ -60,7 +60,7 @@ def save(settings: Settings, directory: Path):
 
 
 class Settings:
-    SERIAL_BAUDRATES = [115200, 57600, 38400, 31250, 28800, 19200, 14400,
+    SERIAL_BAUDRATES = [500000, 115200, 57600, 38400, 31250, 28800, 19200, 14400,
                         9600, 4800, 2400, 1200, 600, 300]
 
     def __init__(self, start_led: int = 0, end_led: int = 0, milliseconds_per_audio_chunk: int = 50,
