@@ -2,7 +2,7 @@
 #include <CDC.h>
 #include <FastLED_NeoPixel.h>
 
-#define SERIAL_BAUD_RATE 500000
+#define SERIAL_BAUD_RATE 1000000
 #define NUMBER_OF_LEDS 600
 #define PIN_NUMBER 7
 
