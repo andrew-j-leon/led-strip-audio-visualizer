@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from pathlib import Path
 from typing import Any, Callable, Dict, Hashable, Union
 
 from controller.controller import Controller
 from libraries.widget import Button, CheckBox, Combo, Input, Text, Widget
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
 from settings import Settings
-from settings import save as save_settings
 from util import Font
 
 
@@ -29,11 +27,11 @@ class Element(Enum):
 
 class SettingsController(Controller):
     def __init__(self, create_gui: Callable[[], WidgetGui],
-                 save_directory: Path, settings=Settings()):
+                 save_settings: Callable[[Settings], None], settings=Settings()):
         self.__gui = create_gui()
         self.__gui.title = 'Settings'
 
-        self.__save_directory = save_directory
+        self.__save_settings_to_file = save_settings
         self.__settings = settings
 
     def close(self):
@@ -47,7 +45,7 @@ class SettingsController(Controller):
     def handle_event(self, event: Union[Element, WidgetGuiEvent]):
         if (event == Element.SAVE_BUTTON):
             self.__save_settings()
-            save_settings(self.__settings, self.__save_directory)
+            self.__save_settings_to_file(self.__settings)
             self.__update_widgets()
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
@@ -57,10 +55,10 @@ class SettingsController(Controller):
             raise ValueError(f'This SettingsController does not recognize the event {event}.')
 
     def display(self):
+        WIDGETS = self.__create_widgets()
+
         def get_widget(widget_key: Element) -> Widget:
             return WIDGETS[widget_key]
-
-        WIDGETS = self.__create_widgets()
 
         SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
 
@@ -68,19 +66,12 @@ class SettingsController(Controller):
         END_LED_INPUT = get_widget(Element.END_LED_INPUT)
 
         MILLISECONDS_PER_AUDIO_CHUNK_INPUT = get_widget(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT)
-
         SERIAL_PORT_INPUT = get_widget(Element.SERIAL_PORT_INPUT)
-
         BAUDRATES_COMBO = get_widget(Element.SERIAL_BAUDRATE_COMBO)
-
         BRIGHTNESS_INPUT = get_widget(Element.BRIGHTNESS_INPUT)
-
         NUMBER_OF_GROUPS_INPUT = get_widget(Element.NUMBER_OF_GROUPS_INPUT)
-
         MINIMUM_FREQUENCY_INPUT = get_widget(Element.MINIMUM_FREQUENCY_INPUT)
-
         MAXIMUM_FREQUENCY_INPUT = get_widget(Element.MAXIMUM_FREQUENCY_INPUT)
-
         REVERSE_LEDS_CHECK_BOX = get_widget(Element.REVERSE_LEDS_CHECK_BOX)
 
         FONT = Font("Courier New", 14)
@@ -125,6 +116,8 @@ class SettingsController(Controller):
             self.__gui.update_widget(widget)
 
     def __create_widgets(self) -> Dict[Element, Widget]:
+        SETTINGS = self.__settings
+
         def create_baudrates_combo():
             BAUDRATES = [str(baudrate) for baudrate in Settings.SERIAL_BAUDRATES]
 
@@ -134,7 +127,6 @@ class SettingsController(Controller):
             return combo
 
         FONT = Font("Courier New", 14)
-        SETTINGS = self.__settings
 
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)
 

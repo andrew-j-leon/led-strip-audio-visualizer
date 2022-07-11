@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from pathlib import Path
 from typing import Callable, List, Tuple, Union
 
 from color_palette import ColorPalette, ColorPaletteSelection
@@ -50,7 +49,7 @@ class State(Enum):
 
 class AudioInController(Controller):
     def __init__(self, settings: Settings, color_palette_selection: ColorPaletteSelection,
-                 settings_save_directory: Path, color_palette_selection_save_directory: Path,
+                 save_settings: Callable[[Settings], None], save_color_palette_selection: Callable[[ColorPaletteSelection], None],
                  create_widget_gui: Callable[[], WidgetGui], create_canvas_gui: Callable[[], CanvasGui],
                  create_serial: Callable[[], Serial], create_audio_in_stream: Callable[[], AudioInStream]):
 
@@ -60,8 +59,9 @@ class AudioInController(Controller):
         self.__settings = settings
         self.__color_palette_selection = color_palette_selection
 
-        self.__settings_controller: RunnableResource = SettingsController(create_widget_gui, settings_save_directory, self.__settings)
-        self.__color_palette_controller: RunnableResource = ColorPaletteController(create_widget_gui, color_palette_selection_save_directory,
+        self.__settings_controller: RunnableResource = SettingsController(create_widget_gui, save_settings, self.__settings)
+        self.__color_palette_controller: RunnableResource = ColorPaletteController(create_widget_gui,
+                                                                                   save_color_palette_selection,
                                                                                    self.__color_palette_selection)
         self.__led_strip: LedStrip = ProductionLedStrip()
         self.__spectrogram = Spectrogram()

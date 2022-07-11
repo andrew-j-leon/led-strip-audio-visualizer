@@ -1,109 +1,27 @@
 import shutil
-from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, Hashable, List, Tuple
+from typing import Any
 
 import pyfakefs.fake_filesystem_unittest as fake_filesystem_unittest
+from controller.__tests__.fake_widget_gui import FakeWidgetGui
 from controller.settings_controller import Element, SettingsController
-from libraries.widget import Button, Widget
+from libraries.widget import Button
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
 from settings import Settings
+from settings import save as save_settings
 
 
-class FakeWidgetGui(WidgetGui):
-    def __init__(self):
-        self.__title = ''
+class SaveSettings:
+    def __init__(self, save_directory: Path):
+        self.number_of_calls = 0
+        self.__save_directory = save_directory
 
-        self.queued_widgets: Dict[Hashable, Widget] = dict()
-        self.displayed_widgets: Dict[Hashable, Widget] = dict()
-
-        self.queued_layout: List[List[Widget]] = []
-        self.displayed_layout = []
-
-        self.event = WidgetGuiEvent.TIMEOUT
-        self.number_of_read_event_and_update_gui_calls = 0
-
-    @property
-    def title(self):
-        return self.__title
-
-    @title.setter
-    def title(self, title):
-        self.__title = title
-
-    def close(self):
-        self.open = False
-
-        self.queued_layout.clear()
-        self.displayed_layout.clear()
-
-        self.queued_widgets.clear()
-        self.displayed_widgets.clear()
-
-    def set_layout(self, layout: List[List[Widget]]):
-        self.queued_layout = layout
-
-        for row in layout:
-            for widget in row:
-                try:
-                    self.queued_widgets[widget.key] = widget
-
-                except AttributeError:
-                    pass
-
-    def display_layout(self):
-        self.displayed_layout = self.queued_layout
-
-        for row in self.displayed_layout:
-            for widget in row:
-                try:
-                    self.displayed_widgets[widget.key] = widget
-
-                except AttributeError:
-                    pass
-
-        self.open = True
-
-    def read_event_and_update_gui(self):
-        self.number_of_read_event_and_update_gui_calls += 1
-        for displayed_widget_key in self.displayed_widgets:
-            try:
-                self.displayed_widgets[displayed_widget_key] = self.queued_widgets[displayed_widget_key]
-
-            except KeyError:
-                continue
-
-        return self.event
-
-    def get_widget(self, widget_key):
-        return self.displayed_widgets[widget_key]
-
-    def update_widget(self, widget: Widget):
-        WIDGET_KEY = widget.key
-
-        if (WIDGET_KEY not in self.queued_widgets):
-            raise KeyError(f'There is no Widget with the key {WIDGET_KEY}.')
-
-        self.queued_widgets[WIDGET_KEY] = widget
-        self.displayed_widgets = self.queued_widgets
-
-
-def create_amplitude_rgbs_widget_value(amplitude_rgbs: List[Tuple[int, int, int]]) -> str:
-    COUNTER = Counter(amplitude_rgbs)
-
-    result = ''
-    for rgb, count in COUNTER.items():
-
-        red, green, blue = rgb
-
-        result += f'{red}, {green}, {blue}, {count}\n'
-
-    return result.strip()
+    def __call__(self, settings: Settings):
+        self.number_of_calls += 1
+        save_settings(settings, self.__save_directory)
 
 
 class SettingsControllerTestCase(fake_filesystem_unittest.TestCase):
-    CURRENT_SETTINGS_NAME = 'current_settings_name'
-
     CURRENT_START_LED = 0
     CURRENT_END_LED = 100
     CURRENT_MILLISECONDS_PER_AUDIO_CHUNK = 50
@@ -115,8 +33,6 @@ class SettingsControllerTestCase(fake_filesystem_unittest.TestCase):
     CURRENT_SHOULD_REVERSE_LEDS = False
     CURRENT_NUMBER_OF_GROUPS = 60
 
-    NON_CURRENT_SETTINGS_NAME = 'non_current_settings_name'
-
     NON_CURRENT_START_LED = 60
     NON_CURRENT_END_LED = 600
     NON_CURRENT_MILLISECONDS_PER_AUDIO_CHUNK = 55
@@ -127,8 +43,6 @@ class SettingsControllerTestCase(fake_filesystem_unittest.TestCase):
     NON_CURRENT_MAXIMUM_FREQUENCY = 2000
     NON_CURRENT_SHOULD_REVERSE_LEDS = True
     NON_CURRENT_NUMBER_OF_GROUPS = 50
-
-    NON_EXISTENT_SETTINGS_NAME = 'I am not a Settings name in the SettingsCollection'
 
     def setUp(self):
         self.setUpPyfakefs()
@@ -163,35 +77,13 @@ class SettingsControllerTestCase(fake_filesystem_unittest.TestCase):
         self.save_directory = Path('save_directory')
         self.save_directory.mkdir()
 
-        self.settings_controller = SettingsController(create_gui, self.save_directory, self.current_settings)
+        self.save_settings = SaveSettings(self.save_directory)
+
+        self.settings_controller = SettingsController(create_gui, self.save_settings, self.current_settings)
 
     def tearDown(self):
         shutil.rmtree(str(self.save_directory), ignore_errors=True)
-
-    def check_widget_gui_does_not_match_settings(self, widget_gui: WidgetGui, settings: Settings):
-        def get_widget_value(element: Element):
-            WIDGET = widget_gui.get_widget(element)
-            return WIDGET.value
-
-        START_LED = str(settings.start_led)
-        END_LED = str(settings.end_led)
-        MILLISECONDS_PER_AUDIO_CHUNK = str(settings.milliseconds_per_audio_chunk)
-        SERIAL_PORT = settings.serial_port
-        SERIAL_BAUDRATE = str(settings.serial_baudrate)
-        BRIGHTNESS = str(settings.brightness)
-        MINIMUM_FREQUENCY = str(settings.minimum_frequency)
-        MAXIMUM_FREQUENCY = str(settings.maximum_frequency)
-        SHOULD_REVERSE_LEDS = settings.should_reverse_leds
-
-        self.assertNotEqual(START_LED, get_widget_value(Element.START_LED_INPUT))
-        self.assertNotEqual(END_LED, get_widget_value(Element.END_LED_INPUT))
-        self.assertNotEqual(MILLISECONDS_PER_AUDIO_CHUNK, get_widget_value(Element.MILLISECONDS_PER_AUDIO_CHUNK_INPUT))
-        self.assertNotEqual(SERIAL_PORT, get_widget_value(Element.SERIAL_PORT_INPUT))
-        self.assertNotEqual(SERIAL_BAUDRATE, get_widget_value(Element.SERIAL_BAUDRATE_COMBO))
-        self.assertNotEqual(BRIGHTNESS, get_widget_value(Element.BRIGHTNESS_INPUT))
-        self.assertNotEqual(MINIMUM_FREQUENCY, get_widget_value(Element.MINIMUM_FREQUENCY_INPUT))
-        self.assertNotEqual(MAXIMUM_FREQUENCY, get_widget_value(Element.MAXIMUM_FREQUENCY_INPUT))
-        self.assertNotEqual(SHOULD_REVERSE_LEDS, get_widget_value(Element.REVERSE_LEDS_CHECK_BOX))
+        self.save_settings.number_of_calls = 0
 
     def check_widget_gui_matches_settings(self, widget_gui: WidgetGui, settings: Settings):
         def get_widget_value(element: Element):
@@ -224,7 +116,6 @@ class TestDisplay(SettingsControllerTestCase):
         self.settings_controller.display()
 
         self.check_widget_gui_matches_settings(self.widget_gui, self.current_settings)
-        self.check_widget_gui_does_not_match_settings(self.widget_gui, self.non_current_settings)
 
         self.assertTrue(self.widget_gui.open)
 
@@ -282,16 +173,13 @@ class TestSettingsController(SettingsControllerTestCase):
         self.check_widget_gui_matches_settings(self.widget_gui, self.non_current_settings)
         self.check_widget_gui_matches_settings(self.widget_gui, self.current_settings)
 
+        EXPECTED_NUMBER_OF_SAVES = 1
+        self.assertEqual(self.save_settings.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
+
     def test_close_window(self):
         self.settings_controller.handle_event(WidgetGuiEvent.CLOSE_WINDOW)
 
         self.assertFalse(self.widget_gui.open)
-
-        self.assertEqual(self.widget_gui.displayed_layout, list())
-        self.assertEqual(self.widget_gui.queued_layout, list())
-
-        self.assertEqual(self.widget_gui.displayed_widgets, dict())
-        self.assertEqual(self.widget_gui.queued_widgets, dict())
 
     def test_unrecognized_event(self):
         UNRECOGNIZED_EVENT = 'unrecognized event'
