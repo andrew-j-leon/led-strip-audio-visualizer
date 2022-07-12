@@ -38,19 +38,18 @@ class TimedCircularQueue:
         self.__circular_queue = CircularQueue(items)
 
         self.__seconds_between_dequeues = seconds_between_dequeues
-        self.__time_of_last_enqueue = time.time() - seconds_between_dequeues
+        self.__time_of_last_dequeue = time.time()
 
     def enqueue(self, item: Any):
         self.__circular_queue.enqueue(item)
-        self.__time_of_last_enqueue = time.time()
 
     def dequeue(self) -> Any:
-        TIME_UNTIL_DEQUEUE_IS_ALLOWED = self.__time_of_last_enqueue + self.__seconds_between_dequeues
+        TIME_UNTIL_DEQUEUE_IS_ALLOWED = self.__time_of_last_dequeue + self.__seconds_between_dequeues
 
         if (TIME_UNTIL_DEQUEUE_IS_ALLOWED > time.time()):
             raise ValueError(f'It has not been {self.__seconds_between_dequeues} seconds since the last dequeue call.')
 
-        self.__time_of_last_enqueue = time.time()
+        self.__time_of_last_dequeue = time.time()
 
         try:
             item = self.__circular_queue.dequeue()

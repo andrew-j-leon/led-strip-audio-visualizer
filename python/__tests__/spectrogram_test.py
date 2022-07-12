@@ -1,52 +1,9 @@
 import os
 import unittest
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
-from led_strip.led_strip import LedStrip
-from spectrogram import Spectrogram
-
-
-class FakeLedStrip(LedStrip):
-    def __init__(self, number_of_groups: int = 1):
-        self.__number_of_groups = number_of_groups
-
-        self.__color_queue: List[Tuple[int, Tuple[int, int, int]]] = []
-        self.group_colors: List[Tuple[int, int, int]] = [(0, 0, 0)] * number_of_groups
-
-    @property
-    def number_of_groups(self) -> int:
-        return self.__number_of_groups
-
-    @property
-    def number_of_queued_colors(self) -> int:
-        return len(self.__color_queue)
-
-    def enqueue_rgb(self, group: int, rgb: Iterable[int]):
-        self.__color_queue.append((group, rgb))
-
-    def group_is_rgb(self, group: int, rgb: Iterable[int]) -> bool:
-        return self.group_colors[group] == rgb
-
-    def show_queued_colors(self):
-        for queued_color in self.__color_queue:
-            group, rgb = queued_color
-
-            self.group_colors[group] = rgb
-
-    def clear_queued_colors(self):
-        self.__color_queue.clear()
-
-    def turn_off(self):
-        self.clear_queued_colors()
-
-        BLACK = (0, 0, 0)
-
-        for group in self.number_of_groups:
-            self.enqueue_rgb(group, BLACK)
-
-        self.show_queued_colors()
-
-        self.clear_queued_colors()
+from led_strip.led_strip import FakeLedStrip
+from spectrogram import ProductionSpectrogram
 
 
 class TestSpectrogram(unittest.TestCase):
@@ -72,7 +29,7 @@ class TestSpectrogram(unittest.TestCase):
 
     def setUp(self):
         self.led_strip = FakeLedStrip(self.NUMBER_OF_GROUPS)
-        self.spectrogram = Spectrogram(self.AMPLITUDE_RGBS, self.START_FREQUENCY, self.END_FREQUENCY)
+        self.spectrogram = ProductionSpectrogram(self.AMPLITUDE_RGBS, self.START_FREQUENCY, self.END_FREQUENCY)
 
     def test_setting_valid_amplitude_rgbs(self):
         VALID_AMPLITUDE_RGBS = [[],

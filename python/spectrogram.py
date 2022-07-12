@@ -1,4 +1,5 @@
 import math
+from abc import ABC, abstractmethod
 from statistics import mean
 from typing import Iterable, List, Union
 
@@ -50,7 +51,27 @@ def _get_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_f
     return round(frequency / (sampling_rate / number_of_frames))
 
 
-class Spectrogram:
+class Spectrogram(ABC):
+    @abstractmethod
+    def set_amplitude_rgbs(self, amplitude_rgbs: List[Iterable[int]]):
+        pass
+
+    @abstractmethod
+    def set_frequency_range(self, start_frequency: int, end_frequency: int):
+        pass
+
+    @abstractmethod
+    def update_led_strip(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int):
+        '''
+            Args:
+                `audio_data (bytes)`: WAV audio data.
+                `number_of_frames (int)`: The number of frames `audio_data` represents.
+                `sampling_rate (int)`: The number of samples per second.
+                `format (numpy.signedinteger)`: The format of the audio (i.e. 16 bit, 32 bit, etc.).
+        '''
+
+
+class ProductionSpectrogram(Spectrogram):
     def __init__(self, amplitude_rgbs: List[Iterable[int]] = [],
                  start_frequency: int = 0, end_frequency: int = 0):
         self.__amplitude_rgbs: List[RGB] = []
@@ -59,13 +80,13 @@ class Spectrogram:
         self.set_amplitude_rgbs(amplitude_rgbs)
         self.set_frequency_range(start_frequency, end_frequency)
 
-    def set_amplitude_rgbs(self, amplitude_rgbs: List[Iterable[int]]):
+    def set_amplitude_rgbs(self, amplitude_rgbs):
         self.__amplitude_rgbs = [RGB(red, green, blue) for red, green, blue in amplitude_rgbs]
 
-    def set_frequency_range(self, start_frequency: int, end_frequency: int):
+    def set_frequency_range(self, start_frequency, end_frequency):
         self.__frequency_range = NonNegativeIntRange(start_frequency, end_frequency)
 
-    def update_led_strip(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int):
+    def update_led_strip(self, led_strip, audio_data, number_of_frames, sampling_rate):
         '''
             Args:
                 `audio_data (bytes)`: WAV audio data.

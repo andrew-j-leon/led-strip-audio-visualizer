@@ -94,3 +94,39 @@ class ProductionSerial(Serial):
 
         except AttributeError:
             pass
+
+
+class FakeSerial(Serial):
+    def __init__(self, number_of_leds: int = 300):
+        self.__number_of_leds = number_of_leds
+        self.opened = False
+
+    @property
+    def number_of_bytes_in_buffer(self) -> int:
+        return 1
+
+    @property
+    def number_of_leds(self) -> int:
+        return self.__number_of_leds
+
+    def read(self, number_of_bytes: int) -> Any:
+        LENGTH = 2
+        BYTE_ORDER = 'big'
+
+        return self.__number_of_leds.to_bytes(LENGTH, BYTE_ORDER)
+
+    def write(self, data):
+        pass
+
+    def close(self):
+        self.opened = False
+
+    def open(self, port, baud_rate, parity, stop_bits, byte_size, read_timeout, write_timeout):
+        self.closed = True
+        self.port = port
+        self.baud_rate = baud_rate
+        self.parity = parity
+        self.stop_bits = stop_bits
+        self.byte_size = byte_size
+        self.read_timeout = read_timeout
+        self.write_timeout = write_timeout

@@ -1,36 +1,8 @@
 import unittest
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 from led_strip.grouped_leds import SerialGroupedLeds
-from libraries.serial import Serial
-
-
-class FakeSerial(Serial):
-    def __init__(self, number_of_leds: int):
-        self.__number_of_leds = number_of_leds
-
-    @property
-    def number_of_bytes_in_buffer(self) -> int:
-        return 1
-
-    @property
-    def number_of_leds(self) -> int:
-        return self.__number_of_leds
-
-    def read(self, number_of_bytes: int) -> Any:
-        LENGTH = 2
-        BYTE_ORDER = 'big'
-
-        return self.__number_of_leds.to_bytes(LENGTH, BYTE_ORDER)
-
-    def write(self, data: bytes):
-        pass
-
-    def close(self):
-        pass
-
-    def open(self):
-        pass
+from libraries.serial import FakeSerial
 
 
 class TestConstructor(unittest.TestCase):

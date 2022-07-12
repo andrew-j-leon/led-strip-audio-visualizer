@@ -136,7 +136,12 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(str(self.save_directory), ignore_errors=True)
-        self.save_color_palette_selection.number_of_calls = 0
+
+    def clear_color_palette_selection(self):
+        NAMES = list(self.color_palette_selection.names())
+
+        for name in NAMES:
+            del self.color_palette_selection[name]
 
     def check_widget_gui_matches_color_palette_selection(self, widget_gui: WidgetGui,
                                                          color_palette_selection: ColorPaletteSelection):
@@ -249,9 +254,10 @@ class TestReadEventAndUpdateGui(DisplayedColorPaletteControllerTestCase):
                          EXPECTED_NUMBER_OF_CALLS)
 
     def test_delete_color_palette_name_event(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.add_value('')
-        NAME_COMBO.value = ''
+        self.clear_color_palette_selection()
+
+        NEW_NAME_COMBO = Combo(Element.NAME_COMBO)
+        self.widget_gui.update_widget(NEW_NAME_COMBO)
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 

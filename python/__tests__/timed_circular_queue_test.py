@@ -32,8 +32,6 @@ class TestTimedCircularQueue(unittest.TestCase):
 
         queue = TimedCircularQueue(ITEMS, SECONDS_BETWEEN_DEQUEUES)
 
-        queue.dequeue()
-
         with self.assertRaises(ValueError):
             queue.dequeue()
 
