@@ -221,11 +221,7 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         super()._set_group_rgbs(group, rgb)
 
     def __configure_serial(self):
-        GROUPED_STRIP_TYPE = 1
-
         self.__send_bytes(self.__brightness.to_bytes(length=1, byteorder="big"))
-
-        self.__send_bytes(GROUPED_STRIP_TYPE.to_bytes(length=1, byteorder="big"))
         self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder="big"))
 
         # send group led ranges
