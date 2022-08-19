@@ -244,7 +244,7 @@ class ProductionWidgetGui(WidgetGui):
                     button.update(button_color=widget.value)
 
             except ValueError as error:
-                if (isinstance(widget, ColorPicker) and value is None):
+                if (isinstance(widget, ColorPicker) and value == 'None'):
                     input: sg.Input = self.__window.find_element(widget.key)
                     input.update(value=widget.value)
 

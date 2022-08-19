@@ -130,12 +130,12 @@ class ColorPicker(Widget):
             IS_VALID_COLOR_HEX = bool(re.match(r'^#[0-9A-Fa-f]{6}$', value))
 
             if (not IS_VALID_COLOR_HEX):
-                raise ValueError(f'The value {value} does not represent a properly formatted hexadecimal color.')
+                raise ValueError(f'The value {value} of type {type(value)} does not represent a properly formatted hexadecimal color.')
 
             self.__value = value
 
         except TypeError:
-            raise ValueError(f'The value {value} does not represent a properly formatted hexadecimal color.')
+            raise ValueError(f'The value {value} of type {type(value)} does not represent a properly formatted hexadecimal color.')
 
     def __repr__(self):
         return f'ColorPicker(key={self.key}, color={self.value})'
