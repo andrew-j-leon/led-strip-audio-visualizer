@@ -99,9 +99,9 @@ class AudioInController(Controller):
             self.__color_palette_controller.run()
 
         elif (event == Event.PLAYING):
-            SHOULD_SHUFFLE_PALETTES = self.__gui.get_widget(Element.CYCLE_COLOR_PALETTES_CHECKBOX).value
+            SHOULD_CYCLE_PALETTES = self.__gui.get_widget(Element.CYCLE_COLOR_PALETTES_CHECKBOX).value
 
-            if (SHOULD_SHUFFLE_PALETTES):
+            if (SHOULD_CYCLE_PALETTES):
                 try:
                     palette: ColorPalette = self.__timed_circular_palette_queue.dequeue()
                     self.__spectrogram.set_amplitude_rgbs(palette.amplitude_rgbs)
@@ -174,10 +174,12 @@ class AudioInController(Controller):
 
         SECONDS_PER_CYCLE_LABEL = Text(text='Seconds Per Palette:')
 
+        SECONDS_PER_COLOR_PALETTE_INPUT_WIDTH = 5
+
         LAYOUT = [[Button(Element.SETTINGS_BUTTON, text="Settings"),
                    Button(Element.COLOR_PALETTE_BUTTON, text='Color Palettes'),
-                   CheckBox(Element.CYCLE_COLOR_PALETTES_CHECKBOX, 'Cycle Color Palettes'),
-                   SECONDS_PER_CYCLE_LABEL, Input(Element.SECONDS_PER_COLOR_PALETTE_INPUT, '90')],
+                   SECONDS_PER_CYCLE_LABEL, Input(Element.SECONDS_PER_COLOR_PALETTE_INPUT, '90', width=SECONDS_PER_COLOR_PALETTE_INPUT_WIDTH),
+                   CheckBox(Element.CYCLE_COLOR_PALETTES_CHECKBOX, 'Cycle Color Palettes')],
 
                   [Text(Element.CURRENT_INPUT_SOURCE_TEXT, text="No audio currently playing.", font=TITLE_TEXT)],
 

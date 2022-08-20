@@ -116,7 +116,8 @@ def _create_elements(widget: Widget) -> Iterable[sg.Element]:
     elif (type(widget) is Input):
         return [sg.Input(key=KEY,
                          default_text=widget.value,
-                         disabled=not widget.enabled)]
+                         disabled=not widget.enabled,
+                         size=widget.width)]
 
     elif (type(widget) is Multiline):
         return [sg.Multiline(key=KEY,

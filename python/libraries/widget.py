@@ -207,11 +207,16 @@ class Combo(Widget):
 
 
 class Input(Widget):
-    def __init__(self, key: Hashable = None, text: str = '', enabled: bool = True):
+    def __init__(self, key: Hashable = None, text: str = '', enabled: bool = True, width: int = 10):
+        '''
+            Args:
+                `width (int, optional)`: In number of characters.
+        '''
         super().__init__(key)
 
         self.__text = text
         self.enabled = enabled
+        self.width = width
 
     @property
     def value(self) -> str:
@@ -224,13 +229,14 @@ class Input(Widget):
     def __repr__(self) -> str:
         KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
 
-        return f'Input({KEY_ARGUMENT}text={self.value}, enabled={self.enabled})'
+        return f'Input({KEY_ARGUMENT}text={self.value}, enabled={self.enabled}, width={self.width})'
 
     def __eq__(self, other: Any) -> bool:
         return(super().__eq__(other)
                and type(other) is Input
                and self.value == other.value
-               and self.enabled == other.enabled)
+               and self.enabled == other.enabled
+               and self.width == other.width)
 
 
 class Multiline(Widget):
@@ -254,7 +260,7 @@ class Multiline(Widget):
     def __repr__(self) -> str:
         KEY_ARGUMENT = 'key=None, ' if (not hasattr(self, 'key')) else f'key={self.key}, '
 
-        return f'Multiline({KEY_ARGUMENT}text={self.value}, size={self.size}, auto_scroll={self.auto_scroll}, enabled={self.enabled})'
+        return (f'Multiline({KEY_ARGUMENT}text={self.value}, size={self.size}, auto_scroll={self.auto_scroll}, enabled={self.enabled})')
 
     def __eq__(self, other: Any) -> bool:
         return (super().__eq__(other)

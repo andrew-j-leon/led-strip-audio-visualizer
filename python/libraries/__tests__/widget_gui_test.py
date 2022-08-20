@@ -247,7 +247,7 @@ class TestReadEventAndUpdateDisplay(WidgetGuiTestCaseWithLayout):
 
     def test_color_picker_widget_set_to_none(self):
         EVENT = None
-        VALUES = {self.COLOR_PICKER.key: None}
+        VALUES = {self.COLOR_PICKER.key: 'None'}
 
         self.window_instance_mock.read.return_value = [EVENT, VALUES]
 
