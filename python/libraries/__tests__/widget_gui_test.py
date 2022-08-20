@@ -384,6 +384,50 @@ class TestUpdateWidget(WidgetGuiTestCaseWithLayout):
         self.assertIs(NEW_COMBO_WITH_NO_VALUES, self.widget_gui.get_widget(NEW_COMBO_WITH_NO_VALUES.key))
 
 
+class TestUpdateWidgets(WidgetGuiTestCaseWithLayout):
+    def test_unrecognized_widget(self):
+        with self.assertRaises(TypeError):
+            widget = UnrecognizedWidget(self.BUTTON.key)
+            self.widget_gui.update_widgets(widget)
+
+    def test_widget_does_not_have_a_key(self):
+        text = Text()
+
+        with self.assertRaises(AttributeError):
+            self.widget_gui.update_widgets(text)
+
+    def test_widget_key_is_not_in_the_gui(self):
+        text = Text(self.NON_EXISTENT_KEY)
+
+        with self.assertRaises(KeyError):
+            self.widget_gui.update_widgets(text)
+
+    def test_widget_key_is_in_the_gui(self):
+        NEW_BUTTON = Button(self.BUTTON.key)
+        NEW_CHECK_BOX = CheckBox(self.CHECK_BOX.key)
+
+        VALUES = ['a', 'b', 'c']
+        NEW_COMBO = Combo(self.COMBO.key, VALUES)
+
+        NEW_INPUT = Input(self.INPUT.key)
+        NEW_MULTILINE = Multiline(self.MULTILINE.key)
+        NEW_TEXT = Text(self.TEXT_WITH_KEY.key)
+        NEW_COLOR_PICKER = ColorPicker(self.COLOR_PICKER.key)
+        NEW_COMBO_WITH_NO_VALUES = Combo(self.COMBO_WITH_NO_VALUES.key)
+
+        self.widget_gui.update_widgets(NEW_BUTTON, NEW_CHECK_BOX, NEW_COMBO, NEW_INPUT,
+                                       NEW_MULTILINE, NEW_TEXT, NEW_COLOR_PICKER, NEW_COMBO_WITH_NO_VALUES)
+
+        self.assertIs(NEW_BUTTON, self.widget_gui.get_widget(NEW_BUTTON.key))
+        self.assertIs(NEW_CHECK_BOX, self.widget_gui.get_widget(NEW_CHECK_BOX.key))
+        self.assertIs(NEW_COMBO, self.widget_gui.get_widget(NEW_COMBO.key))
+        self.assertIs(NEW_INPUT, self.widget_gui.get_widget(NEW_INPUT.key))
+        self.assertIs(NEW_MULTILINE, self.widget_gui.get_widget(NEW_MULTILINE.key))
+        self.assertIs(NEW_TEXT, self.widget_gui.get_widget(NEW_TEXT.key))
+        self.assertIs(NEW_COLOR_PICKER, self.widget_gui.get_widget(NEW_COLOR_PICKER.key))
+        self.assertIs(NEW_COMBO_WITH_NO_VALUES, self.widget_gui.get_widget(NEW_COMBO_WITH_NO_VALUES.key))
+
+
 class TestWidgetGui(WidgetGuiTestCase):
 
     def test_context_manager(self):

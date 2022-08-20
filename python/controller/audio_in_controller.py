@@ -233,14 +233,9 @@ class AudioInController(Controller):
         CYCLE_COLOR_PALETTES_CHECKBOX.enabled = True
         SECONDS_PER_COLOR_PALETTE_INPUT.enabled = True
 
-        self.__gui.update_widget(COLOR_PALETTE_BUTTON)
-        self.__gui.update_widget(SETTINGS_BUTTON)
-        self.__gui.update_widget(STOP_BUTTON)
-        self.__gui.update_widget(RESUME_BUTTON)
-        self.__gui.update_widget(NEXT_COLOR_PALETTE_BUTTON)
-        self.__gui.update_widget(LED_STRIP_TYPE_COMBO)
-        self.__gui.update_widget(CYCLE_COLOR_PALETTES_CHECKBOX)
-        self.__gui.update_widget(SECONDS_PER_COLOR_PALETTE_INPUT)
+        self.__gui.update_widgets(COLOR_PALETTE_BUTTON, SETTINGS_BUTTON, STOP_BUTTON,
+                                  RESUME_BUTTON, NEXT_COLOR_PALETTE_BUTTON, LED_STRIP_TYPE_COMBO,
+                                  CYCLE_COLOR_PALETTES_CHECKBOX, SECONDS_PER_COLOR_PALETTE_INPUT)
 
     def __set_audio_playing_gui_state(self):
         SETTINGS_BUTTON: Button = self.__gui.get_widget(Element.SETTINGS_BUTTON)
@@ -261,14 +256,9 @@ class AudioInController(Controller):
         CYCLE_COLOR_PALETTES_CHECKBOX.enabled = False
         SECONDS_PER_COLOR_PALETTE_INPUT.enabled = False
 
-        self.__gui.update_widget(COLOR_PALETTE_BUTTON)
-        self.__gui.update_widget(SETTINGS_BUTTON)
-        self.__gui.update_widget(STOP_BUTTON)
-        self.__gui.update_widget(RESUME_BUTTON)
-        self.__gui.update_widget(NEXT_COLOR_PALETTE_BUTTON)
-        self.__gui.update_widget(LED_STRIP_TYPE_COMBO)
-        self.__gui.update_widget(CYCLE_COLOR_PALETTES_CHECKBOX)
-        self.__gui.update_widget(SECONDS_PER_COLOR_PALETTE_INPUT)
+        self.__gui.update_widgets(COLOR_PALETTE_BUTTON, SETTINGS_BUTTON, STOP_BUTTON, RESUME_BUTTON,
+                                  NEXT_COLOR_PALETTE_BUTTON, LED_STRIP_TYPE_COMBO,
+                                  CYCLE_COLOR_PALETTES_CHECKBOX, SECONDS_PER_COLOR_PALETTE_INPUT)
 
     def __get_group_index_to_led_range(self) -> List[Tuple[int, int]]:
         def get_number_of_leds() -> int:

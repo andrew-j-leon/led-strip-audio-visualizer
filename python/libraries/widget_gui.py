@@ -51,6 +51,10 @@ class WidgetGui(ABC):
     def update_widget(self, widget: Widget):
         pass
 
+    def update_widgets(self, *widgets: Tuple[Widget]):
+        for widget in widgets:
+            self.update_widget(widget)
+
 
 def _create_font(font: Font) -> Tuple[int, int, int]:
     return (font.name, font.size, font.style)

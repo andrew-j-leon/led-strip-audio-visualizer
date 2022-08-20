@@ -124,8 +124,7 @@ class ColorPaletteController(Controller):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = True
 
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widgets(SAVE_BUTTON, DELETE_BUTTON)
 
             elif (event == Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME):
                 try:
@@ -140,15 +139,13 @@ class ColorPaletteController(Controller):
                 SAVE_BUTTON.enabled = False
                 DELETE_BUTTON.enabled = False
 
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widgets(SAVE_BUTTON, DELETE_BUTTON)
 
             elif (event == Event.ENTER_NEW_COLOR_PALETTE_NAME):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = False
 
-                self.__gui.update_widget(SAVE_BUTTON)
-                self.__gui.update_widget(DELETE_BUTTON)
+                self.__gui.update_widgets(SAVE_BUTTON, DELETE_BUTTON)
 
             else:
                 raise ValueError(f'This ColorPaletteController does not recognize the event {event}.')
