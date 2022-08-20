@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, auto
+from queue import Empty
 from typing import Callable, List, Tuple, Union
 
 from color_palette import ColorPalette, ColorPaletteSelection
@@ -27,6 +28,7 @@ class Element(Enum):
 
     STOP_AUDIO_BUTTON = auto()
     PLAY_AUDIO_BUTTON = auto()
+    NEXT_COLOR_PALETTE_BUTTON = auto()
 
     LED_STRIP_TYPE_COMBO = auto()
 
@@ -91,6 +93,14 @@ class AudioInController(Controller):
 
         return EVENT
 
+    def __cycle_color_palettes(self):
+        try:
+            palette: ColorPalette = self.__timed_circular_palette_queue.dequeue()
+            self.__spectrogram.set_amplitude_rgbs(palette.amplitude_rgbs)
+
+        except Empty:
+            pass
+
     def handle_event(self, event: Union[Element, WidgetGuiEvent]):
         if (event == Element.SETTINGS_BUTTON):
             self.__settings_controller.run()
@@ -103,8 +113,7 @@ class AudioInController(Controller):
 
             if (SHOULD_CYCLE_PALETTES):
                 try:
-                    palette: ColorPalette = self.__timed_circular_palette_queue.dequeue()
-                    self.__spectrogram.set_amplitude_rgbs(palette.amplitude_rgbs)
+                    self.__cycle_color_palettes()
 
                 except ValueError:
                     pass
@@ -136,11 +145,21 @@ class AudioInController(Controller):
             self.__gui.update_widget(CURRENT_INPUT_SOURCE_TEXT)
 
             try:
-                PALETTE = self.__color_palette_selection.selected_palette
-                self.__spectrogram.set_amplitude_rgbs(PALETTE.amplitude_rgbs)
+                SELECTED_PALETTE = self.__color_palette_selection.selected_palette
+                SECONDS_PER_PALETTE = int(self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT).value)
+                COLOR_PALETTES = list(self.__color_palette_selection.palettes())
+                INDEX_OF_SELECTED_PALETTE = COLOR_PALETTES.index(SELECTED_PALETTE)
+                COLOR_PALETTE_QUEUE = COLOR_PALETTES[INDEX_OF_SELECTED_PALETTE:] + COLOR_PALETTES[0:INDEX_OF_SELECTED_PALETTE]
+                self.__timed_circular_palette_queue = TimedCircularQueue(COLOR_PALETTE_QUEUE, SECONDS_PER_PALETTE)
+
+                palette: ColorPalette = self.__timed_circular_palette_queue.dequeue()
+                self.__spectrogram.set_amplitude_rgbs(palette.amplitude_rgbs)
 
             except AttributeError:
                 self.__spectrogram.set_amplitude_rgbs([])
+
+                SECONDS_PER_PALETTE = int(self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT).value)
+                self.__timed_circular_palette_queue = TimedCircularQueue([], SECONDS_PER_PALETTE)
 
             self.__spectrogram.set_frequency_range(self.__settings.minimum_frequency,
                                                    self.__settings.maximum_frequency)
@@ -155,9 +174,11 @@ class AudioInController(Controller):
 
             self.__set_audio_playing_gui_state()
 
-            SECONDS_PER_PALETTE = int(self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT).value)
-            self.__timed_circular_palette_queue = TimedCircularQueue(self.__color_palette_selection.palettes(),
-                                                                     SECONDS_PER_PALETTE)
+        elif (event == Element.NEXT_COLOR_PALETTE_BUTTON):
+            ORIGINAL_SECONDS_BETWEEN_DEQUEUES = self.__timed_circular_palette_queue.seconds_between_dequeues
+            self.__timed_circular_palette_queue.seconds_between_dequeues = 0
+            self.__cycle_color_palettes()
+            self.__timed_circular_palette_queue.seconds_between_dequeues = ORIGINAL_SECONDS_BETWEEN_DEQUEUES
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__gui.close()
@@ -184,7 +205,8 @@ class AudioInController(Controller):
                   [Text(Element.CURRENT_INPUT_SOURCE_TEXT, text="No audio currently playing.", font=TITLE_TEXT)],
 
                   [Button(Element.STOP_AUDIO_BUTTON, text="Stop ([])", font=FONT, enabled=False),
-                   Button(Element.PLAY_AUDIO_BUTTON, text="Play (>)", font=FONT, enabled=True)],
+                   Button(Element.PLAY_AUDIO_BUTTON, text="Play (>)", font=FONT, enabled=True),
+                   Button(Element.NEXT_COLOR_PALETTE_BUTTON, text='Next Color Palette', enabled=False)],
 
                   [Text(text="LED Strip Type : ", font=FONT),
                    LED_STRIP_TYPE_COMBO]]
@@ -197,6 +219,7 @@ class AudioInController(Controller):
         COLOR_PALETTE_BUTTON: Button = self.__gui.get_widget(Element.COLOR_PALETTE_BUTTON)
         STOP_BUTTON: Button = self.__gui.get_widget(Element.STOP_AUDIO_BUTTON)
         RESUME_BUTTON: Button = self.__gui.get_widget(Element.PLAY_AUDIO_BUTTON)
+        NEXT_COLOR_PALETTE_BUTTON: Button = self.__gui.get_widget(Element.NEXT_COLOR_PALETTE_BUTTON)
         LED_STRIP_TYPE_COMBO: Combo = self.__gui.get_widget(Element.LED_STRIP_TYPE_COMBO)
         CYCLE_COLOR_PALETTES_CHECKBOX: CheckBox = self.__gui.get_widget(Element.CYCLE_COLOR_PALETTES_CHECKBOX)
         SECONDS_PER_COLOR_PALETTE_INPUT: Input = self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT)
@@ -205,6 +228,7 @@ class AudioInController(Controller):
         COLOR_PALETTE_BUTTON.enabled = True
         STOP_BUTTON.enabled = False
         RESUME_BUTTON.enabled = True
+        NEXT_COLOR_PALETTE_BUTTON.enabled = False
         LED_STRIP_TYPE_COMBO.enabled = True
         CYCLE_COLOR_PALETTES_CHECKBOX.enabled = True
         SECONDS_PER_COLOR_PALETTE_INPUT.enabled = True
@@ -213,6 +237,7 @@ class AudioInController(Controller):
         self.__gui.update_widget(SETTINGS_BUTTON)
         self.__gui.update_widget(STOP_BUTTON)
         self.__gui.update_widget(RESUME_BUTTON)
+        self.__gui.update_widget(NEXT_COLOR_PALETTE_BUTTON)
         self.__gui.update_widget(LED_STRIP_TYPE_COMBO)
         self.__gui.update_widget(CYCLE_COLOR_PALETTES_CHECKBOX)
         self.__gui.update_widget(SECONDS_PER_COLOR_PALETTE_INPUT)
@@ -222,6 +247,7 @@ class AudioInController(Controller):
         COLOR_PALETTE_BUTTON: Button = self.__gui.get_widget(Element.COLOR_PALETTE_BUTTON)
         STOP_BUTTON: Button = self.__gui.get_widget(Element.STOP_AUDIO_BUTTON)
         RESUME_BUTTON: Button = self.__gui.get_widget(Element.PLAY_AUDIO_BUTTON)
+        NEXT_COLOR_PALETTE_BUTTON: Button = self.__gui.get_widget(Element.NEXT_COLOR_PALETTE_BUTTON)
         CYCLE_COLOR_PALETTES_CHECKBOX: CheckBox = self.__gui.get_widget(Element.CYCLE_COLOR_PALETTES_CHECKBOX)
         SECONDS_PER_COLOR_PALETTE_INPUT: Input = self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT)
         LED_STRIP_TYPE_COMBO: Combo = self.__gui.get_widget(Element.LED_STRIP_TYPE_COMBO)
@@ -231,6 +257,7 @@ class AudioInController(Controller):
         SETTINGS_BUTTON.enabled = False
         STOP_BUTTON.enabled = True
         RESUME_BUTTON.enabled = False
+        NEXT_COLOR_PALETTE_BUTTON.enabled = True
         CYCLE_COLOR_PALETTES_CHECKBOX.enabled = False
         SECONDS_PER_COLOR_PALETTE_INPUT.enabled = False
 
@@ -238,6 +265,7 @@ class AudioInController(Controller):
         self.__gui.update_widget(SETTINGS_BUTTON)
         self.__gui.update_widget(STOP_BUTTON)
         self.__gui.update_widget(RESUME_BUTTON)
+        self.__gui.update_widget(NEXT_COLOR_PALETTE_BUTTON)
         self.__gui.update_widget(LED_STRIP_TYPE_COMBO)
         self.__gui.update_widget(CYCLE_COLOR_PALETTES_CHECKBOX)
         self.__gui.update_widget(SECONDS_PER_COLOR_PALETTE_INPUT)

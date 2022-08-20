@@ -248,6 +248,7 @@ class TestDisplay(AudioInControllerTestCase):
 
         STOP_AUDIO_BUTTON: Button = self.get_widget(Element.STOP_AUDIO_BUTTON)
         PLAY_AUDIO_BUTTON: Button = self.get_widget(Element.PLAY_AUDIO_BUTTON)
+        NEXT_COLOR_PALETTE_BUTTON: Button = self.get_widget(Element.NEXT_COLOR_PALETTE_BUTTON)
 
         LED_STRIP_TYPE_COMBO: Combo = self.get_widget(Element.LED_STRIP_TYPE_COMBO)
 
@@ -262,6 +263,7 @@ class TestDisplay(AudioInControllerTestCase):
 
         self.assertFalse(STOP_AUDIO_BUTTON.enabled)
         self.assertTrue(PLAY_AUDIO_BUTTON.enabled)
+        self.assertFalse(NEXT_COLOR_PALETTE_BUTTON.enabled)
 
         self.assertTrue(LED_STRIP_TYPE_COMBO.enabled)
 
@@ -353,7 +355,6 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
         CYCLE_COLOR_PALETTES_CHECKBOX.value = True
 
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
-        self.audio_in_controller.handle_event(Event.PLAYING)
 
         self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
 
@@ -422,6 +423,26 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
         self.assertFalse(self.audio_in_stream.opened)
 
         self.check_gui_state_after_clicking_stop_button()
+
+    def test_next_color_palette_button(self):
+        self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
+
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
+
+        self.audio_in_controller.handle_event(Element.NEXT_COLOR_PALETTE_BUTTON)
+
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.non_current_color_palette.amplitude_rgbs)
+
+    def test_next_color_palette_button_with_no_color_palettes(self):
+        self.clear_color_palettes()
+
+        self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
+
+        self.assertEqual(self.spectrogram.amplitude_rgbs, [])
+
+        self.audio_in_controller.handle_event(Element.NEXT_COLOR_PALETTE_BUTTON)
+
+        self.assertEqual(self.spectrogram.amplitude_rgbs, [])
 
     def test_play_audio_with_color_palettes(self):
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)

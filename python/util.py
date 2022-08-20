@@ -24,7 +24,7 @@ class CircularQueue:
             return item
 
         except Empty:
-            raise ValueError('This CircularQueue is empty.')
+            raise Empty('This CircularQueue is empty.')
 
     def __len__(self) -> int:
         return self.__length
@@ -32,31 +32,39 @@ class CircularQueue:
 
 class TimedCircularQueue:
     def __init__(self, items: Iterable = [], seconds_between_dequeues: int = 0):
-        if (seconds_between_dequeues < 0):
-            raise ValueError(f'seconds_between_dequeues must be >= 0, but was {seconds_between_dequeues}.')
-
         self.__circular_queue = CircularQueue(items)
 
-        self.__seconds_between_dequeues = seconds_between_dequeues
-        self.__time_of_last_dequeue = time.time()
+        self.seconds_between_dequeues = seconds_between_dequeues
+        self.__epoch_of_most_recent_dequeue = 0
+
+    @property
+    def seconds_between_dequeues(self):
+        return self.__seconds_between_dequeues
+
+    @seconds_between_dequeues.setter
+    def seconds_between_dequeues(self, seconds: int):
+        if (seconds < 0):
+            raise ValueError(f'seconds must be >= 0, but was {seconds}.')
+
+        self.__seconds_between_dequeues = seconds
 
     def enqueue(self, item: Any):
         self.__circular_queue.enqueue(item)
 
     def dequeue(self) -> Any:
-        TIME_UNTIL_DEQUEUE_IS_ALLOWED = self.__time_of_last_dequeue + self.__seconds_between_dequeues
+        TIME_UNTIL_DEQUEUE_IS_ALLOWED = self.__epoch_of_most_recent_dequeue + self.__seconds_between_dequeues
 
         if (TIME_UNTIL_DEQUEUE_IS_ALLOWED > time.time()):
             raise ValueError(f'It has not been {self.__seconds_between_dequeues} seconds since the last dequeue call.')
 
-        self.__time_of_last_dequeue = time.time()
+        self.__epoch_of_most_recent_dequeue = time.time()
 
         try:
             item = self.__circular_queue.dequeue()
             return item
 
-        except ValueError:
-            raise ValueError('This TimedCircularQueue is empty.')
+        except Empty:
+            raise Empty('This TimedCircularQueue is empty.')
 
     def __len__(self) -> int:
         return len(self.__circular_queue)

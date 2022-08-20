@@ -1,4 +1,5 @@
 import unittest
+from queue import Empty
 
 from util import TimedCircularQueue
 
@@ -10,6 +11,32 @@ class TestTimedCircularQueue(unittest.TestCase):
             SECONDS_BETWEEN_DEQUEUES = -1
 
             TimedCircularQueue(ITEMS, SECONDS_BETWEEN_DEQUEUES)
+
+    def test_setting_valid_seconds_between_dequeues(self):
+        VALID_SECONDS = [0, 1, 20, 100]
+
+        queue = TimedCircularQueue()
+
+        for seconds in VALID_SECONDS:
+            with self.subTest(seconds=seconds):
+                queue.seconds_between_dequeues = seconds
+
+                self.assertEqual(seconds, queue.seconds_between_dequeues)
+
+    def test_setting_invalid_seconds_between_dequeues(self):
+        INVALID_SECONDS = [-1, -10]
+
+        queue = TimedCircularQueue()
+
+        ORIGINAL_SECONDS_BETWEEN_DEQUEUES = queue.seconds_between_dequeues
+
+        for seconds in INVALID_SECONDS:
+            with self.subTest(seconds=seconds):
+                with self.assertRaises(ValueError):
+                    queue.seconds_between_dequeues = seconds
+
+                self.assertEqual(ORIGINAL_SECONDS_BETWEEN_DEQUEUES,
+                                 queue.seconds_between_dequeues)
 
     def test_enqueue(self):
         queue = TimedCircularQueue()
@@ -23,7 +50,7 @@ class TestTimedCircularQueue(unittest.TestCase):
     def test_dequeue_empty_queue(self):
         queue = TimedCircularQueue()
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Empty):
             queue.dequeue()
 
     def test_dequeue_before_next_dequeue_is_allowed(self):
@@ -31,6 +58,8 @@ class TestTimedCircularQueue(unittest.TestCase):
         SECONDS_BETWEEN_DEQUEUES = 10
 
         queue = TimedCircularQueue(ITEMS, SECONDS_BETWEEN_DEQUEUES)
+
+        queue.dequeue()
 
         with self.assertRaises(ValueError):
             queue.dequeue()

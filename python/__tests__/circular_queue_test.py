@@ -1,4 +1,5 @@
 import unittest
+from queue import Empty
 
 from util import CircularQueue
 
@@ -30,5 +31,5 @@ class TestCircularQueue(unittest.TestCase):
     def test_dequeue_on_empty_queue(self):
         queue = CircularQueue()
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Empty):
             queue.dequeue()
