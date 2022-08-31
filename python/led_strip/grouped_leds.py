@@ -190,6 +190,10 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         self.__gui.update()
 
 
+START_OF_MESSAGE_CODE = 0xFE
+END_OF_MESSAGE_CODE = 0xFF
+
+
 class SerialGroupedLeds(ProductionGroupedLeds):
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]],
                  serial: Serial, brightness: int):
@@ -211,9 +215,12 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         self.__configure_serial()
 
     def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        self.__send_bytes(len(group_rgbs).to_bytes(length=1, byteorder="big"))
+        self.__send_bytes(START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder="big"))
+        self.__send_bytes(len(group_rgbs).to_bytes(1, "big"))
 
         super().set_group_rgbs(group_rgbs)
+
+        self.__send_bytes(END_OF_MESSAGE_CODE.to_bytes(1, "big"))
 
     def _set_group_rgbs(self, group: int, rgb: RGB):
         self.__send_packet(group, rgb)
@@ -240,6 +247,10 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         packet += rgb.blue.to_bytes(1, "big")
 
         self.__send_bytes(packet)
+
+        check_sum = (sum(packet) % 256).to_bytes(length=1, byteorder="big")
+
+        self.__send_bytes(check_sum)
 
     def __send_bytes(self, bytes_: bytes):
         '''
