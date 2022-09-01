@@ -83,9 +83,9 @@ Do so now. You should see a GUI appear.
 
 Click the **Settings button** and make sure you set the following values correctly:
 
-1. `Port:` Set this to the USB port your Arduino is connected to (on Windows, this may be COM3; on Ubuntu, it may be /dev/ttyACM0). You can find out which port this is through the Arduino IDE.
+1. `Port:` Set this to the USB port your Arduino is connected to (on Windows, this may be COM3; on Ubuntu, it may be /dev/ttyACM0). The correct port number should be shown in the Arduino IDE.
 
-2. `Baudrate:` Set this to 115200.
+2. `Baudrate:` Set this to 1000000.
 
 > **Note:** If you want to use a different baudrate, you can edit the **arduino/main/main.ino** sketch's `SERIAL_BAUD_RATE` global variable. If you do so, don't forget to re-upload the sketch!
 
