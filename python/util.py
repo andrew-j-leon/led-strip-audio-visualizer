@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import time
+from abc import ABC, abstractmethod
 from queue import Empty, SimpleQueue
 from typing import Any, Iterable, Tuple
+
+
+class Jsonable(ABC):
+    @abstractmethod
+    def to_json(self) -> dict:
+        pass
 
 
 class CircularQueue:

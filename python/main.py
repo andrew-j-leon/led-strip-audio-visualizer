@@ -2,8 +2,6 @@ from contextlib import closing
 from pathlib import Path
 
 from color_palette import ColorPalette
-from color_palette import load as load_color_palette_selection
-from color_palette import save as save_color_palette_selection
 from controller.audio_in_controller import AudioInController
 from controller.color_palette_controller import ColorPaletteController
 from controller.settings_controller import SettingsController
@@ -12,7 +10,7 @@ from libraries.audio_in_stream import AudioInStream, ProductionAudioInStream
 from libraries.canvas_gui import CanvasGui, ProductionCanvasGui
 from libraries.serial import ProductionSerial, Serial
 from libraries.widget_gui import ProductionWidgetGui, WidgetGui
-from selection import Selection
+from selection import Selection, load, save
 from settings import Settings
 from settings import load as load_settings
 from settings import save as save_settings
@@ -61,7 +59,7 @@ if __name__ == '__main__':
     color_palette_selection = Selection()
 
     try:
-        color_palette_selection = load_color_palette_selection(COLOR_PALETTE_SELECTION_SAVE_DIRECTORY)
+        color_palette_selection = load(COLOR_PALETTE_SELECTION_SAVE_DIRECTORY, ColorPalette)
 
     except FileNotFoundError:
         COLOR_PALETTE_SELECTION_SAVE_DIRECTORY.mkdir(parents=True)
@@ -74,7 +72,7 @@ if __name__ == '__main__':
 
     def create_color_palette_controller(color_palette_selection: Selection[ColorPalette]) -> ColorPaletteController:
         def save_color_palette_selection_to_file(color_palette_selection: Selection[ColorPalette]):
-            save_color_palette_selection(color_palette_selection, COLOR_PALETTE_SELECTION_SAVE_DIRECTORY)
+            save(color_palette_selection, COLOR_PALETTE_SELECTION_SAVE_DIRECTORY)
 
         return ColorPaletteController(create_widget_gui, save_color_palette_selection_to_file, color_palette_selection)
 

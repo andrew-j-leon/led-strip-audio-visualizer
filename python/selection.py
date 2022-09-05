@@ -1,4 +1,9 @@
-from typing import Any, Dict, Generic, TypeVar
+import json
+import shutil
+from pathlib import Path
+from typing import Any, Dict, Generic, Type, TypeVar
+
+from util import Jsonable
 
 T = TypeVar('T')
 
@@ -95,4 +100,89 @@ class Selection(Generic[T]):
             raise KeyError(f'There is no "{key}" key in this Selection.')
 
         except IndexError:
+            pass
+
+
+def load(directory: Path, jsonable_class: Type[Jsonable]) -> Selection[Jsonable]:
+    items: Dict[str, Jsonable] = dict()
+
+    try:
+        for save_file in directory.iterdir():
+            with save_file.open('r') as file:
+                try:
+                    json_data = json.load(file)
+                    key = save_file.name
+
+                    cls = jsonable_class(**json_data)
+                    items[key] = cls
+
+                except (json.decoder.JSONDecodeError, PermissionError, TypeError):
+                    pass
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f'The directory {directory} does not exist.')
+
+    except NotADirectoryError:
+        raise NotADirectoryError(f'The path "{directory}" is not a directory.')
+
+    SELECTION = Selection(items)
+
+    FILE_FOR_SELECTED_KEY = directory.joinpath('.selected_key')
+
+    if (FILE_FOR_SELECTED_KEY.is_file()):
+        with FILE_FOR_SELECTED_KEY.open('r') as file:
+
+            SELECTED_KEY = file.read().strip()
+            SELECTION.selected_key = SELECTED_KEY
+
+    return SELECTION
+
+
+def save(selection: Selection[Jsonable], directory: Path):
+    if (len(selection) == 0):
+        _clear_directory(directory)
+
+    else:
+        temporary_save_directory = directory.joinpath('.temporary_save_directory')
+
+        try:
+            temporary_save_directory.mkdir(exist_ok=True)
+
+            for key, value in selection.items():
+                save_file = temporary_save_directory.joinpath(key)
+
+                with save_file.open('w') as file:
+                    json.dump(value.to_json(), file, indent=4)
+
+            FILE_FOR_SELECTED_KEY = temporary_save_directory.joinpath('.selected_key')
+
+            with FILE_FOR_SELECTED_KEY.open('w') as file:
+                file.write(selection.selected_key)
+
+            _clear_directory(directory)
+
+            for save_file in temporary_save_directory.iterdir():
+                new_save_file = directory.joinpath(save_file.name)
+                save_file.rename(new_save_file)
+
+        except FileNotFoundError:
+            raise FileNotFoundError(f'The directory {directory} does not exist.')
+
+        except NotADirectoryError:
+            raise NotADirectoryError(f'The pathname {directory} points to a file, not a directory.')
+
+        except PermissionError:
+            raise PermissionError('The current user does not have the '
+                                  f'permissions to save to the directory {directory}.')
+
+        finally:
+            shutil.rmtree(str(temporary_save_directory), ignore_errors=True)
+
+
+def _clear_directory(directory: Path):
+    for save_file in directory.iterdir():
+        try:
+            save_file.unlink()
+
+        except (IsADirectoryError, PermissionError):
             pass

@@ -5,12 +5,11 @@ from unittest import TestCase
 
 import pyfakefs.fake_filesystem_unittest as fake_filesystem_unittest
 from color_palette import ColorPalette
-from color_palette import save as save_color_palette_selection
 from controller.__tests__.fake_widget_gui import FakeWidgetGui
 from controller.color_palette_controller import ColorPaletteController, Element, Event, create_color_palette_gui_values
 from libraries.widget import Button, Combo
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
-from selection import Selection
+from selection import Selection, save
 from util import rgb_to_hex
 
 
@@ -21,7 +20,7 @@ class SaveColorPaletteSelection:
 
     def __call__(self, color_palette_selection: Selection[ColorPalette]):
         self.number_of_calls += 1
-        save_color_palette_selection(color_palette_selection, self.__save_directory)
+        save(color_palette_selection, self.__save_directory)
 
 
 class TestCreateColorPaletteGuiValues(TestCase):
@@ -130,9 +129,9 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
         self.save_directory = Path('save_directory')
         self.save_directory.mkdir()
 
-        self.save_color_palette_selection = SaveColorPaletteSelection(self.save_directory)
+        self.save = SaveColorPaletteSelection(self.save_directory)
 
-        self.color_palette_controller = ColorPaletteController(create_gui, self.save_color_palette_selection,
+        self.color_palette_controller = ColorPaletteController(create_gui, self.save,
                                                                self.color_palette_selection)
 
     def tearDown(self):
@@ -305,7 +304,7 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
         EXPECTED_NUMBER_OF_SAVES = 1
-        self.assertEqual(self.save_color_palette_selection.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
+        self.assertEqual(self.save.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
 
     def test_overwrite_saved_color_palette(self):
         def set_widget_value(widget_key: Hashable, value: Any):
@@ -356,7 +355,7 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
         EXPECTED_NUMBER_OF_SAVES = 1
-        self.assertEqual(self.save_color_palette_selection.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
+        self.assertEqual(self.save.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
 
     def test_delete_non_existent_color_palette_name(self):
         NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
