@@ -4,12 +4,13 @@ from typing import Any, Hashable
 from unittest import TestCase
 
 import pyfakefs.fake_filesystem_unittest as fake_filesystem_unittest
-from color_palette import ColorPalette, ColorPaletteSelection
+from color_palette import ColorPalette
 from color_palette import save as save_color_palette_selection
 from controller.__tests__.fake_widget_gui import FakeWidgetGui
 from controller.color_palette_controller import ColorPaletteController, Element, Event, create_color_palette_gui_values
 from libraries.widget import Button, Combo
 from libraries.widget_gui import WidgetGui, WidgetGuiEvent
+from selection import Selection
 from util import rgb_to_hex
 
 
@@ -18,7 +19,7 @@ class SaveColorPaletteSelection:
         self.number_of_calls = 0
         self.__save_directory = save_directory
 
-    def __call__(self, color_palette_selection: ColorPaletteSelection):
+    def __call__(self, color_palette_selection: Selection[ColorPalette]):
         self.number_of_calls += 1
         save_color_palette_selection(color_palette_selection, self.__save_directory)
 
@@ -118,8 +119,8 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
         self.current_color_palette = ColorPalette(self.CURRENT_COLOR_PALETTE_AMPLITUDE_RGBS)
         self.non_current_color_palette = ColorPalette(self.NON_CURRENT_COLOR_PALETTE_AMPLITUDE_RGBS)
 
-        self.color_palette_selection = ColorPaletteSelection({self.CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
-                                                              self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette})
+        self.color_palette_selection = Selection({self.CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
+                                                  self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette})
 
         self.widget_gui = FakeWidgetGui()
 
@@ -138,13 +139,13 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
         shutil.rmtree(str(self.save_directory), ignore_errors=True)
 
     def clear_color_palette_selection(self):
-        NAMES = list(self.color_palette_selection.names())
+        NAMES = list(self.color_palette_selection.keys())
 
         for name in NAMES:
             del self.color_palette_selection[name]
 
     def check_widget_gui_matches_color_palette_selection(self, widget_gui: WidgetGui,
-                                                         color_palette_selection: ColorPaletteSelection):
+                                                         color_palette_selection: Selection[ColorPalette]):
         def get_widget_value(element: Element):
             WIDGET = widget_gui.get_widget(element)
             return WIDGET.value
@@ -152,13 +153,13 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
         # Check the combo
         NAME_COMBO: Combo = widget_gui.get_widget(Element.NAME_COMBO)
 
-        EXPECTED_NAMES = list(color_palette_selection.names())
+        EXPECTED_NAMES = list(color_palette_selection.keys())
         self.assertEqual(EXPECTED_NAMES, NAME_COMBO.values)
 
-        self.assertEqual(color_palette_selection.selected_name, NAME_COMBO.value)
+        self.assertEqual(color_palette_selection.selected_key, NAME_COMBO.value)
 
         # Check the colors of the selected color palette
-        SELECTED_COLOR_PALETTE = color_palette_selection.selected_palette
+        SELECTED_COLOR_PALETTE = color_palette_selection.selected_value
 
         NUMBER_OF_COLORS = 5
         COLOR_PALETTE_GUI_VALUES = create_color_palette_gui_values(SELECTED_COLOR_PALETTE.amplitude_rgbs,
@@ -298,8 +299,8 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         EXPECTED_COLOR_PALETTES = {self.CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
                                    self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette,
                                    self.NON_EXISTENT_COLOR_PALETTE_NAME: EXPECTED_NEW_COLOR_PALETTE}
-        EXPECTED_COLOR_PALETTE_SELECTION = ColorPaletteSelection(EXPECTED_COLOR_PALETTES)
-        EXPECTED_COLOR_PALETTE_SELECTION.selected_name = self.NON_EXISTENT_COLOR_PALETTE_NAME
+        EXPECTED_COLOR_PALETTE_SELECTION = Selection(EXPECTED_COLOR_PALETTES)
+        EXPECTED_COLOR_PALETTE_SELECTION.selected_key = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
@@ -349,8 +350,8 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
 
         EXPECTED_COLOR_PALETTES = {self.CURRENT_COLOR_PALETTE_NAME: EXPECTED_CURRENT_COLOR_PALETTE,
                                    self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette}
-        EXPECTED_COLOR_PALETTE_SELECTION = ColorPaletteSelection(EXPECTED_COLOR_PALETTES)
-        EXPECTED_COLOR_PALETTE_SELECTION.selected_name = self.CURRENT_COLOR_PALETTE_NAME
+        EXPECTED_COLOR_PALETTE_SELECTION = Selection(EXPECTED_COLOR_PALETTES)
+        EXPECTED_COLOR_PALETTE_SELECTION.selected_key = self.CURRENT_COLOR_PALETTE_NAME
 
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
@@ -367,8 +368,8 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
 
         EXPECTED_COLOR_PALETTES = {self.CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
                                    self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette}
-        EXPECTED_COLOR_PALETTE_SELECTION = ColorPaletteSelection(EXPECTED_COLOR_PALETTES)
-        EXPECTED_COLOR_PALETTE_SELECTION.selected_name = self.CURRENT_COLOR_PALETTE_NAME
+        EXPECTED_COLOR_PALETTE_SELECTION = Selection(EXPECTED_COLOR_PALETTES)
+        EXPECTED_COLOR_PALETTE_SELECTION.selected_key = self.CURRENT_COLOR_PALETTE_NAME
 
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
@@ -379,7 +380,7 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.color_palette_controller.handle_event(Element.DELETE_BUTTON)
 
         EXPECTED_COLOR_PALETTES = {self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette}
-        EXPECTED_COLOR_PALETTE_SELECTION = ColorPaletteSelection(EXPECTED_COLOR_PALETTES)
+        EXPECTED_COLOR_PALETTE_SELECTION = Selection(EXPECTED_COLOR_PALETTES)
 
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
@@ -400,7 +401,7 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertTrue(SAVE_BUTTON.enabled)
         self.assertTrue(DELETE_BUTTON.enabled)
 
-        self.color_palette_selection.selected_name = self.CURRENT_COLOR_PALETTE_NAME
+        self.color_palette_selection.selected_key = self.CURRENT_COLOR_PALETTE_NAME
         self.check_widget_gui_matches_color_palette_selection(self.widget_gui, self.color_palette_selection)
 
     def test_select_non_current_color_palette_name(self):
@@ -415,7 +416,7 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertTrue(SAVE_BUTTON.enabled)
         self.assertTrue(DELETE_BUTTON.enabled)
 
-        self.color_palette_selection.selected_name = self.NON_CURRENT_COLOR_PALETTE_NAME
+        self.color_palette_selection.selected_key = self.NON_CURRENT_COLOR_PALETTE_NAME
         self.check_widget_gui_matches_color_palette_selection(self.widget_gui, self.color_palette_selection)
 
     def test_select_non_current_color_palette_name_when_combo_name_not_in_color_palette_selection(self):

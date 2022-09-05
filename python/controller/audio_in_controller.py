@@ -4,7 +4,7 @@ from enum import Enum, auto
 from queue import Empty
 from typing import Callable, List, Tuple, Union
 
-from color_palette import ColorPalette, ColorPaletteSelection
+from color_palette import ColorPalette
 from controller.controller import Controller, RunnableResource
 from led_strip.grouped_leds import GraphicGroupedLeds, GroupedLeds, SerialGroupedLeds
 from led_strip.led_strip import LedStrip, ProductionLedStrip
@@ -13,6 +13,7 @@ from libraries.canvas_gui import CanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Serial
 from libraries.widget import Button, CheckBox, Combo, Input, Text
 from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
+from selection import Selection
 from settings import Settings
 from spectrogram import Spectrogram
 from util import TimedCircularQueue
@@ -49,8 +50,8 @@ class LedStripType:
 
 class AudioInController(Controller):
     def __init__(self, create_settings_controller: Callable[[Settings], RunnableResource], settings: Settings,
-                 create_color_palette_controller: Callable[[ColorPaletteSelection], RunnableResource],
-                 color_palette_selection: ColorPaletteSelection,
+                 create_color_palette_controller: Callable[[Selection[ColorPalette]], RunnableResource],
+                 color_palette_selection: Selection[ColorPalette],
                  create_widget_gui: Callable[[], WidgetGui], create_canvas_gui: Callable[[], CanvasGui],
                  create_serial: Callable[[], Serial], create_audio_in_stream: Callable[[], AudioInStream],
                  create_led_strip: Callable[[], LedStrip], create_spectrogram: Callable[[], Spectrogram]):
@@ -70,7 +71,7 @@ class AudioInController(Controller):
         self.__led_strip_gui = create_canvas_gui()
         self.__audio_in_stream = create_audio_in_stream()
 
-        self.__timed_circular_palette_queue = TimedCircularQueue(self.__color_palette_selection.palettes())
+        self.__timed_circular_palette_queue = TimedCircularQueue(self.__color_palette_selection.values())
 
     def close(self):
         self.__settings_controller.close()
@@ -145,9 +146,9 @@ class AudioInController(Controller):
             self.__gui.update_widget(CURRENT_INPUT_SOURCE_TEXT)
 
             try:
-                SELECTED_PALETTE = self.__color_palette_selection.selected_palette
+                SELECTED_PALETTE = self.__color_palette_selection.selected_value
                 SECONDS_PER_PALETTE = int(self.__gui.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT).value)
-                COLOR_PALETTES = list(self.__color_palette_selection.palettes())
+                COLOR_PALETTES = list(self.__color_palette_selection.values())
                 INDEX_OF_SELECTED_PALETTE = COLOR_PALETTES.index(SELECTED_PALETTE)
                 COLOR_PALETTE_QUEUE = COLOR_PALETTES[INDEX_OF_SELECTED_PALETTE:] + COLOR_PALETTES[0:INDEX_OF_SELECTED_PALETTE]
                 self.__timed_circular_palette_queue = TimedCircularQueue(COLOR_PALETTE_QUEUE, SECONDS_PER_PALETTE)

@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Hashable, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
+
+from selection import Selection
 
 
-def load(directory: Path) -> ColorPaletteSelection:
+def load(directory: Path) -> Selection[ColorPalette]:
     collection: Dict[str, ColorPalette] = dict()
 
     try:
@@ -14,9 +16,9 @@ def load(directory: Path) -> ColorPaletteSelection:
             with save_file.open('r') as file:
                 try:
                     color_palette = json.load(file)
-                    name = save_file.name
+                    key = save_file.name
 
-                    collection[name] = ColorPalette(**color_palette)
+                    collection[key] = ColorPalette(**color_palette)
 
                 except (json.decoder.JSONDecodeError, PermissionError, TypeError):
                     pass
@@ -27,15 +29,15 @@ def load(directory: Path) -> ColorPaletteSelection:
     except NotADirectoryError:
         raise NotADirectoryError(f'The path {directory} points to a file, not a directory.')
 
-    COLOR_PALETTE_SELECTION = ColorPaletteSelection(collection)
+    COLOR_PALETTE_SELECTION = Selection(collection)
 
-    SELECTED_NAME_FILE = directory.joinpath('.selected_name')
+    SELECTED_NAME_FILE = directory.joinpath('.selected_key')
 
     if (SELECTED_NAME_FILE.is_file()):
         with SELECTED_NAME_FILE.open('r') as file:
 
-            SELECTED_NAME = file.read().strip()
-            COLOR_PALETTE_SELECTION.selected_name = SELECTED_NAME
+            SELECTED_KEY = file.read().strip()
+            COLOR_PALETTE_SELECTION.selected_key = SELECTED_KEY
 
     return COLOR_PALETTE_SELECTION
 
@@ -48,7 +50,7 @@ class ColorPaletteEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def save(color_palette_selection: ColorPaletteSelection, directory: Path):
+def save(color_palette_selection: Selection[ColorPalette], directory: Path):
     if (len(color_palette_selection) == 0):
         _delete_saved_color_palette_collection(directory)
 
@@ -58,16 +60,16 @@ def save(color_palette_selection: ColorPaletteSelection, directory: Path):
         try:
             temporary_save_directory.mkdir(exist_ok=True)
 
-            for name, color_palette in color_palette_selection.items():
-                save_file = temporary_save_directory.joinpath(name)
+            for key, color_palette in color_palette_selection.items():
+                save_file = temporary_save_directory.joinpath(key)
 
                 with save_file.open('w') as file:
                     json.dump(color_palette, file, cls=ColorPaletteEncoder, indent=4)
 
-            selected_name_file = temporary_save_directory.joinpath('.selected_name')
+            selected_key_file = temporary_save_directory.joinpath('.selected_key')
 
-            with selected_name_file.open('w') as file:
-                file.write(color_palette_selection.selected_name)
+            with selected_key_file.open('w') as file:
+                file.write(color_palette_selection.selected_key)
 
             _delete_saved_color_palette_collection(directory)
 
@@ -79,7 +81,7 @@ def save(color_palette_selection: ColorPaletteSelection, directory: Path):
             raise FileNotFoundError(f'The directory {directory} does not exist.')
 
         except NotADirectoryError:
-            raise NotADirectoryError(f'The path name {directory} points to a file, not a directory.')
+            raise NotADirectoryError(f'The pathname {directory} points to a file, not a directory.')
 
         except PermissionError:
             raise PermissionError('The current user does not have the '
@@ -136,101 +138,3 @@ class ColorPalette:
                 raise ValueError(f'The rgb at index {i}, {amplitude_rgbs[i]}, was not an Iterable with three values.')
 
         self.__amplitude_rgbs = new_amplitude_rgbs
-
-
-class ColorPaletteSelection:
-    def __init__(self, palettes: Dict[str, ColorPalette] = dict()):
-
-        self.__collection: Dict[str, ColorPalette] = dict()
-        for name, color_palette in palettes.items():
-            self[name] = color_palette
-
-    @property
-    def selected_palette(self):
-        try:
-            return self[self.selected_name]
-
-        except AttributeError:
-            raise AttributeError('There are no ColorPalettes in this ColorPaletteSelection.')
-
-    @property
-    def selected_name(self):
-        try:
-            return self.__current_name
-
-        except AttributeError:
-            raise AttributeError('There are no ColorPalettes in this ColorPaletteSelection.')
-
-    @selected_name.setter
-    def selected_name(self, name: Hashable):
-        if (name not in self):
-            raise ValueError(f'There is no ColorPalette in this ColorPaletteSelection with the name {name}.')
-
-        self.__current_name = name
-
-    def names(self):
-        return self.__collection.keys()
-
-    def palettes(self):
-        return self.__collection.values()
-
-    def items(self):
-        return self.__collection.items()
-
-    def __eq__(self, other: Any) -> bool:
-        if (isinstance(other, ColorPaletteSelection)):
-
-            try:
-                if (self.names() == other.names() and self.selected_name == other.selected_name
-                        and self.selected_palette == other.selected_palette):
-                    for name in self.names():
-                        if (self[name] != other[name]):
-                            return False
-
-                    return True
-
-            except AttributeError:
-                return (len(self) == 0 and len(other) == 0)
-
-        return False
-
-    def __len__(self):
-        return len(self.__collection)
-
-    def __contains__(self, name: Hashable):
-        return name in self.__collection
-
-    def __iter__(self):
-        return self.__collection.__iter__()
-
-    def __getitem__(self, name: Hashable) -> ColorPalette:
-        try:
-            return self.__collection[name]
-
-        except KeyError:
-            raise KeyError(f'This ColorPaletteSelection contains no ColorPalette with the name {name}.')
-
-    def __setitem__(self, name: Hashable, color_palette: ColorPalette):
-        if (not isinstance(color_palette, ColorPalette)):
-            raise TypeError(f'color_palette argument ({color_palette}) of type {type(color_palette)} must be an instance of type ColorPalette.')
-
-        self.__collection[name] = color_palette
-
-        if (len(self.__collection) == 1):
-            self.selected_name = name
-
-    def __delitem__(self, name: Hashable):
-        try:
-            del self.__collection[name]
-
-            if (name == self.selected_name):
-                del self.__current_name
-
-            INDEX = 0
-            self.selected_name = list(self.names()).pop(INDEX)
-
-        except KeyError:
-            raise KeyError(f'This ColorPaletteSelection contains no ColorPalette with the name {name}.')
-
-        except IndexError:
-            pass

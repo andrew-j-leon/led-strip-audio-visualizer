@@ -1,7 +1,7 @@
 from typing import Hashable, List, Tuple
 from unittest import TestCase
 
-from color_palette import ColorPalette, ColorPaletteSelection
+from color_palette import ColorPalette
 from controller.__tests__.fake_widget_gui import FakeWidgetGui, WidgetGuiEvent
 from controller.audio_in_controller import AudioInController, Element, Event, LedStripType
 from controller.controller import RunnableResource
@@ -10,6 +10,7 @@ from libraries.audio_in_stream import AudioInStream
 from libraries.canvas_gui import CanvasGui
 from libraries.serial import FakeSerial
 from libraries.widget import Button, CheckBox, Combo, Input, Text, Widget
+from selection import Selection
 from settings import Settings
 from spectrogram import Spectrogram
 from util import Font
@@ -173,7 +174,7 @@ class AudioInControllerTestCase(TestCase):
                                  SERIAL_BAUDRATE, BRIGHTNESS, START_FREQUENCY, END_FREQUENCY,
                                  SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS)
         self.color_palette_controller = FakeRunnableResource()
-        self.color_palette_selection = ColorPaletteSelection(COLOR_PALETTES)
+        self.color_palette_selection = Selection(COLOR_PALETTES)
         self.widget_gui = FakeWidgetGui()
         self.canvas_gui = FakeCanvasGui()
         self.serial = FakeSerial()
@@ -184,7 +185,7 @@ class AudioInControllerTestCase(TestCase):
         def create_settings_controller(settings: Settings):
             return self.settings_controller
 
-        def create_color_palette_controller(color_palette_selection: ColorPaletteSelection):
+        def create_color_palette_controller(color_palette_selection: Selection[ColorPalette]):
             return self.color_palette_controller
 
         def create_widget_gui():
@@ -220,7 +221,7 @@ class AudioInControllerTestCase(TestCase):
                 self.assertTrue(self.led_strip.group_is_rgb(group, BLACK_RGB))
 
     def clear_color_palettes(self):
-        COLOR_PALETTE_NAMES = list(self.color_palette_selection.names())
+        COLOR_PALETTE_NAMES = list(self.color_palette_selection.keys())
 
         for name in COLOR_PALETTE_NAMES:
             del self.color_palette_selection[name]

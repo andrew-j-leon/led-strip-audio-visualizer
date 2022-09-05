@@ -1,8 +1,9 @@
 import shutil
 from pathlib import Path
 
-from color_palette import ColorPalette, ColorPaletteSelection, load, save
+from color_palette import ColorPalette, load, save
 from pyfakefs import fake_filesystem_unittest
+from selection import Selection
 
 
 class TestSaveAndLoadColorPaletteSelection(fake_filesystem_unittest.TestCase):
@@ -21,7 +22,7 @@ class TestSaveAndLoadColorPaletteSelection(fake_filesystem_unittest.TestCase):
         PALETTES = {self.SELECTED_NAME: SELECTED_COLOR_PALETTE,
                     self.NON_SELECTED_NAME: NON_SELECTED_COLOR_PALETTE}
 
-        self.color_palette_selection = ColorPaletteSelection(PALETTES)
+        self.color_palette_selection = Selection(PALETTES)
 
         self.existent_directory = Path('existent_directory')
         self.existent_directory.mkdir()
@@ -59,12 +60,12 @@ class TestSaveAndLoadColorPaletteSelection(fake_filesystem_unittest.TestCase):
     def test_loading_from_an_empty_directory(self):
         selection = load(self.existent_directory)
 
-        EXPECTED_SELECTION = ColorPaletteSelection()
+        EXPECTED_SELECTION = Selection()
 
         self.assertEqual(selection, EXPECTED_SELECTION)
 
     def test_save_and_load_empty_selection(self):
-        selection_1 = ColorPaletteSelection()
+        selection_1 = Selection()
 
         save(selection_1, self.existent_directory)
 
@@ -80,7 +81,7 @@ class TestSaveAndLoadColorPaletteSelection(fake_filesystem_unittest.TestCase):
         self.assertEqual(self.color_palette_selection, loaded_selection)
 
     def test_save_and_laod_selection_with_non_default_selected_palette(self):
-        self.color_palette_selection.selected_name = self.NON_SELECTED_NAME
+        self.color_palette_selection.selected_key = self.NON_SELECTED_NAME
 
         save(self.color_palette_selection, self.existent_directory)
 
