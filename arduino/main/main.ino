@@ -33,7 +33,7 @@ void setup() {
     led_strip.begin();
     led_strip.show();
 
-    setup_group_indices_to_led_ranges();
+    setup_strip_groups();
 }
 
 
@@ -63,16 +63,16 @@ void on_end_of_message(uint8* packets, unsigned int number_of_packets) {
 }
 
 
-void setup_group_indices_to_led_ranges() {
+void setup_strip_groups() {
     uint8 number_of_groups = read_serial();
     strip_groups = new StripGroups(number_of_groups);
 
     for (uint8 group_number = 0; group_number < strip_groups->get_number_of_groups(); group_number++) {
-        uint8 start_led_high_order_byte = read_serial();
         uint8 start_led_low_order_byte = read_serial();
+        uint8 start_led_high_order_byte = read_serial();
 
-        uint8 end_led_high_order_byte = read_serial();
         uint8 end_led_low_order_byte = read_serial();
+        uint8 end_led_high_order_byte = read_serial();
 
         uint16 start_led = uint8_to_uint16(start_led_high_order_byte, start_led_low_order_byte);
         uint16 end_led = uint8_to_uint16(end_led_high_order_byte, end_led_low_order_byte);

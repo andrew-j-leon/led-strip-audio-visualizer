@@ -52,7 +52,7 @@ class ProductionSerial(Serial):
         if (len(number_of_leds) != NUMBER_OF_BYTES):
             raise ValueError(f'ProductionSerial expected {NUMBER_OF_BYTES} bytes from the serial connection (representing the number of leds in the led strip), but instead received {len(number_of_leds)} bytes.')
 
-        self.__number_of_leds = int.from_bytes(number_of_leds, byteorder="big")
+        self.__number_of_leds = int.from_bytes(number_of_leds, byteorder="little")
 
     @property
     def number_of_bytes_in_buffer(self) -> int:

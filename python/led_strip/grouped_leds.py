@@ -192,6 +192,7 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
 
 START_OF_MESSAGE_CODE = 0xFE
 END_OF_MESSAGE_CODE = 0xFF
+BYTE_ORDER = 'little'
 
 
 class SerialGroupedLeds(ProductionGroupedLeds):
@@ -215,12 +216,12 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         self.__configure_serial()
 
     def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        self.__send_bytes(START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder="big"))
-        self.__send_bytes(len(group_rgbs).to_bytes(1, "big"))
+        self.__send_bytes(START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(len(group_rgbs).to_bytes(1, BYTE_ORDER))
 
         super().set_group_rgbs(group_rgbs)
 
-        self.__send_bytes(END_OF_MESSAGE_CODE.to_bytes(1, "big"))
+        self.__send_bytes(END_OF_MESSAGE_CODE.to_bytes(1, BYTE_ORDER))
 
     def _set_group_rgbs(self, group: int, rgb: RGB):
         self.__send_packet(group, rgb)
@@ -228,27 +229,27 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         super()._set_group_rgbs(group, rgb)
 
     def __configure_serial(self):
-        self.__send_bytes(self.__brightness.to_bytes(length=1, byteorder="big"))
-        self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder="big"))
+        self.__send_bytes(self.__brightness.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder=BYTE_ORDER))
 
         # send group led ranges
         for group in range(self.number_of_groups):
             start, end = self.get_group_led_range(group)
 
-            packet = (start.to_bytes(length=2, byteorder="big")
-                      + end.to_bytes(length=2, byteorder="big"))
+            packet = (start.to_bytes(length=2, byteorder=BYTE_ORDER)
+                      + end.to_bytes(length=2, byteorder=BYTE_ORDER))
 
             self.__send_bytes(packet)
 
     def __send_packet(self, group_index: int, rgb: RGB):
-        packet = group_index.to_bytes(length=1, byteorder="big")
-        packet += rgb.red.to_bytes(1, "big")
-        packet += rgb.green.to_bytes(1, "big")
-        packet += rgb.blue.to_bytes(1, "big")
+        packet = group_index.to_bytes(length=1, byteorder=BYTE_ORDER)
+        packet += rgb.red.to_bytes(1, BYTE_ORDER)
+        packet += rgb.green.to_bytes(1, BYTE_ORDER)
+        packet += rgb.blue.to_bytes(1, BYTE_ORDER)
 
         self.__send_bytes(packet)
 
-        check_sum = (sum(packet) % 256).to_bytes(length=1, byteorder="big")
+        check_sum = (sum(packet) % 256).to_bytes(length=1, byteorder=BYTE_ORDER)
 
         self.__send_bytes(check_sum)
 
@@ -268,5 +269,5 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         '''
         echo = bytes()
         while (echo == bytes()):
-            self.__serial.write(byte_.to_bytes(length=1, byteorder="big"))
+            self.__serial.write(byte_.to_bytes(length=1, byteorder=BYTE_ORDER))
             echo = self.__serial.read(1)

@@ -25,7 +25,7 @@ class TestOpen(SerialTestCase):
     def test_open_and_connection_succeeded(self):
         NUMBER_OF_LEDS = 100
         NUMBER_OF_BYTES = 2
-        BYTE_ORDER = 'big'
+        BYTE_ORDER = 'little'
 
         self.serial_instance_mock.read.return_value = NUMBER_OF_LEDS.to_bytes(NUMBER_OF_BYTES, BYTE_ORDER)
 
@@ -77,7 +77,7 @@ class TestProductionSerialWhenConnectionIsOpen(SerialTestCase):
         super().setUp()
 
         NUMBER_OF_BYTES = 2
-        BYTE_ORDER = 'big'
+        BYTE_ORDER = 'little'
         self.serial_instance_mock.read.return_value = self.NUMBER_OF_LEDS.to_bytes(NUMBER_OF_BYTES, BYTE_ORDER)
 
         self.production_serial.open(self.PORT, self.BAUD_RATE, PARITY_NONE, STOPBITS_ONE_POINT_FIVE,
