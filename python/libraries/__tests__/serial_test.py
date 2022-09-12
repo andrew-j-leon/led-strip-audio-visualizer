@@ -44,10 +44,6 @@ class TestOpen(SerialTestCase):
 
 
 class TestProductionSerialWhenConnectionIsClosed(SerialTestCase):
-    def test_number_of_bytes_in_buffer(self):
-        with self.assertRaises(ValueError):
-            self.production_serial.number_of_bytes_in_buffer
-
     def test_number_of_leds(self):
         with self.assertRaises(ValueError):
             self.production_serial.number_of_leds
@@ -84,13 +80,6 @@ class TestProductionSerialWhenConnectionIsOpen(SerialTestCase):
                                     EIGHTBITS, self.READ_TIMEOUT, self.WRITE_TIMEOUT)
 
         self.serial_instance_mock.read.reset_mock()
-
-    def test_number_of_bytes_in_buffer(self):
-        NUMBER_OF_BYTES_IN_BUFFER = 5
-
-        self.serial_instance_mock.in_waiting = NUMBER_OF_BYTES_IN_BUFFER
-
-        self.assertEqual(self.production_serial.number_of_bytes_in_buffer, NUMBER_OF_BYTES_IN_BUFFER)
 
     def test_number_of_leds(self):
         ACTUAL_NUMBER_OF_LEDS = self.production_serial.number_of_leds

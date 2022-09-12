@@ -13,7 +13,7 @@ from selection import Selection, save
 from util import rgb_to_hex
 
 
-class SaveColorPaletteSelection:
+class SaveSelection:
     def __init__(self, save_directory: Path):
         self.number_of_calls = 0
         self.__save_directory = save_directory
@@ -129,7 +129,7 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
         self.save_directory = Path('save_directory')
         self.save_directory.mkdir()
 
-        self.save = SaveColorPaletteSelection(self.save_directory)
+        self.save = SaveSelection(self.save_directory)
 
         self.color_palette_controller = ColorPaletteController(create_gui, self.save,
                                                                self.color_palette_selection)
@@ -137,7 +137,7 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(str(self.save_directory), ignore_errors=True)
 
-    def clear_color_palette_selection(self):
+    def clear_selection(self):
         NAMES = list(self.color_palette_selection.keys())
 
         for name in NAMES:
@@ -149,15 +149,15 @@ class ColorPaletteControllerTestCase(fake_filesystem_unittest.TestCase):
             WIDGET = widget_gui.get_widget(element)
             return WIDGET.value
 
-        # Check the combo
-        NAME_COMBO: Combo = widget_gui.get_widget(Element.NAME_COMBO)
+        # Check the save names combo
+        SAVE_NAME_COMBO: Combo = widget_gui.get_widget(Element.SAVE_NAME_COMBO)
 
         EXPECTED_NAMES = list(color_palette_selection.keys())
-        self.assertEqual(EXPECTED_NAMES, NAME_COMBO.values)
+        self.assertEqual(EXPECTED_NAMES, SAVE_NAME_COMBO.values)
 
-        self.assertEqual(color_palette_selection.selected_key, NAME_COMBO.value)
+        self.assertEqual(color_palette_selection.selected_key, SAVE_NAME_COMBO.value)
 
-        # Check the colors of the selected color palette
+        # Check ColorPalette inputs
         SELECTED_COLOR_PALETTE = color_palette_selection.selected_value
 
         NUMBER_OF_COLORS = 5
@@ -228,57 +228,57 @@ class TestReadEventAndUpdateGui(DisplayedColorPaletteControllerTestCase):
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
                          EXPECTED_NUMBER_OF_CALLS)
 
-    def test_select_current_color_palette_name_event(self):
+    def test_select_current_save_event(self):
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
         EVENT = self.color_palette_controller.read_event_and_update_gui()
 
-        self.assertEqual(Event.SELECT_CURRENT_COLOR_PALETTE_NAME, EVENT)
+        self.assertEqual(Event.SELECT_CURRENT_SAVE, EVENT)
 
         EXPECTED_NUMBER_OF_CALLS = 1
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
                          EXPECTED_NUMBER_OF_CALLS)
 
-    def test_select_non_current_color_palette_name_event(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.value = self.NON_CURRENT_COLOR_PALETTE_NAME
+    def test_select_non_current_save_event(self):
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.value = self.NON_CURRENT_COLOR_PALETTE_NAME
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
         EVENT = self.color_palette_controller.read_event_and_update_gui()
 
-        self.assertEqual(Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME, EVENT)
+        self.assertEqual(Event.SELECT_NON_CURRENT_SAVE, EVENT)
 
         EXPECTED_NUMBER_OF_CALLS = 1
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
                          EXPECTED_NUMBER_OF_CALLS)
 
-    def test_delete_color_palette_name_event(self):
-        self.clear_color_palette_selection()
+    def test_delete_save_name_event(self):
+        self.clear_selection()
 
-        NEW_NAME_COMBO = Combo(Element.NAME_COMBO)
+        NEW_NAME_COMBO = Combo(Element.SAVE_NAME_COMBO)
         self.widget_gui.update_widget(NEW_NAME_COMBO)
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
         EVENT = self.color_palette_controller.read_event_and_update_gui()
 
-        self.assertEqual(Event.DELETE_COLOR_PALETTE_NAME, EVENT)
+        self.assertEqual(Event.DELETE_SAVE_NAME, EVENT)
 
         EXPECTED_NUMBER_OF_CALLS = 1
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
                          EXPECTED_NUMBER_OF_CALLS)
 
     def test_new_color_palette_name_event(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
-        NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
+        SAVE_NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
         self.widget_gui.event = WidgetGuiEvent.TIMEOUT
 
         EVENT = self.color_palette_controller.read_event_and_update_gui()
 
-        self.assertEqual(Event.ENTER_NEW_COLOR_PALETTE_NAME, EVENT)
+        self.assertEqual(Event.ENTER_NEW_SAVE_NAME, EVENT)
 
         EXPECTED_NUMBER_OF_CALLS = 1
         self.assertEqual(self.widget_gui.number_of_read_event_and_update_gui_calls,
@@ -287,17 +287,15 @@ class TestReadEventAndUpdateGui(DisplayedColorPaletteControllerTestCase):
 
 class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
     def test_save_new_color_palette(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
-        NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
+        SAVE_NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
         self.color_palette_controller.handle_event(Element.SAVE_BUTTON)
 
-        EXPECTED_NEW_COLOR_PALETTE = ColorPalette(self.current_color_palette.amplitude_rgbs)
-
         EXPECTED_COLOR_PALETTES = {self.CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
                                    self.NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette,
-                                   self.NON_EXISTENT_COLOR_PALETTE_NAME: EXPECTED_NEW_COLOR_PALETTE}
+                                   self.NON_EXISTENT_COLOR_PALETTE_NAME: self.current_color_palette}
         EXPECTED_COLOR_PALETTE_SELECTION = Selection(EXPECTED_COLOR_PALETTES)
         EXPECTED_COLOR_PALETTE_SELECTION.selected_key = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
@@ -358,9 +356,9 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertEqual(self.save.number_of_calls, EXPECTED_NUMBER_OF_SAVES)
 
     def test_delete_non_existent_color_palette_name(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
-        NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
+        SAVE_NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
         with self.assertRaises(ValueError):
             self.color_palette_controller.handle_event(Element.DELETE_BUTTON)
@@ -373,8 +371,8 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
     def test_delete_existent_color_palette_name(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.value = self.CURRENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.value = self.CURRENT_COLOR_PALETTE_NAME
 
         self.color_palette_controller.handle_event(Element.DELETE_BUTTON)
 
@@ -383,16 +381,11 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
 
         self.assertEqual(self.color_palette_selection, EXPECTED_COLOR_PALETTE_SELECTION)
 
-    def test_close_window(self):
-        self.color_palette_controller.handle_event(WidgetGuiEvent.CLOSE_WINDOW)
-
-        self.assertFalse(self.widget_gui.open)
-
     def test_select_current_color_palette_name(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.value = self.CURRENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.value = self.CURRENT_COLOR_PALETTE_NAME
 
-        self.color_palette_controller.handle_event(Event.SELECT_CURRENT_COLOR_PALETTE_NAME)
+        self.color_palette_controller.handle_event(Event.SELECT_CURRENT_SAVE)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
@@ -404,10 +397,10 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.check_widget_gui_matches_color_palette_selection(self.widget_gui, self.color_palette_selection)
 
     def test_select_non_current_color_palette_name(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.value = self.NON_CURRENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.value = self.NON_CURRENT_COLOR_PALETTE_NAME
 
-        self.color_palette_controller.handle_event(Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME)
+        self.color_palette_controller.handle_event(Event.SELECT_NON_CURRENT_SAVE)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
@@ -419,15 +412,15 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.check_widget_gui_matches_color_palette_selection(self.widget_gui, self.color_palette_selection)
 
     def test_select_non_current_color_palette_name_when_combo_name_not_in_color_palette_selection(self):
-        NAME_COMBO: Combo = self.widget_gui.get_widget(Element.NAME_COMBO)
-        NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
-        NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
+        SAVE_NAME_COMBO: Combo = self.widget_gui.get_widget(Element.SAVE_NAME_COMBO)
+        SAVE_NAME_COMBO.add_value(self.NON_EXISTENT_COLOR_PALETTE_NAME)
+        SAVE_NAME_COMBO.value = self.NON_EXISTENT_COLOR_PALETTE_NAME
 
         with self.assertRaises(ValueError):
-            self.color_palette_controller.handle_event(Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME)
+            self.color_palette_controller.handle_event(Event.SELECT_NON_CURRENT_SAVE)
 
     def test_delete_color_palette_name(self):
-        self.color_palette_controller.handle_event(Event.DELETE_COLOR_PALETTE_NAME)
+        self.color_palette_controller.handle_event(Event.DELETE_SAVE_NAME)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
@@ -436,13 +429,18 @@ class TestHandleEvent(DisplayedColorPaletteControllerTestCase):
         self.assertFalse(DELETE_BUTTON.enabled)
 
     def test_enter_new_color_palette_name(self):
-        self.color_palette_controller.handle_event(Event.ENTER_NEW_COLOR_PALETTE_NAME)
+        self.color_palette_controller.handle_event(Event.ENTER_NEW_SAVE_NAME)
 
         SAVE_BUTTON: Button = self.widget_gui.get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON: Button = self.widget_gui.get_widget(Element.DELETE_BUTTON)
 
         self.assertTrue(SAVE_BUTTON.enabled)
         self.assertFalse(DELETE_BUTTON.enabled)
+
+    def test_close_window(self):
+        self.color_palette_controller.handle_event(WidgetGuiEvent.CLOSE_WINDOW)
+
+        self.assertFalse(self.widget_gui.open)
 
     def test_unrecognized_event(self):
         EVENT = 'unrecognized event'

@@ -12,8 +12,6 @@ from libraries.serial import ProductionSerial, Serial
 from libraries.widget_gui import ProductionWidgetGui, WidgetGui
 from selection import Selection, load, save
 from settings import Settings
-from settings import load as load_settings
-from settings import save as save_settings
 from spectrogram import ProductionSpectrogram, Spectrogram
 
 
@@ -48,15 +46,15 @@ if __name__ == '__main__':
     SETTINGS_SAVE_DIRECTORY = Path('./saves/settings')
     COLOR_PALETTE_SELECTION_SAVE_DIRECTORY = Path('./saves/color_palettes')
 
-    settings = Settings()
+    settings_selection: Selection[Settings] = Selection()
 
     try:
-        settings = load_settings(SETTINGS_SAVE_DIRECTORY)
+        settings_selection = load(SETTINGS_SAVE_DIRECTORY, Settings)
 
     except FileNotFoundError:
         SETTINGS_SAVE_DIRECTORY.mkdir(parents=True)
 
-    color_palette_selection = Selection()
+    color_palette_selection: Selection[ColorPalette] = Selection()
 
     try:
         color_palette_selection = load(COLOR_PALETTE_SELECTION_SAVE_DIRECTORY, ColorPalette)
@@ -64,11 +62,11 @@ if __name__ == '__main__':
     except FileNotFoundError:
         COLOR_PALETTE_SELECTION_SAVE_DIRECTORY.mkdir(parents=True)
 
-    def create_settings_controller(settings: Settings) -> SettingsController:
-        def save_settings_to_file(settings: Settings):
-            save_settings(settings, SETTINGS_SAVE_DIRECTORY)
+    def create_settings_controller(settings_selection: Selection[Settings]) -> SettingsController:
+        def save_settings_to_file(settings_selection: Selection[Settings]):
+            save(settings_selection, SETTINGS_SAVE_DIRECTORY)
 
-        return SettingsController(create_widget_gui, save_settings_to_file, settings)
+        return SettingsController(create_widget_gui, save_settings_to_file, settings_selection)
 
     def create_color_palette_controller(color_palette_selection: Selection[ColorPalette]) -> ColorPaletteController:
         def save_color_palette_selection_to_file(color_palette_selection: Selection[ColorPalette]):
@@ -78,7 +76,7 @@ if __name__ == '__main__':
 
     # Passing in an object's dependencies rather than having said object
     # construct its own dependencies is known as "Dependency Injection"
-    with closing(AudioInController(create_settings_controller, settings,
+    with closing(AudioInController(create_settings_controller, settings_selection,
                                    create_color_palette_controller, color_palette_selection,
                                    create_widget_gui, create_canvas_gui,
                                    create_serial, create_audio_in_stream,

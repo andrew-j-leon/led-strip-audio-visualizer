@@ -129,7 +129,7 @@ def load(directory: Path, jsonable_class: Type[Jsonable]) -> Selection[Jsonable]
 
     FILE_FOR_SELECTED_KEY = directory.joinpath('.selected_key')
 
-    if (FILE_FOR_SELECTED_KEY.is_file()):
+    if (FILE_FOR_SELECTED_KEY.is_file() and len(SELECTION) > 0):
         with FILE_FOR_SELECTED_KEY.open('r') as file:
 
             SELECTED_KEY = file.read().strip()
@@ -139,44 +139,43 @@ def load(directory: Path, jsonable_class: Type[Jsonable]) -> Selection[Jsonable]
 
 
 def save(selection: Selection[Jsonable], directory: Path):
-    if (len(selection) == 0):
-        _clear_directory(directory)
-
-    else:
+    try:
         temporary_save_directory = directory.joinpath('.temporary_save_directory')
+        temporary_save_directory.mkdir(exist_ok=True)
 
-        try:
-            temporary_save_directory.mkdir(exist_ok=True)
+        for key, value in selection.items():
+            save_file = temporary_save_directory.joinpath(key)
 
-            for key, value in selection.items():
-                save_file = temporary_save_directory.joinpath(key)
+            with save_file.open('w') as file:
+                json.dump(value.to_json(), file, indent=4)
 
-                with save_file.open('w') as file:
-                    json.dump(value.to_json(), file, indent=4)
+        FILE_FOR_SELECTED_KEY = temporary_save_directory.joinpath('.selected_key')
 
-            FILE_FOR_SELECTED_KEY = temporary_save_directory.joinpath('.selected_key')
-
-            with FILE_FOR_SELECTED_KEY.open('w') as file:
+        with FILE_FOR_SELECTED_KEY.open('w') as file:
+            try:
                 file.write(selection.selected_key)
 
-            _clear_directory(directory)
+            except AttributeError:
+                pass
 
-            for save_file in temporary_save_directory.iterdir():
-                new_save_file = directory.joinpath(save_file.name)
-                save_file.rename(new_save_file)
+        _clear_directory(directory)
 
-        except FileNotFoundError:
-            raise FileNotFoundError(f'The directory {directory} does not exist.')
+        for save_file in temporary_save_directory.iterdir():
+            new_save_file = directory.joinpath(save_file.name)
+            save_file.rename(new_save_file)
 
-        except NotADirectoryError:
-            raise NotADirectoryError(f'The pathname {directory} points to a file, not a directory.')
+    except FileNotFoundError:
+        raise FileNotFoundError(f'The directory {directory} does not exist.')
 
-        except PermissionError:
-            raise PermissionError('The current user does not have the '
-                                  f'permissions to save to the directory {directory}.')
+    except NotADirectoryError:
+        raise NotADirectoryError(f'The pathname {directory} points to a file, not a directory.')
 
-        finally:
-            shutil.rmtree(str(temporary_save_directory), ignore_errors=True)
+    except PermissionError:
+        raise PermissionError('The current user does not have the '
+                              f'permissions to save to the directory {directory}.')
+
+    finally:
+        shutil.rmtree(str(temporary_save_directory), ignore_errors=True)
 
 
 def _clear_directory(directory: Path):

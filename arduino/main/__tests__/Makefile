@@ -4,4 +4,7 @@ default:
 	-lgtest -lgtest_main -o main_test
 
 test:
-	make && ./main_test
+	make && ./main_test && make clean
+
+clean:
+	rm ./main_test

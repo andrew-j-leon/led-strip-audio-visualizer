@@ -1,70 +1,16 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
-
-def load(directory: Path) -> Settings:
-    settings_file = directory.joinpath('settings')
-
-    try:
-        with settings_file.open('r') as file:
-            settings = json.load(file)
-            return Settings(**settings)
-
-    except FileNotFoundError:
-        if (directory.is_file()):
-            raise NotADirectoryError(f'The path {directory} points to a file, not a directory.')
-
-        elif (directory.is_dir()):
-            raise ValueError(f'There was no saved Settings in the directory {directory}.')
-
-        raise FileNotFoundError(f'The directory {directory} does not exist.')
+from util import Jsonable
 
 
-def save(settings: Settings, directory: Path):
-    SETTINGS_JSON = dict(start_led=settings.start_led,
-                         end_led=settings.end_led,
-                         milliseconds_per_audio_chunk=settings.milliseconds_per_audio_chunk,
-                         serial_port=settings.serial_port,
-                         serial_baudrate=settings.serial_baudrate,
-                         brightness=settings.brightness,
-                         minimum_frequency=settings.minimum_frequency,
-                         maximum_frequency=settings.maximum_frequency,
-                         should_reverse_leds=settings.should_reverse_leds,
-                         number_of_groups=settings.number_of_groups)
-
-    TEMPORARY_SAVE_FILE = directory.joinpath('temp')
-
-    try:
-        with TEMPORARY_SAVE_FILE.open('w') as file:
-            json.dump(SETTINGS_JSON, file, indent=4)
-
-        SAVE_FILE = directory.joinpath('settings')
-
-        if (SAVE_FILE.is_file()):
-            SAVE_FILE.unlink()
-
-        TEMPORARY_SAVE_FILE.rename(SAVE_FILE)
-
-    except NotADirectoryError:
-        raise NotADirectoryError(f'The path {directory} points to a file, not a directory.')
-
-    except FileNotFoundError:
-        raise FileNotFoundError(f'The directory {directory} does not exist.')
-
-    except PermissionError:
-        raise PermissionError('The current user does not have the permissions '
-                              f'to save in the directory {directory}.')
-
-
-class Settings:
+class Settings(Jsonable):
     SERIAL_BAUDRATES = [1000000, 500000, 115200, 57600, 38400, 31250, 28800, 19200, 14400,
                         9600, 4800, 2400, 1200, 600, 300]
 
     def __init__(self, start_led: int = 0, end_led: int = 0, milliseconds_per_audio_chunk: int = 50,
-                 serial_port: str = '', serial_baudrate: int = 115200, brightness: int = 0,
+                 serial_port: str = '', serial_baudrate: int = 1000000, brightness: int = 0,
                  minimum_frequency: int = 0, maximum_frequency: int = 0, should_reverse_leds: bool = False,
                  number_of_groups: int = 0):
 
@@ -101,6 +47,14 @@ class Settings:
                     and self.number_of_groups == other.number_of_groups)
 
         return False
+
+    def to_json(self):
+        return {'start_led': self.start_led, 'end_led': self.end_led,
+                'milliseconds_per_audio_chunk': self.milliseconds_per_audio_chunk,
+                'serial_port': self.serial_port, 'serial_baudrate': self.serial_baudrate,
+                'brightness': self.brightness, 'minimum_frequency': self.minimum_frequency,
+                'maximum_frequency': self.maximum_frequency,
+                'should_reverse_leds': self.should_reverse_leds, 'number_of_groups': self.number_of_groups}
 
     @property
     def start_led(self) -> int:

@@ -12,11 +12,6 @@ FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5, 6, 7, 8)
 class Serial(ABC):
     @property
     @abstractmethod
-    def number_of_bytes_in_buffer(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
     def number_of_leds(self) -> int:
         pass
 
@@ -55,15 +50,6 @@ class ProductionSerial(Serial):
         self.__number_of_leds = int.from_bytes(number_of_leds, byteorder="little")
 
     @property
-    def number_of_bytes_in_buffer(self) -> int:
-        try:
-            return self.__serial.in_waiting
-
-        except (AttributeError, SerialException):
-            raise ValueError('No Serial connection is established. Did you remember to call '
-                             'open? Did you call close, but never called open after?')
-
-    @property
     def number_of_leds(self) -> int:
         try:
             return self.__number_of_leds
@@ -100,10 +86,6 @@ class FakeSerial(Serial):
     def __init__(self, number_of_leds: int = 300):
         self.__number_of_leds = number_of_leds
         self.opened = False
-
-    @property
-    def number_of_bytes_in_buffer(self) -> int:
-        return 1
 
     @property
     def number_of_leds(self) -> int:

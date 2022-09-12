@@ -51,9 +51,8 @@ void PacketState::update_state(uint8 byte, void (*on_end_of_message)(uint8*, uns
     } else if (state == END_OF_MESSAGE_STATE) {
         if (byte == END_OF_MESSAGE_CODE) {
             on_end_of_message(packets, packets_expected);
+            state = START_OF_MESSAGE_STATE;
         }
-
-        state = START_OF_MESSAGE_STATE;
     }
 }
 

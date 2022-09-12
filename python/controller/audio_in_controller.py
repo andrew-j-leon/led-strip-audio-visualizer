@@ -49,7 +49,8 @@ class LedStripType:
 
 
 class AudioInController(Controller):
-    def __init__(self, create_settings_controller: Callable[[Settings], RunnableResource], settings: Settings,
+    def __init__(self, create_settings_controller: Callable[[Selection[Settings]], RunnableResource],
+                 settings_selection: Selection[Settings],
                  create_color_palette_controller: Callable[[Selection[ColorPalette]], RunnableResource],
                  color_palette_selection: Selection[ColorPalette],
                  create_widget_gui: Callable[[], WidgetGui], create_canvas_gui: Callable[[], CanvasGui],
@@ -59,10 +60,10 @@ class AudioInController(Controller):
         self.__gui = create_widget_gui()
         self.__gui.title = 'Audio In Music Visualizer'
 
-        self.__settings = settings
+        self.__settings_selection = settings_selection
         self.__color_palette_selection = color_palette_selection
 
-        self.__settings_controller = create_settings_controller(self.__settings)
+        self.__settings_controller = create_settings_controller(self.__settings_selection)
         self.__color_palette_controller = create_color_palette_controller(self.__color_palette_selection)
         self.__led_strip = create_led_strip()
         self.__spectrogram = create_spectrogram()
@@ -72,6 +73,14 @@ class AudioInController(Controller):
         self.__audio_in_stream = create_audio_in_stream()
 
         self.__timed_circular_palette_queue = TimedCircularQueue(self.__color_palette_selection.values())
+
+    @property
+    def __settings(self) -> Settings:
+        try:
+            return self.__settings_selection.selected_value
+
+        except AttributeError:
+            return Settings()
 
     def close(self):
         self.__settings_controller.close()

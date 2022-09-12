@@ -192,6 +192,17 @@ TEST_F(PacketStateTest, NumberOfPackets_to_EndOfMessage) {
     EXPECT_FALSE(on_EOM_was_called);
 }
 
+TEST_F(PacketStateTest, EndOfMessage_to_StartOfMessage) {
+    update_state(START_OF_MESSAGE_CODE);
+
+    const uint8 NUMBER_OF_PACKETS = 0x00;
+    update_state(NUMBER_OF_PACKETS);
+    update_state(END_OF_MESSAGE_CODE);
+
+    EXPECT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+    EXPECT_TRUE(on_EOM_was_called);
+}
+
 TEST_F(PacketStateTest, OnePacket) {
     uint8 NUMBER_OF_PACKETS = 1;
     go_to_packet_state(NUMBER_OF_PACKETS);
@@ -272,6 +283,7 @@ TEST_F(PacketStateTest, InvalidEndOfMessageCode) {
 
     update_state(START_OF_MESSAGE_CODE);
     EXPECT_FALSE(on_EOM_was_called);
+    EXPECT_EQ(packet_state.get_state(), END_OF_MESSAGE_STATE);
 }
 
 TEST_F(PacketStateTest, TwoCompleteStateTransitions) {

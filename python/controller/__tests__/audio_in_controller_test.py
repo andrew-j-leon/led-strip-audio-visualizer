@@ -149,8 +149,8 @@ class AudioInControllerTestCase(TestCase):
                             + [RGB_B1] * RGB_B1_COUNT
                             + [RGB_B2] * RGB_B2_COUNT)
 
-        CURRENT_COLOR_PALETTE_NAME = 'color_palette_A'
-        NON_CURRENT_COLOR_PALETTE_NAME = 'color_palette_B'
+        CURRENT_COLOR_PALETTE_NAME = 'current_color_palette'
+        NON_CURRENT_COLOR_PALETTE_NAME = 'non_current_color_palette'
 
         self.current_color_palette = ColorPalette(AMPLITUDE_RGBS_A)
         self.non_current_color_palette = ColorPalette(AMPLITUDE_RGBS_B)
@@ -158,21 +158,43 @@ class AudioInControllerTestCase(TestCase):
         COLOR_PALETTES = {CURRENT_COLOR_PALETTE_NAME: self.current_color_palette,
                           NON_CURRENT_COLOR_PALETTE_NAME: self.non_current_color_palette}
 
-        START_LED = 0
-        END_LED = 300
-        MILLISECONDS_PER_AUDIO_CHUNK = 50
-        SERIAL_PORT = '/dev/ttyACM0'
-        SERIAL_BAUDRATE = 1000000
-        BRIGHTNESS = 20
-        START_FREQUENCY = 0
-        END_FREQUENCY = 2000
-        SHOULD_REVERSE_LEDS = True
-        NUMBER_OF_GROUPS = 60
+        CURRENT_SETTINGS_NAME = 'current_settings'
+        START_LED_A = 0
+        END_LED_A = 300
+        MILLISECONDS_PER_AUDIO_CHUNK_A = 50
+        SERIAL_PORT_A = '/dev/ttyACM0'
+        SERIAL_BAUDRATE_A = 1000000
+        BRIGHTNESS_A = 20
+        START_FREQUENCY_A = 0
+        END_FREQUENCY_A = 2000
+        SHOULD_REVERSE_LEDS_A = True
+        NUMBER_OF_GROUPS_A = 60
+
+        NON_CURRENT_SETTINGS_NAME = 'non_current_settings'
+        START_LED_B = 60
+        END_LED_B = 600
+        MILLISECONDS_PER_AUDIO_CHUNK_B = 55
+        SERIAL_PORT_B = 'COM2'
+        SERIAL_BAUDRATE_B = Settings.SERIAL_BAUDRATES[1]
+        BRIGHTNESS_B = 50
+        MINIMUM_FREQUENCY_B = 20
+        MAXIMUM_FREQUENCY_B = 2000
+        SHOULD_REVERSE_LEDS_B = True
+        NUMBER_OF_GROUPS_B = 50
 
         self.settings_controller = FakeRunnableResource()
-        self.settings = Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT,
-                                 SERIAL_BAUDRATE, BRIGHTNESS, START_FREQUENCY, END_FREQUENCY,
-                                 SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS)
+        self.current_settings = Settings(START_LED_A, END_LED_A, MILLISECONDS_PER_AUDIO_CHUNK_A, SERIAL_PORT_A,
+                                         SERIAL_BAUDRATE_A, BRIGHTNESS_A, START_FREQUENCY_A, END_FREQUENCY_A,
+                                         SHOULD_REVERSE_LEDS_A, NUMBER_OF_GROUPS_A)
+        self.non_current_settings = Settings(START_LED_B, END_LED_B, MILLISECONDS_PER_AUDIO_CHUNK_B, SERIAL_PORT_B,
+                                             SERIAL_BAUDRATE_B, BRIGHTNESS_B, MINIMUM_FREQUENCY_B, MAXIMUM_FREQUENCY_B,
+                                             SHOULD_REVERSE_LEDS_B, NUMBER_OF_GROUPS_B)
+
+        SETTINGS = {CURRENT_SETTINGS_NAME: self.current_settings,
+                    NON_CURRENT_SETTINGS_NAME: self.non_current_settings}
+
+        self.settings_selection = Selection(SETTINGS)
+
         self.color_palette_controller = FakeRunnableResource()
         self.color_palette_selection = Selection(COLOR_PALETTES)
         self.widget_gui = FakeWidgetGui()
@@ -206,7 +228,7 @@ class AudioInControllerTestCase(TestCase):
         def create_spectrogram():
             return self.spectrogram
 
-        self.audio_in_controller = AudioInController(create_settings_controller, self.settings,
+        self.audio_in_controller = AudioInController(create_settings_controller, self.settings_selection,
                                                      create_color_palette_controller, self.color_palette_selection,
                                                      create_widget_gui, create_canvas_gui, create_serial,
                                                      create_audio_in_stream, create_led_strip, create_spectrogram)
@@ -343,7 +365,7 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         MILLISECONDS_PER_SECOND = 1000
         FRAMES_PER_MILLISECOND = self.audio_in_stream.sample_rate / MILLISECONDS_PER_SECOND
-        NUMBER_OF_FRAMES = int(FRAMES_PER_MILLISECOND * self.settings.milliseconds_per_audio_chunk)
+        NUMBER_OF_FRAMES = int(FRAMES_PER_MILLISECOND * self.settings_selection.selected_value.milliseconds_per_audio_chunk)
         self.assertEqual(self.spectrogram.number_of_frames, NUMBER_OF_FRAMES)
 
         self.assertEqual(self.spectrogram.sampling_rate, self.audio_in_stream.sample_rate)
@@ -357,7 +379,7 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
 
-        self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.color_palette_selection.selected_value.amplitude_rgbs)
 
         self.audio_in_controller.handle_event(Event.PLAYING)
         self.assertEqual(self.spectrogram.amplitude_rgbs, self.non_current_color_palette.amplitude_rgbs)
@@ -372,11 +394,11 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
         self.audio_in_controller.handle_event(Event.PLAYING)
 
-        self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.color_palette_selection.selected_value.amplitude_rgbs)
 
         self.audio_in_controller.handle_event(Event.PLAYING)
 
-        self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.color_palette_selection.selected_value.amplitude_rgbs)
 
     def test_color_palette_does_not_shuffle_because_there_are_no_color_palettes(self):
         SECONDS_PER_COLOR_PALETTE_INPUT: Input = self.get_widget(Element.SECONDS_PER_COLOR_PALETTE_INPUT)
@@ -428,7 +450,7 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
     def test_next_color_palette_button(self):
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
 
-        self.assertEqual(self.spectrogram.amplitude_rgbs, self.current_color_palette.amplitude_rgbs)
+        self.assertEqual(self.spectrogram.amplitude_rgbs, self.color_palette_selection.selected_value.amplitude_rgbs)
 
         self.audio_in_controller.handle_event(Element.NEXT_COLOR_PALETTE_BUTTON)
 
@@ -450,9 +472,9 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         self.assertTrue(self.audio_in_stream.opened)
 
-        self.check_spectrogram(self.current_color_palette.amplitude_rgbs,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+        self.check_spectrogram(self.color_palette_selection.selected_value.amplitude_rgbs,
+                               self.current_settings.minimum_frequency,
+                               self.current_settings.maximum_frequency)
 
         self.check_gui_state_after_clicking_play_button()
 
@@ -465,21 +487,21 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         EXPECTED_SPECTROGRAM_AMPLITUDE_RGBS = []
         self.check_spectrogram(EXPECTED_SPECTROGRAM_AMPLITUDE_RGBS,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+                               self.settings_selection.selected_value.minimum_frequency,
+                               self.settings_selection.selected_value.maximum_frequency)
 
         self.check_gui_state_after_clicking_play_button()
 
     def test_play_audio_with_zero_groups(self):
-        self.settings.number_of_groups = 0
+        self.settings_selection.selected_value.number_of_groups = 0
 
         self.audio_in_controller.handle_event(Element.PLAY_AUDIO_BUTTON)
 
         self.assertTrue(self.audio_in_stream.opened)
 
-        self.check_spectrogram(self.current_color_palette.amplitude_rgbs,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+        self.check_spectrogram(self.color_palette_selection.selected_value.amplitude_rgbs,
+                               self.settings_selection.selected_value.minimum_frequency,
+                               self.settings_selection.selected_value.maximum_frequency)
 
         self.check_gui_state_after_clicking_play_button()
 
@@ -491,9 +513,9 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         self.assertTrue(self.audio_in_stream.opened)
 
-        self.check_spectrogram(self.current_color_palette.amplitude_rgbs,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+        self.check_spectrogram(self.color_palette_selection.selected_value.amplitude_rgbs,
+                               self.settings_selection.selected_value.minimum_frequency,
+                               self.settings_selection.selected_value.maximum_frequency)
 
         self.check_gui_state_after_clicking_play_button()
 
@@ -505,9 +527,9 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         self.assertTrue(self.audio_in_stream.opened)
 
-        self.check_spectrogram(self.current_color_palette.amplitude_rgbs,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+        self.check_spectrogram(self.color_palette_selection.selected_value.amplitude_rgbs,
+                               self.settings_selection.selected_value.minimum_frequency,
+                               self.settings_selection.selected_value.maximum_frequency)
 
         self.check_gui_state_after_clicking_play_button()
 
@@ -523,9 +545,9 @@ class TestHandleEvent(DisplayedAudioInControllerTestCase):
 
         self.assertFalse(self.audio_in_stream.opened)
 
-        self.check_spectrogram(self.current_color_palette.amplitude_rgbs,
-                               self.settings.minimum_frequency,
-                               self.settings.maximum_frequency)
+        self.check_spectrogram(self.color_palette_selection.selected_value.amplitude_rgbs,
+                               self.settings_selection.selected_value.minimum_frequency,
+                               self.settings_selection.selected_value.maximum_frequency)
 
         self.check_gui_state_after_clicking_stop_button()
 

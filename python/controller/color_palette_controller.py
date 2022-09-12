@@ -13,10 +13,9 @@ from util import Font, hex_to_rgb, rgb_to_hex
 
 
 class Element(Enum):
+    SAVE_NAME_COMBO = auto()
     SAVE_BUTTON = auto()
     DELETE_BUTTON = auto()
-
-    NAME_COMBO = auto()
 
     DECIBEL_INPUT_0 = auto()
     COLOR_PICKER_0 = auto()
@@ -35,10 +34,10 @@ class Element(Enum):
 
 
 class Event(Enum):
-    SELECT_CURRENT_COLOR_PALETTE_NAME = auto()
-    SELECT_NON_CURRENT_COLOR_PALETTE_NAME = auto()
-    DELETE_COLOR_PALETTE_NAME = auto()
-    ENTER_NEW_COLOR_PALETTE_NAME = auto()
+    SELECT_CURRENT_SAVE = auto()
+    SELECT_NON_CURRENT_SAVE = auto()
+    DELETE_SAVE_NAME = auto()
+    ENTER_NEW_SAVE_NAME = auto()
 
 
 def create_color_palette_gui_values(amplitude_rgbs: List[Tuple[int, int, int]],
@@ -67,13 +66,13 @@ def create_color_palette_gui_values(amplitude_rgbs: List[Tuple[int, int, int]],
 
 class ColorPaletteController(Controller):
     def __init__(self, create_gui: Callable[[], WidgetGui],
-                 save_color_palette_selection: Callable[[Selection[ColorPalette]], None],
-                 color_palette_selection: Selection[ColorPalette] = Selection()):
+                 save_selection: Callable[[Selection[ColorPalette]], None],
+                 selection: Selection[ColorPalette] = Selection()):
         self.__gui = create_gui()
         self.__gui.title = 'Color Palettes'
 
-        self.__save_color_palette_selection_to_file = save_color_palette_selection
-        self.__color_palette_collection = color_palette_selection
+        self.__save_selection = save_selection
+        self.__selection = selection
 
     def close(self):
         self.__gui.close()
@@ -82,37 +81,37 @@ class ColorPaletteController(Controller):
         EVENT = self.__gui.read_event_and_update_gui()
 
         if (EVENT == WidgetGuiEvent.TIMEOUT):
-            SELECTED_NAME = self.__get_selected_name()
+            CURRENT_SAVE_NAME = self.__get_current_save_name()
 
-            if (self.__the_current_name_is_selected(SELECTED_NAME)):
-                return Event.SELECT_CURRENT_COLOR_PALETTE_NAME
+            if (self.__the_current_name_is_selected(CURRENT_SAVE_NAME)):
+                return Event.SELECT_CURRENT_SAVE
 
-            elif (self.__a_non_current_name_is_selected(SELECTED_NAME)):
-                return Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME
+            elif (self.__a_non_current_name_is_selected(CURRENT_SAVE_NAME)):
+                return Event.SELECT_NON_CURRENT_SAVE
 
-            elif (SELECTED_NAME == ''):
-                return Event.DELETE_COLOR_PALETTE_NAME
+            elif (CURRENT_SAVE_NAME == ''):
+                return Event.DELETE_SAVE_NAME
 
-            return Event.ENTER_NEW_COLOR_PALETTE_NAME
+            return Event.ENTER_NEW_SAVE_NAME
 
         return EVENT
 
     def handle_event(self, event: Union[Element, WidgetGuiEvent]):
-        SELECTED_NAME = self.__get_selected_name()
+        CURRENT_SAVE_NAME = self.__get_current_save_name()
 
         if (event == Element.SAVE_BUTTON):
-            self.__save_color_palette()
-            self.__save_color_palette_selection_to_file(self.__color_palette_collection)
+            self.__set_color_palette()
+            self.__save_selection(self.__selection)
             self.__update_widgets()
 
         elif (event == Element.DELETE_BUTTON):
             try:
-                del self.__color_palette_collection[SELECTED_NAME]
-                self.__save_color_palette_selection_to_file(self.__color_palette_collection)
+                del self.__selection[CURRENT_SAVE_NAME]
+                self.__save_selection(self.__selection)
                 self.__update_widgets()
 
             except KeyError:
-                raise ValueError(f'There is no ColorPalette with the name {SELECTED_NAME} to delete.')
+                raise ValueError(f'There is no ColorPalette with the name {CURRENT_SAVE_NAME} to delete.')
 
         elif (event == WidgetGuiEvent.CLOSE_WINDOW):
             self.__gui.close()
@@ -121,28 +120,28 @@ class ColorPaletteController(Controller):
             SAVE_BUTTON: Button = self.__gui.get_widget(Element.SAVE_BUTTON)
             DELETE_BUTTON: Button = self.__gui.get_widget(Element.DELETE_BUTTON)
 
-            if (event == Event.SELECT_CURRENT_COLOR_PALETTE_NAME):
+            if (event == Event.SELECT_CURRENT_SAVE):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = True
 
                 self.__gui.update_widgets(SAVE_BUTTON, DELETE_BUTTON)
 
-            elif (event == Event.SELECT_NON_CURRENT_COLOR_PALETTE_NAME):
+            elif (event == Event.SELECT_NON_CURRENT_SAVE):
                 try:
-                    self.__color_palette_collection.selected_key = SELECTED_NAME
+                    self.__selection.selected_key = CURRENT_SAVE_NAME
                     self.__update_widgets()
 
                 except ValueError:
-                    raise ValueError(f"The selected color_pallete name {SELECTED_NAME} is not in "
+                    raise ValueError(f"The selected color_pallete name {CURRENT_SAVE_NAME} is not in "
                                      "this ColorPaletteController's ColorPalette Selection.")
 
-            elif (event == Event.DELETE_COLOR_PALETTE_NAME):
+            elif (event == Event.DELETE_SAVE_NAME):
                 SAVE_BUTTON.enabled = False
                 DELETE_BUTTON.enabled = False
 
                 self.__gui.update_widgets(SAVE_BUTTON, DELETE_BUTTON)
 
-            elif (event == Event.ENTER_NEW_COLOR_PALETTE_NAME):
+            elif (event == Event.ENTER_NEW_SAVE_NAME):
                 SAVE_BUTTON.enabled = True
                 DELETE_BUTTON.enabled = False
 
@@ -157,7 +156,7 @@ class ColorPaletteController(Controller):
         def get_widget(widget_key: Element) -> Widget:
             return WIDGETS[widget_key]
 
-        NAMES_COMBO = get_widget(Element.NAME_COMBO)
+        SAVE_NAME_COMBO = get_widget(Element.SAVE_NAME_COMBO)
         SAVE_BUTTON = get_widget(Element.SAVE_BUTTON)
         DELETE_BUTTON = get_widget(Element.DELETE_BUTTON)
 
@@ -182,7 +181,7 @@ class ColorPaletteController(Controller):
         NEXT_TEXT = Text(text='next', font=FONT)
         DECIBELS_TEXT = Text(text='decibels (dB) are')
 
-        LAYOUT = [[NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON],
+        LAYOUT = [[SAVE_NAME_COMBO, SAVE_BUTTON, DELETE_BUTTON],
                   [FIRST_TEXT, DECIBEL_INPUT_0, DECIBELS_TEXT, COLOR_PICKER_0],
                   [NEXT_TEXT, DECIBEL_INPUT_1, DECIBELS_TEXT, COLOR_PICKER_1],
                   [NEXT_TEXT, DECIBEL_INPUT_2, DECIBELS_TEXT, COLOR_PICKER_2],
@@ -192,24 +191,24 @@ class ColorPaletteController(Controller):
         self.__gui.set_layout(LAYOUT)
         self.__gui.display_layout()
 
-    def __get_selected_name(self) -> str:
+    def __get_current_save_name(self) -> str:
         try:
-            COMBO = self.__gui.get_widget(Element.NAME_COMBO)
+            COMBO = self.__gui.get_widget(Element.SAVE_NAME_COMBO)
             return COMBO.value
 
         except AttributeError:
             return ''
 
-    def __the_current_name_is_selected(self, name: str):
+    def __the_current_name_is_selected(self, name: str) -> bool:
         try:
-            return name == self.__color_palette_collection.selected_key
+            return name == self.__selection.selected_key
 
         except AttributeError:
             return False
 
     def __a_non_current_name_is_selected(self, name: str):
-        return (name in self.__color_palette_collection
-                and name != self.__color_palette_collection.selected_key)
+        return (name in self.__selection
+                and name != self.__selection.selected_key)
 
     def __update_widgets(self):
         WIDGETS = self.__create_widgets()
@@ -218,14 +217,14 @@ class ColorPaletteController(Controller):
             self.__gui.update_widget(widget)
 
     def __create_widgets(self) -> Dict[Element, Widget]:
-        def create_names_combo():
-            NAMES = list(self.__color_palette_collection.keys())
-            NAMES_COMBO_SIZE = (40, 7)
+        def create_save_name_combo():
+            SAVE_NAMES = list(self.__selection.keys())
+            COMBO_SIZE = (40, 7)
 
-            combo = Combo(Element.NAME_COMBO, NAMES, size=NAMES_COMBO_SIZE)
+            combo = Combo(Element.SAVE_NAME_COMBO, SAVE_NAMES, size=COMBO_SIZE)
 
             try:
-                combo.value = self.__color_palette_collection.selected_key
+                combo.value = self.__selection.selected_key
                 return combo
 
             except AttributeError:
@@ -252,10 +251,10 @@ class ColorPaletteController(Controller):
             return widgets
 
         FONT = Font("Courier New", 14)
-        COLOR_PALETTE = (ColorPalette() if (not hasattr(self.__color_palette_collection, 'selected_value'))
-                         else self.__color_palette_collection.selected_value)
+        COLOR_PALETTE = (ColorPalette() if (not hasattr(self.__selection, 'selected_value'))
+                         else self.__selection.selected_value)
 
-        NAMES_COMBO = create_names_combo()
+        SAVE_NAME_COMBO = create_save_name_combo()
         SAVE_BUTTON = Button(Element.SAVE_BUTTON, "Save", FONT, True)
         DELETE_BUTTON = Button(Element.DELETE_BUTTON, "Delete", FONT, True)
 
@@ -267,17 +266,17 @@ class ColorPaletteController(Controller):
 
             return result
 
-        return create_widgets(NAMES_COMBO, SAVE_BUTTON, DELETE_BUTTON,
+        return create_widgets(SAVE_NAME_COMBO, SAVE_BUTTON, DELETE_BUTTON,
                               *create_amplitude_rgbs_widgets(COLOR_PALETTE))
 
-    def __save_color_palette(self):
+    def __set_color_palette(self):
         COLOR_PALETTE = self.__create_color_palette_from_widget_gui()
 
-        NAME_COMBO = self.__gui.get_widget(Element.NAME_COMBO)
-        NAME = NAME_COMBO.value
+        SAVE_NAME_COMBO = self.__gui.get_widget(Element.SAVE_NAME_COMBO)
+        NAME = SAVE_NAME_COMBO.value
 
-        self.__color_palette_collection[NAME] = COLOR_PALETTE
-        self.__color_palette_collection.selected_key = NAME
+        self.__selection[NAME] = COLOR_PALETTE
+        self.__selection.selected_key = NAME
 
     def __create_color_palette_from_widget_gui(self) -> ColorPalette:
         NUMBER_OF_DECIBELS_1 = self.__get_setting_from_widget_gui(Element.DECIBEL_INPUT_0)

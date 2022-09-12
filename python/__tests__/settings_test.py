@@ -311,3 +311,33 @@ class TestNumberOfGroups(SettingsTestCase):
                 self.settings.number_of_groups = number_of_groups
 
                 self.assertEqual(self.settings.number_of_groups, number_of_groups)
+
+
+class TestToJSON(SettingsTestCase):
+    def test_empty(self):
+        SETTINGS = Settings()
+
+        EXPECTED = {'start_led': SETTINGS.start_led, 'end_led': SETTINGS.end_led,
+                    'milliseconds_per_audio_chunk': SETTINGS.milliseconds_per_audio_chunk,
+                    'serial_port': SETTINGS.serial_port, 'serial_baudrate': SETTINGS.serial_baudrate,
+                    'brightness': SETTINGS.brightness, 'minimum_frequency': SETTINGS.minimum_frequency,
+                    'maximum_frequency': SETTINGS.maximum_frequency,
+                    'should_reverse_leds': SETTINGS.should_reverse_leds, 'number_of_groups': SETTINGS.number_of_groups}
+
+        ACTUAL = SETTINGS.to_json()
+
+        self.assertEqual(EXPECTED, ACTUAL)
+
+    def test_not_empty(self):
+        SETTINGS = self.settings
+
+        EXPECTED = {'start_led': SETTINGS.start_led, 'end_led': SETTINGS.end_led,
+                    'milliseconds_per_audio_chunk': SETTINGS.milliseconds_per_audio_chunk,
+                    'serial_port': SETTINGS.serial_port, 'serial_baudrate': SETTINGS.serial_baudrate,
+                    'brightness': SETTINGS.brightness, 'minimum_frequency': SETTINGS.minimum_frequency,
+                    'maximum_frequency': SETTINGS.maximum_frequency,
+                    'should_reverse_leds': SETTINGS.should_reverse_leds, 'number_of_groups': SETTINGS.number_of_groups}
+
+        ACTUAL = self.settings.to_json()
+
+        self.assertEqual(EXPECTED, ACTUAL)
