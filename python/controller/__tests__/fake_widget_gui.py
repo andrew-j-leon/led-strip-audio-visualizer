@@ -45,6 +45,9 @@ class FakeWidgetGui(WidgetGui):
                 except AttributeError:
                     pass
 
+    def append_layout(self, layout):
+        self.set_layout(self.queued_layout + layout)
+
     def display_layout(self):
         self.displayed_layout = self.queued_layout
 

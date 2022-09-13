@@ -113,6 +113,12 @@ class WidgetGuiTestCaseWithLayout(WidgetGuiTestCase):
         self.multiline_mock.reset_mock()
         self.text_mock.reset_mock()
 
+class TestContextManager(WidgetGuiTestCase):
+    def test_context_manager(self):
+        with ProductionWidgetGui() as widget_gui:
+            pass
+
+        self.window_instance_mock.close.assert_called_once()
 
 class TestConstructor(WidgetGuiTestCase):
     def test_constructor(self):
@@ -151,7 +157,7 @@ class TestTitle(WidgetGuiTestCase):
         self.assertEqual(self.widget_gui.title, TITLE)
 
 
-class TestSetAndDisplayLayout(WidgetGuiTestCaseWithLayout):
+class TestSetLayout(WidgetGuiTestCaseWithLayout):
     def test_set_layout_where_multiple_widgets_have_the_same_key(self):
         KEY = 'key'
 
@@ -190,6 +196,72 @@ class TestSetAndDisplayLayout(WidgetGuiTestCaseWithLayout):
         LAYOUT = [[UnrecognizedWidget('some_key')]]
 
         self.widget_gui.set_layout(LAYOUT)
+
+        with self.assertRaises(TypeError):
+            self.widget_gui.display_layout()
+
+class TestAppendLayout(WidgetGuiTestCaseWithLayout):
+
+    def test_key_clash_with_preexisting_layout(self):
+        BUTTON = Button(self.BUTTON.key)
+        LAYOUT = [[BUTTON]]
+
+        with self.assertRaises(ValueError):
+            self.widget_gui.append_layout(LAYOUT)
+
+        self.widget_gui.display_layout()
+
+        self.window_mock.assert_called_once_with(self.TITLE, layout=self.MOCK_LAYOUT, modal=self.IS_MODAL,
+                                                 resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
+                                                 margins=self.MARGINS,
+                                                 titlebar_background_color=self.TITLEBAR_BACKGROUND_COLOR,
+                                                 titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
+
+        self.window_instance_mock.close.assert_called_once()
+        self.window_instance_mock.read.assert_called_once_with(timeout=0)
+
+    def test_multiple_widgets_have_the_same_key(self):
+        KEY = 'key'
+
+        BUTTON = Button(KEY)
+        TEXT = Text(KEY)
+
+        LAYOUT = [[BUTTON], [TEXT]]
+
+        with self.assertRaises(ValueError):
+            self.widget_gui.append_layout(LAYOUT)
+
+        self.widget_gui.display_layout()
+
+        self.window_mock.assert_called_once_with(self.TITLE, layout=self.MOCK_LAYOUT, modal=self.IS_MODAL,
+                                                 resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
+                                                 margins=self.MARGINS,
+                                                 titlebar_background_color=self.TITLEBAR_BACKGROUND_COLOR,
+                                                 titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
+
+        self.window_instance_mock.close.assert_called_once()
+        self.window_instance_mock.read.assert_called_once_with(timeout=0)
+
+    def test_append_valid_layout(self):
+        LAYOUT = [[Button(self.NON_EXISTENT_KEY)]]
+
+        self.widget_gui.append_layout(LAYOUT)
+        self.widget_gui.display_layout()
+
+        MOCK_LAYOUT = self.MOCK_LAYOUT + [[self.button_instance_mock]]
+
+        self.window_mock.assert_called_once_with(self.TITLE, layout=MOCK_LAYOUT, modal=self.IS_MODAL,
+                                                 resizable=self.RESIZABLE, element_padding=self.ELEMENT_PADDING,
+                                                 margins=self.MARGINS,
+                                                 titlebar_background_color=self.TITLEBAR_BACKGROUND_COLOR,
+                                                 titlebar_text_color=self.TITLEBAR_TEXT_COLOR)
+        self.window_instance_mock.close.assert_called_once()
+        self.window_instance_mock.read.assert_called_once_with(timeout=0)
+
+    def test_set_and_display_layout_with_unrecognized_widget(self):
+        LAYOUT = [[UnrecognizedWidget('some_key')]]
+
+        self.widget_gui.append_layout(LAYOUT)
 
         with self.assertRaises(TypeError):
             self.widget_gui.display_layout()
@@ -426,12 +498,3 @@ class TestUpdateWidgets(WidgetGuiTestCaseWithLayout):
         self.assertIs(NEW_TEXT, self.widget_gui.get_widget(NEW_TEXT.key))
         self.assertIs(NEW_COLOR_PICKER, self.widget_gui.get_widget(NEW_COLOR_PICKER.key))
         self.assertIs(NEW_COMBO_WITH_NO_VALUES, self.widget_gui.get_widget(NEW_COMBO_WITH_NO_VALUES.key))
-
-
-class TestWidgetGui(WidgetGuiTestCase):
-
-    def test_context_manager(self):
-        with ProductionWidgetGui() as widget_gui:
-            pass
-
-        self.window_instance_mock.close.assert_called_once()

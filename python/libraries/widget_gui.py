@@ -36,6 +36,10 @@ class WidgetGui(ABC):
         pass
 
     @abstractmethod
+    def append_layout(self, layout: List[List[Widget]]):
+        pass
+
+    @abstractmethod
     def display_layout(self):
         pass
 
@@ -194,6 +198,9 @@ class ProductionWidgetGui(WidgetGui):
 
         self.__layout = layout
         self.__widgets = widgets
+
+    def append_layout(self, layout):
+        self.set_layout(self.__layout + layout)
 
     def display_layout(self):
         layout: List[List[sg.Element]] = []
