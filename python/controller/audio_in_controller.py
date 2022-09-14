@@ -13,7 +13,7 @@ from libraries.canvas_gui import CanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Serial
 from libraries.widget import Button, CheckBox, Combo, Input, Text
 from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
-from selection import Selection
+from selection.selection import Selection
 from settings import Settings
 from spectrogram import Spectrogram
 from util import TimedCircularQueue

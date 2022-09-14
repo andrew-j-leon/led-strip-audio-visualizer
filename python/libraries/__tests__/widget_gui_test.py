@@ -113,12 +113,14 @@ class WidgetGuiTestCaseWithLayout(WidgetGuiTestCase):
         self.multiline_mock.reset_mock()
         self.text_mock.reset_mock()
 
+
 class TestContextManager(WidgetGuiTestCase):
     def test_context_manager(self):
         with ProductionWidgetGui() as widget_gui:
             pass
 
         self.window_instance_mock.close.assert_called_once()
+
 
 class TestConstructor(WidgetGuiTestCase):
     def test_constructor(self):
@@ -199,6 +201,7 @@ class TestSetLayout(WidgetGuiTestCaseWithLayout):
 
         with self.assertRaises(TypeError):
             self.widget_gui.display_layout()
+
 
 class TestAppendLayout(WidgetGuiTestCaseWithLayout):
 

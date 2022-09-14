@@ -17,6 +17,8 @@ class FakeWidgetGui(WidgetGui):
         self.event = WidgetGuiEvent.TIMEOUT
         self.number_of_read_event_and_update_gui_calls = 0
 
+        self.open = False
+
     @property
     def title(self):
         return self.__title

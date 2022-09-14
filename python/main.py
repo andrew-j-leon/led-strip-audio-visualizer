@@ -3,14 +3,15 @@ from pathlib import Path
 
 from color_palette import ColorPalette
 from controller.audio_in_controller import AudioInController
-from controller.color_palette_controller import ColorPaletteController
-from controller.settings_controller import SettingsController
+from controller.selection_controller import SelectionController
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.audio_in_stream import AudioInStream, ProductionAudioInStream
 from libraries.canvas_gui import CanvasGui, ProductionCanvasGui
 from libraries.serial import ProductionSerial, Serial
 from libraries.widget_gui import ProductionWidgetGui, WidgetGui
-from selection import Selection, load, save
+from selection.color_palette_selection_gui import ColorPaletteSelectionGui
+from selection.selection import Selection, load, save
+from selection.settings_selection_gui import SettingsSelectionGui
 from settings import Settings
 from spectrogram import ProductionSpectrogram, Spectrogram
 
@@ -62,17 +63,21 @@ if __name__ == '__main__':
     except FileNotFoundError:
         COLOR_PALETTE_SELECTION_SAVE_DIRECTORY.mkdir(parents=True)
 
-    def create_settings_controller(settings_selection: Selection[Settings]) -> SettingsController:
-        def save_settings_to_file(settings_selection: Selection[Settings]):
+    def create_settings_controller(settings_selection: Selection[Settings]) -> SelectionController:
+        def save_settings_selection_to_file(settings_selection: Selection[Settings]):
             save(settings_selection, SETTINGS_SAVE_DIRECTORY)
 
-        return SettingsController(create_widget_gui, save_settings_to_file, settings_selection)
+        return SelectionController(SettingsSelectionGui(create_widget_gui),
+                                   save_settings_selection_to_file,
+                                   settings_selection)
 
-    def create_color_palette_controller(color_palette_selection: Selection[ColorPalette]) -> ColorPaletteController:
+    def create_color_palette_controller(color_palette_selection: Selection[ColorPalette]) -> SelectionController:
         def save_color_palette_selection_to_file(color_palette_selection: Selection[ColorPalette]):
             save(color_palette_selection, COLOR_PALETTE_SELECTION_SAVE_DIRECTORY)
 
-        return ColorPaletteController(create_widget_gui, save_color_palette_selection_to_file, color_palette_selection)
+        return SelectionController(ColorPaletteSelectionGui(create_widget_gui),
+                                   save_color_palette_selection_to_file,
+                                   color_palette_selection)
 
     # Passing in an object's dependencies rather than having said object
     # construct its own dependencies is known as "Dependency Injection"

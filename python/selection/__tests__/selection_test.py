@@ -1,7 +1,7 @@
 import unittest
 
 from color_palette import ColorPalette
-from selection import Selection
+from selection.selection import Selection
 
 
 class SelectionTestCase(unittest.TestCase):

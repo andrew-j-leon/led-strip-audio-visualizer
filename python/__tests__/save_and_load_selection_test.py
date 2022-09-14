@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from pyfakefs import fake_filesystem_unittest
-from selection import Selection, load, save
+from selection.selection import Selection, load, save
 from util import Jsonable
 
 

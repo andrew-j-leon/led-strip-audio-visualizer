@@ -10,7 +10,7 @@ from libraries.audio_in_stream import AudioInStream
 from libraries.canvas_gui import CanvasGui
 from libraries.serial import FakeSerial
 from libraries.widget import Button, CheckBox, Combo, Input, Text, Widget
-from selection import Selection
+from selection.selection import Selection
 from settings import Settings
 from spectrogram import Spectrogram
 from util import Font
