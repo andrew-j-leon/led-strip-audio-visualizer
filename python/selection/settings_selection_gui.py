@@ -20,6 +20,7 @@ class Element(Enum):
     MINIMUM_FREQUENCY_INPUT = auto()
     MAXIMUM_FREQUENCY_INPUT = auto()
     REVERSE_LEDS_CHECK_BOX = auto()
+    CENTER_GROUPS_CHECK_BOX = auto()
 
 
 class SettingsSelectionGui(SelectionGui):
@@ -43,6 +44,7 @@ class SettingsSelectionGui(SelectionGui):
         MINIMUM_FREQUENCY_INPUT = WIDGETS[Element.MINIMUM_FREQUENCY_INPUT]
         MAXIMUM_FREQUENCY_INPUT = WIDGETS[Element.MAXIMUM_FREQUENCY_INPUT]
         REVERSE_LEDS_CHECK_BOX = WIDGETS[Element.REVERSE_LEDS_CHECK_BOX]
+        CENTER_GROUPS_CHECK_BOCK = WIDGETS[Element.CENTER_GROUPS_CHECK_BOX]
 
         FONT = Font("Courier New", 14)
 
@@ -65,7 +67,8 @@ class SettingsSelectionGui(SelectionGui):
                   [NUMBER_OF_GROUPS_LABEL, NUMBER_OF_GROUPS_INPUT],
                   [MINIMUM_FREQUENCY_LABEL, MINIMUM_FREQUENCY_INPUT],
                   [MAXIMUM_FREQUENCY_LABEL, MAXIMUM_FREQUENCY_INPUT],
-                  [REVERSE_LEDS_CHECK_BOX]]
+                  [REVERSE_LEDS_CHECK_BOX],
+                  [CENTER_GROUPS_CHECK_BOCK]]
 
         return LAYOUT
 
@@ -107,9 +110,12 @@ class SettingsSelectionGui(SelectionGui):
         REVERSE_LEDS_CHECK_BOX = CheckBox(Element.REVERSE_LEDS_CHECK_BOX,
                                           "Reverse LEDs", FONT, SETTINGS.should_reverse_leds)
 
+        CENTER_GROUPS_CHECK_BOX = CheckBox(Element.CENTER_GROUPS_CHECK_BOX, 'Center Groups',
+                                           FONT, SETTINGS.should_center_groups)
+
         WIDGETS: List[Widget] = [START_LED_INPUT, END_LED_INPUT, MILLISECONDS_PER_AUDIO_CHUNK_INPUT, SERIAL_PORT_INPUT,
                                  BAUDRATES_COMBO, BRIGHTNESS_INPUT, NUMBER_OF_GROUPS_INPUT,
-                                 MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX]
+                                 MINIMUM_FREQUENCY_INPUT, MAXIMUM_FREQUENCY_INPUT, REVERSE_LEDS_CHECK_BOX, CENTER_GROUPS_CHECK_BOX]
 
         return dict((widget.key, widget) for widget in WIDGETS)
 
@@ -142,7 +148,8 @@ class SettingsSelectionGui(SelectionGui):
         MAXIMUM_FREQUENCY = get_setting_from_wiget_gui(Element.MAXIMUM_FREQUENCY_INPUT)
         SHOULD_REVERSE_LEDS = get_setting_from_wiget_gui(Element.REVERSE_LEDS_CHECK_BOX)
         NUMBER_OF_GROUPS = get_setting_from_wiget_gui(Element.NUMBER_OF_GROUPS_INPUT)
+        SHOULD_CENTER_GROUPS = get_setting_from_wiget_gui(Element.CENTER_GROUPS_CHECK_BOX)
 
         return Settings(START_LED, END_LED, MILLISECONDS_PER_AUDIO_CHUNK, SERIAL_PORT,
                         SERIAL_BAUDRATE, BRIGHTNESS, MINIMUM_FREQUENCY, MAXIMUM_FREQUENCY,
-                        SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS)
+                        SHOULD_REVERSE_LEDS, NUMBER_OF_GROUPS, SHOULD_CENTER_GROUPS)

@@ -14,39 +14,27 @@ class SettingsTestCase(unittest.TestCase):
     MAXIMUM_FREQUENCY = 2000
     SHOULD_REVERSE_LEDS = True
     NUMBER_OF_GROUPS = 50
+    SHOULD_CENTER_GROUPS = True
 
     def setUp(self):
         self.settings = Settings(self.START_LED, self.END_LED, self.MILLISECONDS_PER_AUDIO_CHUNK,
                                  self.SERIAL_PORT, self.SERIAL_BAUDRATE, self.BRIGHTNESS, self.MINIMUM_FREQUENCY,
-                                 self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS)
+                                 self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS,
+                                 self.SHOULD_CENTER_GROUPS)
 
 
 class TestEquals(SettingsTestCase):
     def test_does_equal(self):
         settings = Settings(self.START_LED, self.END_LED, self.MILLISECONDS_PER_AUDIO_CHUNK,
                             self.SERIAL_PORT, self.SERIAL_BAUDRATE, self.BRIGHTNESS, self.MINIMUM_FREQUENCY,
-                            self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS)
+                            self.MAXIMUM_FREQUENCY, self.SHOULD_REVERSE_LEDS, self.NUMBER_OF_GROUPS,
+                            self.SHOULD_CENTER_GROUPS)
 
         self.assertEqual(settings, self.settings)
 
     def test_does_not_equal(self):
         self.assertNotEqual(self.settings, Settings())
         self.assertNotEqual(self.settings, None)
-
-
-class TestRepr(SettingsTestCase):
-    def test_repr(self):
-        actual = repr(self.settings)
-
-        expected = (f'Settings(start_led = {self.settings.start_led}, end_led = {self.settings.end_led}, '
-                    f'milliseconds_per_audio_chunk = {self.settings.milliseconds_per_audio_chunk}, '
-                    f'serial_port = {self.settings.serial_port}, serial_baudrate = {self.settings.serial_baudrate}, '
-                    f'brightness = {self.settings.brightness}, minimum_frequency = {self.settings.minimum_frequency}, '
-                    f'maximum_frequency = {self.settings.maximum_frequency}, should_reverse_leds = {self.settings.should_reverse_leds}, '
-                    f'number_of_groups = {self.settings.number_of_groups})')
-
-        self.assertEqual(actual, expected)
-
 
 class TestStartLed(SettingsTestCase):
     def test_set_to_less_than_0(self):
@@ -311,33 +299,3 @@ class TestNumberOfGroups(SettingsTestCase):
                 self.settings.number_of_groups = number_of_groups
 
                 self.assertEqual(self.settings.number_of_groups, number_of_groups)
-
-
-class TestToJSON(SettingsTestCase):
-    def test_empty(self):
-        SETTINGS = Settings()
-
-        EXPECTED = {'start_led': SETTINGS.start_led, 'end_led': SETTINGS.end_led,
-                    'milliseconds_per_audio_chunk': SETTINGS.milliseconds_per_audio_chunk,
-                    'serial_port': SETTINGS.serial_port, 'serial_baudrate': SETTINGS.serial_baudrate,
-                    'brightness': SETTINGS.brightness, 'minimum_frequency': SETTINGS.minimum_frequency,
-                    'maximum_frequency': SETTINGS.maximum_frequency,
-                    'should_reverse_leds': SETTINGS.should_reverse_leds, 'number_of_groups': SETTINGS.number_of_groups}
-
-        ACTUAL = SETTINGS.to_json()
-
-        self.assertEqual(EXPECTED, ACTUAL)
-
-    def test_not_empty(self):
-        SETTINGS = self.settings
-
-        EXPECTED = {'start_led': SETTINGS.start_led, 'end_led': SETTINGS.end_led,
-                    'milliseconds_per_audio_chunk': SETTINGS.milliseconds_per_audio_chunk,
-                    'serial_port': SETTINGS.serial_port, 'serial_baudrate': SETTINGS.serial_baudrate,
-                    'brightness': SETTINGS.brightness, 'minimum_frequency': SETTINGS.minimum_frequency,
-                    'maximum_frequency': SETTINGS.maximum_frequency,
-                    'should_reverse_leds': SETTINGS.should_reverse_leds, 'number_of_groups': SETTINGS.number_of_groups}
-
-        ACTUAL = self.settings.to_json()
-
-        self.assertEqual(EXPECTED, ACTUAL)

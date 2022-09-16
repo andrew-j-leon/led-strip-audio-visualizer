@@ -24,6 +24,7 @@ class SettingsSelectionGuiTestCase(TestCase):
     CURRENT_MAXIMUM_FREQUENCY = 1000
     CURRENT_SHOULD_REVERSE_LEDS = False
     CURRENT_NUMBER_OF_GROUPS = 60
+    CURRENT_SHOULD_CENTER_GROUPS = True
 
     NON_CURRENT_SETTINGS_NAME = 'non_current_settings'
     NON_CURRENT_START_LED = 60
@@ -36,6 +37,7 @@ class SettingsSelectionGuiTestCase(TestCase):
     NON_CURRENT_MAXIMUM_FREQUENCY = 2000
     NON_CURRENT_SHOULD_REVERSE_LEDS = True
     NON_CURRENT_NUMBER_OF_GROUPS = 50
+    NON_CURRENT_SHOULD_CENTER_GROUPS = False
 
     NON_EXISTENT_SETTINGS_NAME = 'non_existent_settings_name'
 
@@ -49,7 +51,8 @@ class SettingsSelectionGuiTestCase(TestCase):
                                          self.CURRENT_MINIMUM_FREQUENCY,
                                          self.CURRENT_MAXIMUM_FREQUENCY,
                                          self.CURRENT_SHOULD_REVERSE_LEDS,
-                                         self.CURRENT_NUMBER_OF_GROUPS)
+                                         self.CURRENT_NUMBER_OF_GROUPS,
+                                         self.CURRENT_SHOULD_CENTER_GROUPS)
 
         self.non_current_settings = Settings(self.NON_CURRENT_START_LED,
                                              self.NON_CURRENT_END_LED,
@@ -60,7 +63,8 @@ class SettingsSelectionGuiTestCase(TestCase):
                                              self.NON_CURRENT_MINIMUM_FREQUENCY,
                                              self.NON_CURRENT_MAXIMUM_FREQUENCY,
                                              self.NON_CURRENT_SHOULD_REVERSE_LEDS,
-                                             self.NON_CURRENT_NUMBER_OF_GROUPS)
+                                             self.NON_CURRENT_NUMBER_OF_GROUPS,
+                                             self.NON_CURRENT_SHOULD_CENTER_GROUPS)
 
         self.settings_selection = Selection({self.CURRENT_SETTINGS_NAME: self.current_settings,
                                              self.NON_CURRENT_SETTINGS_NAME: self.non_current_settings})
@@ -104,6 +108,7 @@ class SettingsSelectionGuiTestCase(TestCase):
         MINIMUM_FREQUENCY = str(SELECTED_SETTINGS.minimum_frequency)
         MAXIMUM_FREQUENCY = str(SELECTED_SETTINGS.maximum_frequency)
         SHOULD_REVERSE_LEDS = SELECTED_SETTINGS.should_reverse_leds
+        SHOULD_CENTER_GROUPS = SELECTED_SETTINGS.should_center_groups
 
         self.assertEqual(START_LED, get_widget_value(SettingsSelectionElement.START_LED_INPUT))
         self.assertEqual(END_LED, get_widget_value(SettingsSelectionElement.END_LED_INPUT))
@@ -114,6 +119,7 @@ class SettingsSelectionGuiTestCase(TestCase):
         self.assertEqual(MINIMUM_FREQUENCY, get_widget_value(SettingsSelectionElement.MINIMUM_FREQUENCY_INPUT))
         self.assertEqual(MAXIMUM_FREQUENCY, get_widget_value(SettingsSelectionElement.MAXIMUM_FREQUENCY_INPUT))
         self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(SettingsSelectionElement.REVERSE_LEDS_CHECK_BOX))
+        self.assertEqual(SHOULD_CENTER_GROUPS, get_widget_value(SettingsSelectionElement.CENTER_GROUPS_CHECK_BOX))
 
 
 class TestDisplay(SettingsSelectionGuiTestCase):
