@@ -52,66 +52,107 @@ class TestConstructor(unittest.TestCase):
 
                     ProductionGroupedLeds(invalid_led_range, group_led_ranges)
 
+    def test_group_led_ranges_with_varying_lengths(self):
+        START_LED = 0
+        END_LED = 100
+        LED_RANGE = (START_LED, END_LED)
+        GROUP_LED_RANGES = [[], [(0, 10)], [(10, 20), (20, 30)], [(30, 40), (40, 50), (70, 80), (90, 100)]]
+
+        grouped_leds = ProductionGroupedLeds(LED_RANGE, GROUP_LED_RANGES)
+
+        self.assertEqual(grouped_leds.start_led, START_LED)
+        self.assertEqual(grouped_leds.end_led, END_LED)
+        self.assertEqual(grouped_leds.number_of_groups, len(GROUP_LED_RANGES))
+        self.assertEqual(grouped_leds.number_of_leds, END_LED - START_LED)
+
+        for group_number in range(len(GROUP_LED_RANGES)):
+            with self.subTest(group_number=group_number):
+                self.assertEqual(grouped_leds.get_group_led_ranges(group_number), GROUP_LED_RANGES[group_number])
+
     def test_group_led_ranges_with_led_range_starting_at_0(self):
         LED_RANGE_STARTING_AT_0 = (0, 150)
 
-        VALID_GROUP_LED_RANGES = [[(0, 0)], [(0, 1)], [(0, 150)], [(1, 1)], [(1, 150)],
-                                  [(150, 150), (151, 151), (300, 300)]]
+        VALID_GROUP_LED_RANGES = [[[(0, 0)]],
+                                  [[(0, 1)]],
+                                  [[(0, 150)]],
+                                  [[(1, 1)]],
+                                  [[(1, 150)]],
+                                  [[(150, 150)], [(151, 151)], [(300, 300)]]
+                                  ]
 
-        INVALID_GROUP_LED_RANGES = [[(-1, 0)], [(0, -1)], [(-1, -1)],
-                                    [(-10, 0)], [(0, -10)],
-                                    [(1, 0)], [(10, 0)],
-                                    [(10, 9)], [(10, 5)]]
+        INVALID_GROUP_LED_RANGES = [[[(-1, 0)]],
+                                    [[(0, -1)]],
+                                    [[(-1, -1)]],
+                                    [[(-10, 0)]],
+                                    [[(0, -10)]],
+                                    [[(1, 0)]],
+                                    [[(10, 0)]],
+                                    [[(10, 9)]],
+                                    [[(10, 5)]]]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_0, VALID_GROUP_LED_RANGES)
         self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_0, INVALID_GROUP_LED_RANGES)
 
     def test_group_led_ranges_with_led_range_starting_at_10(self):
-
         LED_RANGE_STARTING_AT_10 = (10, 150)
 
         VALID_GROUP_LED_RANGES = [
-            [(10, 10)], [(10, 11)], [(10, 150)],
-            [(149, 150)], [(150, 150)],
-            [(10, 90), (90, 150)]
+            [[(10, 10)]],
+            [[(10, 11)]],
+            [[(10, 150)]],
+            [[(149, 150)]],
+            [[(150, 150)]],
+            [[(10, 90)], [(90, 150)]]
         ]
 
         INVALID_GROUP_LED_RANGES = [
-            [(0, 1)], [(0, 10)], [(0, 150)], [(0, 151)], [(0, 300)],
-            [(9, 10)], [(9, 11)], [(9, 150)], [(9, 300)],
-            [(10, 151)], [(10, 300)],
-            [(50, 151)], [(50, 300)],
-            [(150, 151)], [(150, 300)],
-            [(151, 152)], [(152, 300)]
+            [[(0, 1)]],
+            [[(0, 10)]],
+            [[(0, 150)]],
+            [[(0, 151)]],
+            [[(0, 300)]],
+            [[(9, 10)]],
+            [[(9, 11)]],
+            [[(9, 150)]],
+            [[(9, 300)]],
+            [[(10, 151)]],
+            [[(10, 300)]],
+            [[(50, 151)]],
+            [[(50, 300)]],
+            [[(150, 151)]],
+            [[(150, 300)]],
+            [[(151, 152)]],
+            [[(152, 300)]]
         ]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_10, VALID_GROUP_LED_RANGES)
         self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_10, INVALID_GROUP_LED_RANGES)
 
-    def check_valid_group_led_ranges(self, led_range: Tuple[int, int], valid_group_led_ranges: List[Tuple[int, int]]):
-        for group_led_ranges in valid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
+    def check_valid_group_led_ranges(self, led_range: Tuple[int, int],
+                                     valid_group_led_ranges: List[List[List[Tuple[int, int]]]]):
+        for led_ranges in valid_group_led_ranges:
+            with self.subTest(led_range=led_range, led_ranges=led_ranges):
 
-                ProductionGroupedLeds(led_range, group_led_ranges)
+                ProductionGroupedLeds(led_range, led_ranges)
 
-    def check_invalid_group_led_ranges(self, led_range: Tuple[int, int], invalid_group_led_ranges: List[Tuple[int, int]]):
-        for group_led_ranges in invalid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
+    def check_invalid_group_led_ranges(self, led_range: Tuple[int, int],
+                                       invalid_group_led_ranges: List[List[List[Tuple[int, int]]]]):
+        for led_ranges in invalid_group_led_ranges:
+            with self.subTest(led_range=led_range, led_ranges=led_ranges):
 
                 with self.assertRaises(ValueError):
-                    ProductionGroupedLeds(led_range, group_led_ranges)
+                    ProductionGroupedLeds(led_range, led_ranges)
 
 
 class TestMethods(unittest.TestCase):
-
     def test_number_of_groups(self):
         LED_RANGE = (0, 100)
         GROUP_LED_RANGES = [[],
-                            [(0, 10)],
-                            [(0, 10), (10, 20)],
+                            [[(0, 10)]],
+                            [[(0, 10)], [(10, 20)]],
 
-                            [(0, 10), (10, 20), (20, 30), (30, 40), (40, 50),
-                            (50, 60), (60, 70), (70, 80), (80, 90), (90, 100)]]
+                            [[(0, 10)], [(10, 20)], [(20, 30)], [(30, 40)], [(40, 50)],
+                            [(50, 60)], [(60, 70)], [(70, 80)], [(80, 90)], [(90, 100)]]]
 
         for group_led_ranges in GROUP_LED_RANGES:
             with self.subTest(number_of_groups=len(group_led_ranges)):
@@ -151,7 +192,7 @@ class TestMethods(unittest.TestCase):
 
 class GroupMethodsTestCase(unittest.TestCase):
     LED_RANGE = (0, 100)
-    GROUP_LED_RANGES = [(0, 10), (10, 20), (20, 30)]
+    GROUP_LED_RANGES = [[(0, 10)], [(10, 20)], [(20, 30)]]
 
     NUMBER_OF_GROUPS = len(GROUP_LED_RANGES)
 
@@ -331,19 +372,13 @@ class TestSetGroupRGB(GroupMethodsTestCase):
                     self.leds.set_group_rgbs(group_rgbs)
 
 
-class TestGetGroupLedRange(GroupMethodsTestCase):
+class TestGetGroupLedRanges(GroupMethodsTestCase):
     def test_valid(self):
         for group in range(len(self.GROUP_LED_RANGES)):
-
-            group_led_range = self.GROUP_LED_RANGES[group]
-
-            with self.subTest(group=group, group_led_range=group_led_range):
-                start, end = self.leds.get_group_led_range(group)
-
-                start_led, end_led = group_led_range
-
-                self.assertEqual(start, start_led)
-                self.assertEqual(end, end_led)
+            with self.subTest(group=group):
+                expected_led_ranges = self.GROUP_LED_RANGES[group]
+                actual_led_ranges = self.leds.get_group_led_ranges(group)
+                self.assertEqual(expected_led_ranges, actual_led_ranges)
 
     def test_no_groups(self):
         LED_RANGE = (0, 100)
@@ -357,7 +392,7 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
             with self.subTest(group=group):
 
                 with self.assertRaises(IndexError):
-                    leds.get_group_led_range(group)
+                    leds.get_group_led_ranges(group)
 
     def test_group_less_than_0(self):
         GROUPS = [-1, -2, -100]
@@ -366,7 +401,7 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
             with self.subTest(group=group):
 
                 with self.assertRaises(ValueError):
-                    self.leds.get_group_led_range(group)
+                    self.leds.get_group_led_ranges(group)
 
     def test_group_exceeds_max_group(self):
         GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
@@ -375,4 +410,4 @@ class TestGetGroupLedRange(GroupMethodsTestCase):
             with self.subTest(group=group):
 
                 with self.assertRaises(IndexError):
-                    self.leds.get_group_led_range(group)
+                    self.leds.get_group_led_ranges(group)

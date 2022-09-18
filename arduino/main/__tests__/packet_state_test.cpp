@@ -51,10 +51,10 @@ class PacketStateTest : public ::testing::Test {
 
     protected:
         void go_to_packet_state(uint8 number_of_packets) {
-            ASSERT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
-            update_state(START_OF_MESSAGE_CODE);
+            ASSERT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
+            update_state(PacketState::START_OF_MESSAGE_CODE);
 
-            ASSERT_EQ(packet_state.get_state(), NUMBER_OF_PACKETS_STATE);
+            ASSERT_EQ(packet_state.get_state(), PacketStateState::NUMBER_OF_PACKETS);
             update_state(number_of_packets);
         }
 
@@ -72,7 +72,7 @@ class PacketStateTest : public ::testing::Test {
                 while (packet_number < number_of_packets - 1) {
                     test_packet(packets, start, end);
                     update_state(get_checksum(packets, start, end));
-                    ASSERT_EQ(packet_state.get_state(), PACKET_STATE);
+                    ASSERT_EQ(packet_state.get_state(), PacketStateState::PACKET);
 
                     packet_number++;
                     start += bytes_per_packet;
@@ -81,7 +81,7 @@ class PacketStateTest : public ::testing::Test {
 
                 test_packet(packets, start, end);
                 update_state(get_checksum(packets, start, end));
-                ASSERT_EQ(packet_state.get_state(), END_OF_MESSAGE_STATE);
+                ASSERT_EQ(packet_state.get_state(), PacketStateState::END_OF_MESSAGE);
             }
         }
 
@@ -118,7 +118,7 @@ class PacketStateTest : public ::testing::Test {
                 while (packet_number < failing_packet_number) {
                     test_packet(packets, start, end);
                     update_state(get_checksum(packets, start, end));
-                    ASSERT_EQ(packet_state.get_state(), PACKET_STATE);
+                    ASSERT_EQ(packet_state.get_state(), PacketStateState::PACKET);
 
                     packet_number++;
                     start += bytes_per_packet;
@@ -127,12 +127,12 @@ class PacketStateTest : public ::testing::Test {
 
                 test_packet(packets, start, end);
                 update_state(get_checksum(packets, start, end) + 0x01);
-                ASSERT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+                ASSERT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
             }
         }
 
-        void test_end_of_message(uint8 packets[], unsigned int number_of_packets) {
-            update_state(END_OF_MESSAGE_CODE);
+        void test_end_state(uint8 packets[], unsigned int number_of_packets) {
+            update_state(PacketState::END_OF_MESSAGE_CODE);
 
             EXPECT_TRUE(on_EOM_was_called);
 
@@ -141,12 +141,12 @@ class PacketStateTest : public ::testing::Test {
 
             EXPECT_EQ(EOM_number_of_packets, number_of_packets);
 
-            EXPECT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+            EXPECT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
         }
 
         void test_packet(uint8 packets[], unsigned int start, unsigned int end) {
             send_packet(packets, start, end);
-            ASSERT_EQ(packet_state.get_state(), CHECK_SUM_STATE);
+            ASSERT_EQ(packet_state.get_state(), PacketStateState::CHECK_SUM);
         }
 
         void send_packet(uint8 packets[], unsigned int start, unsigned int end) {
@@ -157,49 +157,49 @@ class PacketStateTest : public ::testing::Test {
 };
 
 TEST_F(PacketStateTest, StartOfMessage_to_StartOfMessage) {
-    const uint8 INVALID_START_OF_MESSAGE_CODE = START_OF_MESSAGE_CODE + 0x01;
+    const uint8 INVALID_START_OF_MESSAGE_CODE = PacketState::START_OF_MESSAGE_CODE + 0x01;
 
     update_state(INVALID_START_OF_MESSAGE_CODE);
 
-    EXPECT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
     EXPECT_FALSE(on_EOM_was_called);
 }
 
 TEST_F(PacketStateTest, StartOfMessage_to_NumberOfPackets) {
-    update_state(START_OF_MESSAGE_CODE);
+    update_state(PacketState::START_OF_MESSAGE_CODE);
 
-    EXPECT_EQ(packet_state.get_state(), NUMBER_OF_PACKETS_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::NUMBER_OF_PACKETS);
     EXPECT_FALSE(on_EOM_was_called);
 }
 
 TEST_F(PacketStateTest, NumberOfPackets_to_Packet) {
-    update_state(START_OF_MESSAGE_CODE);
+    update_state(PacketState::START_OF_MESSAGE_CODE);
 
     const uint8 NUMBER_OF_PACKETS = 0x01;
     update_state(NUMBER_OF_PACKETS);
 
-    EXPECT_EQ(packet_state.get_state(), PACKET_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::PACKET);
     EXPECT_FALSE(on_EOM_was_called);
 }
 
 TEST_F(PacketStateTest, NumberOfPackets_to_EndOfMessage) {
-    update_state(START_OF_MESSAGE_CODE);
+    update_state(PacketState::START_OF_MESSAGE_CODE);
 
     const uint8 NUMBER_OF_PACKETS = 0x00;
     update_state(NUMBER_OF_PACKETS);
 
-    EXPECT_EQ(packet_state.get_state(), END_OF_MESSAGE_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::END_OF_MESSAGE);
     EXPECT_FALSE(on_EOM_was_called);
 }
 
 TEST_F(PacketStateTest, EndOfMessage_to_StartOfMessage) {
-    update_state(START_OF_MESSAGE_CODE);
+    update_state(PacketState::START_OF_MESSAGE_CODE);
 
     const uint8 NUMBER_OF_PACKETS = 0x00;
     update_state(NUMBER_OF_PACKETS);
-    update_state(END_OF_MESSAGE_CODE);
+    update_state(PacketState::END_OF_MESSAGE_CODE);
 
-    EXPECT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
     EXPECT_TRUE(on_EOM_was_called);
 }
 
@@ -212,7 +212,7 @@ TEST_F(PacketStateTest, OnePacket) {
     ASSERT_EQ(sizeof(packets), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets, NUMBER_OF_PACKETS);
-    test_end_of_message(packets, NUMBER_OF_PACKETS);
+    test_end_state(packets, NUMBER_OF_PACKETS);
 }
 
 TEST_F(PacketStateTest, ThreePackets) {
@@ -226,7 +226,7 @@ TEST_F(PacketStateTest, ThreePackets) {
     ASSERT_EQ(sizeof(packets), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets, NUMBER_OF_PACKETS);
-    test_end_of_message(packets, NUMBER_OF_PACKETS);
+    test_end_state(packets, NUMBER_OF_PACKETS);
 }
 
 TEST_F(PacketStateTest, FirstPacketCheckSumFailed) {
@@ -281,9 +281,9 @@ TEST_F(PacketStateTest, InvalidEndOfMessageCode) {
 
     test_packets(packets, NUMBER_OF_PACKETS);
 
-    update_state(START_OF_MESSAGE_CODE);
+    update_state(PacketState::START_OF_MESSAGE_CODE);
     EXPECT_FALSE(on_EOM_was_called);
-    EXPECT_EQ(packet_state.get_state(), END_OF_MESSAGE_STATE);
+    EXPECT_EQ(packet_state.get_state(), PacketStateState::END_OF_MESSAGE);
 }
 
 TEST_F(PacketStateTest, TwoCompleteStateTransitions) {
@@ -298,7 +298,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions) {
     ASSERT_EQ(sizeof(packets), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets, NUMBER_OF_PACKETS);
-    test_end_of_message(packets, NUMBER_OF_PACKETS);
+    test_end_state(packets, NUMBER_OF_PACKETS);
 
     // Transition 2
     go_to_packet_state(NUMBER_OF_PACKETS);
@@ -310,15 +310,15 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions) {
     ASSERT_EQ(sizeof(packets_2), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets_2, NUMBER_OF_PACKETS);
-    test_end_of_message(packets_2, NUMBER_OF_PACKETS);
+    test_end_state(packets_2, NUMBER_OF_PACKETS);
 }
 
 TEST_F(PacketStateTest, TwoCompleteStateTransitions_IncorrectStartOfMessageCodeOnFirst) {
     // Transition 1
     uint8 NUMBER_OF_PACKETS = 3;
-    ASSERT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
-    update_state(START_OF_MESSAGE_CODE + 0x01);
-    ASSERT_EQ(packet_state.get_state(), START_OF_MESSAGE_STATE);
+    ASSERT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
+    update_state(PacketState::START_OF_MESSAGE_CODE + 0x01);
+    ASSERT_EQ(packet_state.get_state(), PacketStateState::START_OF_MESSAGE);
 
     uint8 packets[] = {0x00, 0x10, 0x20, 0x30,
                        0x01, 0x11, 0x21, 0x31,
@@ -327,7 +327,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_IncorrectStartOfMessageCodeO
     ASSERT_EQ(sizeof(packets), bytes_per_packet * NUMBER_OF_PACKETS);
 
     send_packets(packets, NUMBER_OF_PACKETS);
-    update_state(END_OF_MESSAGE_CODE);
+    update_state(PacketState::END_OF_MESSAGE_CODE);
 
     // Transition 2
     go_to_packet_state(NUMBER_OF_PACKETS);
@@ -339,7 +339,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_IncorrectStartOfMessageCodeO
     ASSERT_EQ(sizeof(packets_2), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets_2, NUMBER_OF_PACKETS);
-    test_end_of_message(packets_2, NUMBER_OF_PACKETS);
+    test_end_state(packets_2, NUMBER_OF_PACKETS);
 }
 
 TEST_F(PacketStateTest, TwoCompleteStateTransitions_CheckSumFailureOnFirst) {
@@ -360,7 +360,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_CheckSumFailureOnFirst) {
     const unsigned int END = START + bytes_per_packet;
     send_packet(packets, START, END);
 
-    update_state(END_OF_MESSAGE_CODE);
+    update_state(PacketState::END_OF_MESSAGE_CODE);
 
     // Transition 2
     go_to_packet_state(NUMBER_OF_PACKETS);
@@ -372,7 +372,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_CheckSumFailureOnFirst) {
     ASSERT_EQ(sizeof(packets_2), bytes_per_packet * NUMBER_OF_PACKETS);
 
     test_packets(packets_2, NUMBER_OF_PACKETS);
-    test_end_of_message(packets_2, NUMBER_OF_PACKETS);
+    test_end_state(packets_2, NUMBER_OF_PACKETS);
 }
 
 TEST_F(PacketStateTest, TwoCompleteStateTransitions_ZeroPacketsOnFirst) {
@@ -385,7 +385,7 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_ZeroPacketsOnFirst) {
     ASSERT_EQ(sizeof(packets), bytes_per_packet * number_of_packets);
 
     send_packets(packets, number_of_packets);
-    update_state(END_OF_MESSAGE_CODE);
+    update_state(PacketState::END_OF_MESSAGE_CODE);
 
     // Transition 2
     number_of_packets = 3;
@@ -398,5 +398,5 @@ TEST_F(PacketStateTest, TwoCompleteStateTransitions_ZeroPacketsOnFirst) {
     ASSERT_EQ(sizeof(packets_2), bytes_per_packet * number_of_packets);
 
     test_packets(packets_2, number_of_packets);
-    test_end_of_message(packets_2, number_of_packets);
+    test_end_state(packets_2, number_of_packets);
 }

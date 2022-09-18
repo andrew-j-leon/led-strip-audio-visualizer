@@ -26,8 +26,8 @@ class FakeGroupedLeds(GroupedLeds):
     def end_led(self) -> int:
         return 1
 
-    def get_group_led_range(self, group: int) -> Tuple[int, int]:
-        return (0, 1)
+    def get_group_led_ranges(self, group: int) -> List[Tuple[int, int]]:
+        return [(0, 1)]
 
     def get_group_rgb(self, group: int) -> RGB:
         return self.__group_colors[group]

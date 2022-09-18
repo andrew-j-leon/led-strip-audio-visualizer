@@ -58,11 +58,12 @@ class FakeCanvasGui(CanvasGui):
         self.elements[element_id].set_fill_color(color)
 
     def set_group_rgbs(self, leds: GraphicGroupedLeds, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        for group, rgb in group_rgbs:
-            led_start, led_end = leds.get_group_led_range(group)
+        for group_number, rgb in group_rgbs:
+            led_ranges = leds.get_group_led_ranges(group_number)
 
-            for i in range(led_start, led_end):
-                self.__set_led_fill_color(leds.led_diameter, i, rgb)
+            for start, end in led_ranges:
+                for i in range(start, end):
+                    self.__set_led_fill_color(leds.led_diameter, i, rgb)
 
     def __set_led_fill_color(self, led_diameter: int, led_index: int, rgb: Tuple[int, int, int]):
         LEDS_PER_ROW = math.floor(self.width / led_diameter)
@@ -285,66 +286,105 @@ class TestConstructor(unittest.TestCase):
 
                     GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
 
+    def test_group_led_ranges_with_varying_lengths(self):
+        START_LED = 0
+        END_LED = 100
+        LED_RANGE = (START_LED, END_LED)
+        GROUP_LED_RANGES = [[], [(0, 10)], [(10, 20), (20, 30)], [(30, 40), (40, 50), (70, 80), (90, 100)]]
+
+        grouped_leds = GraphicGroupedLeds(LED_RANGE, GROUP_LED_RANGES, FakeCanvasGui())
+
+        self.assertEqual(grouped_leds.start_led, START_LED)
+        self.assertEqual(grouped_leds.end_led, END_LED)
+        self.assertEqual(grouped_leds.number_of_groups, len(GROUP_LED_RANGES))
+        self.assertEqual(grouped_leds.number_of_leds, END_LED - START_LED)
+
+        for group_number in range(len(GROUP_LED_RANGES)):
+            with self.subTest(group_number=group_number):
+                self.assertEqual(grouped_leds.get_group_led_ranges(group_number), GROUP_LED_RANGES[group_number])
+
     def test_group_led_ranges_with_led_range_starting_at_0(self):
         LED_RANGE_STARTING_AT_0 = (0, 150)
 
-        VALID_GROUP_LED_RANGES = [[(0, 0)], [(0, 1)], [(0, 150)], [(1, 1)], [(1, 150)],
-                                  [(150, 150), (151, 151), (300, 300)]]
+        VALID_GROUP_LED_RANGES = [[[(0, 0)]],
+                                  [[(0, 1)]],
+                                  [[(0, 150)]],
+                                  [[(1, 1)]],
+                                  [[(1, 150)]],
+                                  [[(150, 150)], [(151, 151)], [(300, 300)]]
+                                  ]
 
-        INVALID_GROUP_LED_RANGES = [[(-1, 0)], [(0, -1)], [(-1, -1)],
-                                    [(-10, 0)], [(0, -10)],
-                                    [(1, 0)], [(10, 0)],
-                                    [(10, 9)], [(10, 5)]]
+        INVALID_GROUP_LED_RANGES = [[[(-1, 0)]],
+                                    [[(0, -1)]],
+                                    [[(-1, -1)]],
+                                    [[(-10, 0)]],
+                                    [[(0, -10)]],
+                                    [[(1, 0)]],
+                                    [[(10, 0)]],
+                                    [[(10, 9)]],
+                                    [[(10, 5)]]]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_0, VALID_GROUP_LED_RANGES)
         self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_0, INVALID_GROUP_LED_RANGES)
 
     def test_group_led_ranges_with_led_range_starting_at_10(self):
-
         LED_RANGE_STARTING_AT_10 = (10, 150)
 
         VALID_GROUP_LED_RANGES = [
-            [(10, 10)], [(10, 11)], [(10, 150)],
-            [(149, 150)], [(150, 150)],
-            [(10, 90), (90, 150)]
+            [[(10, 10)]],
+            [[(10, 11)]],
+            [[(10, 150)]],
+            [[(149, 150)]],
+            [[(150, 150)]],
+            [[(10, 90)], [(90, 150)]]
         ]
 
         INVALID_GROUP_LED_RANGES = [
-            [(0, 1)], [(0, 10)], [(0, 150)], [(0, 151)], [(0, 300)],
-            [(9, 10)], [(9, 11)], [(9, 150)], [(9, 300)],
-            [(10, 151)], [(10, 300)],
-            [(50, 151)], [(50, 300)],
-            [(150, 151)], [(150, 300)],
-            [(151, 152)], [(152, 300)]
+            [[(0, 1)]],
+            [[(0, 10)]],
+            [[(0, 150)]],
+            [[(0, 151)]],
+            [[(0, 300)]],
+            [[(9, 10)]],
+            [[(9, 11)]],
+            [[(9, 150)]],
+            [[(9, 300)]],
+            [[(10, 151)]],
+            [[(10, 300)]],
+            [[(50, 151)]],
+            [[(50, 300)]],
+            [[(150, 151)]],
+            [[(150, 300)]],
+            [[(151, 152)]],
+            [[(152, 300)]]
         ]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_10, VALID_GROUP_LED_RANGES)
         self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_10, INVALID_GROUP_LED_RANGES)
 
-    def check_valid_group_led_ranges(self, led_range: Tuple[int, int], valid_group_led_ranges: List[Tuple[int, int]]):
-        for group_led_ranges in valid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
-
+    def check_valid_group_led_ranges(self, led_range: Tuple[int, int],
+                                     valid_group_led_ranges: List[List[List[Tuple[int, int]]]]):
+        for led_ranges in valid_group_led_ranges:
+            with self.subTest(led_range=led_range, led_ranges=led_ranges):
                 gui = FakeCanvasGui()
-
-                leds = GraphicGroupedLeds(led_range, group_led_ranges, gui)
+                leds = GraphicGroupedLeds(led_range, led_ranges, gui)
 
                 expected_gui = create_gui_after_init(gui.width, leds)
                 self.assertEqual(gui, expected_gui)
 
-    def check_invalid_group_led_ranges(self, led_range: Tuple[int, int], invalid_group_led_ranges: List[Tuple[int, int]]):
-        for group_led_ranges in invalid_group_led_ranges:
-            with self.subTest(led_range=led_range, group_led_ranges=group_led_ranges):
+    def check_invalid_group_led_ranges(self, led_range: Tuple[int, int],
+                                       invalid_group_led_ranges: List[List[List[Tuple[int, int]]]]):
+        for led_ranges in invalid_group_led_ranges:
+            with self.subTest(led_range=led_range, led_ranges=led_ranges):
 
                 with self.assertRaises(ValueError):
                     gui = FakeCanvasGui()
-
-                    GraphicGroupedLeds(led_range, group_led_ranges, gui)
+                    GraphicGroupedLeds(led_range, led_ranges, gui)
 
 
 class TestSetGroupRGB(unittest.TestCase):
     LED_RANGE = (0, 100)
-    GROUP_LED_RANGES = [(0, 10), (10, 20), (20, 30)]
+    GROUP_LED_RANGES = [[(0, 10)], [(10, 20)], [(20, 30)]]
 
     NUMBER_OF_GROUPS = len(GROUP_LED_RANGES)
 

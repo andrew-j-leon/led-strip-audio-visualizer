@@ -53,7 +53,7 @@ class GroupedLeds(ABC):
         '''
 
     @abstractmethod
-    def get_group_led_range(self, group: int) -> Tuple[int, int]:
+    def get_group_led_ranges(self, group: int) -> Tuple[int, int]:
         pass
 
     @abstractmethod
@@ -67,22 +67,28 @@ class GroupedLeds(ABC):
 
 class ProductionGroupedLeds(GroupedLeds):
     def __init__(self, led_range: Tuple[int, int] = (0, 0),
-                 group_led_ranges: List[Tuple[int, int]] = []):
+                 group_led_ranges: List[List[Tuple[int, int]]] = []):
         start, end = led_range
 
-        self.__led_range = NonNegativeIntRange(start, end)
+        self.__led_strip_range = NonNegativeIntRange(start, end)
+        self.__group_led_ranges: List[List[NonNegativeIntRange]] = []
 
-        self.__group_led_ranges: List[NonNegativeIntRange] = []
+        for group_number in range(len(group_led_ranges)):
 
-        for i in range(len(group_led_ranges)):
-            start, end = group_led_ranges[i]
+            led_ranges: List[Tuple(int, int)] = []
 
-            non_negative_integer_range = NonNegativeIntRange(start, end)
+            for led_range_number in range(len(group_led_ranges[group_number])):
+                start, end = group_led_ranges[group_number][led_range_number]
 
-            if (non_negative_integer_range not in self.__led_range):
-                raise ValueError(f'group_led_ranges[{i}]={(start, end)} is not within the bounds of led_range={led_range}.')
+                led_range = NonNegativeIntRange(start, end)
 
-            self.__group_led_ranges.append(non_negative_integer_range)
+                if (led_range not in self.__led_strip_range):
+                    raise ValueError(f'group_led_ranges[{group_number}][{led_range_number}] = {(start, end)} '
+                                     f'is not within the bounds of led_range={led_range}.')
+
+                led_ranges.append(led_range)
+
+            self.__group_led_ranges.append(led_ranges)
 
         self.__group_colors = [RGB()] * len(group_led_ranges)
 
@@ -92,23 +98,26 @@ class ProductionGroupedLeds(GroupedLeds):
 
     @property
     def number_of_leds(self) -> int:
-        return self.__led_range.end - self.__led_range.start
+        return self.__led_strip_range.end - self.__led_strip_range.start
 
     @property
     def start_led(self) -> int:
-        return self.__led_range.start
+        return self.__led_strip_range.start
 
     @property
     def end_led(self) -> int:
-        return self.__led_range.end
+        return self.__led_strip_range.end
 
-    def get_group_led_range(self, group: int) -> Tuple[int, int]:
+    def get_group_led_ranges(self, group: int) -> List[Tuple[int, int]]:
         if (group < 0):
             raise ValueError(f'group must be >= 0, but was {group}.')
 
-        non_negative_int_range = self.__group_led_ranges[group]
+        led_ranges: List[Tuple[int, int]] = []
 
-        return (non_negative_int_range.start, non_negative_int_range.end)
+        for led_range in self.__group_led_ranges[group]:
+            led_ranges.append((led_range.start, led_range.end))
+
+        return led_ranges
 
     def get_group_rgb(self, group: int) -> RGB:
         if (group < 0):
@@ -128,7 +137,7 @@ class ProductionGroupedLeds(GroupedLeds):
 
 
 class GraphicGroupedLeds(ProductionGroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]],
+    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[List[Tuple[int, int]]],
                  gui: CanvasGui, led_diameter: int = 30):
         super().__init__(led_range, group_led_ranges)
 
@@ -155,12 +164,10 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         super()._set_group_rgbs(group, rgb)
 
     def __recolor_leds(self, group: int, rgb: RGB):
-        start, end = self.get_group_led_range(group)
-
-        for i in range(start, end):
-            element_id = self.__led_element_ids[i]
-
-            self.__gui.set_element_fill_color(element_id, rgb_to_hex(rgb.red, rgb.green, rgb.blue))
+        for start, end in self.get_group_led_ranges(group):
+            for led in range(start, end):
+                element_id = self.__led_element_ids[led]
+                self.__gui.set_element_fill_color(element_id, rgb_to_hex(rgb.red, rgb.green, rgb.blue))
 
     def __draw_and_store_leds(self):
         FONT_NAME = 'Arial'
@@ -190,13 +197,17 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         self.__gui.update()
 
 
-START_OF_MESSAGE_CODE = 0xFE
-END_OF_MESSAGE_CODE = 0xFF
+GROUP_SETUP_START_OF_MESSAGE_CODE = 0xFE
+GROUP_SETUP_END_OF_MESSAGE_CODE = 0xFF
+
+GROUP_COLOR_START_OF_MESSAGE_CODE = 0xFE
+GROUP_COLOR_END_OF_MESSAGE_CODE = 0xFF
+
 BYTE_ORDER = 'little'
 
 
 class SerialGroupedLeds(ProductionGroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Tuple[int, int]],
+    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[List[Tuple[int, int]]],
                  serial: Serial, brightness: int):
         super().__init__(led_range, group_led_ranges)
 
@@ -216,12 +227,12 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         self.__configure_serial()
 
     def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        self.__send_bytes(START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(GROUP_COLOR_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
         self.__send_bytes(len(group_rgbs).to_bytes(1, BYTE_ORDER))
 
         super().set_group_rgbs(group_rgbs)
 
-        self.__send_bytes(END_OF_MESSAGE_CODE.to_bytes(1, BYTE_ORDER))
+        self.__send_bytes(GROUP_COLOR_END_OF_MESSAGE_CODE.to_bytes(1, BYTE_ORDER))
 
     def _set_group_rgbs(self, group: int, rgb: RGB):
         self.__send_packet(group, rgb)
@@ -231,15 +242,22 @@ class SerialGroupedLeds(ProductionGroupedLeds):
     def __configure_serial(self):
         self.__send_bytes(self.__brightness.to_bytes(length=1, byteorder=BYTE_ORDER))
         self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(GROUP_SETUP_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
 
-        # send group led ranges
-        for group in range(self.number_of_groups):
-            start, end = self.get_group_led_range(group)
+        for group_number in range(self.number_of_groups):
+            led_ranges = self.get_group_led_ranges(group_number)
+            led_ranges_length_bytes = len(led_ranges).to_bytes(length=1, byteorder=BYTE_ORDER)
+            self.__send_bytes(led_ranges_length_bytes)
 
-            packet = (start.to_bytes(length=2, byteorder=BYTE_ORDER)
-                      + end.to_bytes(length=2, byteorder=BYTE_ORDER))
+            for start, end in led_ranges:
+                start_bytes = start.to_bytes(length=2, byteorder=BYTE_ORDER)
+                end_bytes = end.to_bytes(length=2, byteorder=BYTE_ORDER)
+                checksum = (sum(start_bytes) + sum(end_bytes) + sum(led_ranges_length_bytes)) % 256
 
-            self.__send_bytes(packet)
+                packet = start_bytes + end_bytes + checksum.to_bytes(length=1, byteorder=BYTE_ORDER)
+                self.__send_bytes(packet)
+
+        self.__send_bytes(GROUP_SETUP_END_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
 
     def __send_packet(self, group_index: int, rgb: RGB):
         packet = group_index.to_bytes(length=1, byteorder=BYTE_ORDER)

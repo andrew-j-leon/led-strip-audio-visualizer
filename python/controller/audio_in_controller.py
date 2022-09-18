@@ -270,25 +270,25 @@ class AudioInController(Controller):
                                   NEXT_COLOR_PALETTE_BUTTON, LED_STRIP_TYPE_COMBO,
                                   CYCLE_COLOR_PALETTES_CHECKBOX, SECONDS_PER_COLOR_PALETTE_INPUT)
 
-    def __get_group_index_to_led_range(self) -> List[Tuple[int, int]]:
-        def get_number_of_leds() -> int:
-            return self.__settings.end_led - self.__settings.start_led
-
+    def __create_group_led_ranges(self) -> List[List[Tuple[int, int]]]:
         try:
-            number_of_leds_per_group = max(1, get_number_of_leds() // self.__settings.number_of_groups)
-            group_index_to_led_range = list()
+            NUMBER_OF_LEDS = self.__settings.end_led - self.__settings.start_led
+            NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // self.__settings.number_of_groups)
+            group_led_ranges: List[List[Tuple[int, int]]] = []
 
-            for group_index in range(self.__settings.number_of_groups):
-                shifted_start_index = group_index * number_of_leds_per_group + self.__settings.start_led
+            for group_number in range(self.__settings.number_of_groups):
+                led_ranges: List[Tuple[int, int]] = []
 
-                shifted_end_index = shifted_start_index + number_of_leds_per_group
+                shifted_start_index = group_number * NUMBER_OF_LEDS_PER_GROUP + self.__settings.start_led
+                shifted_end_index = shifted_start_index + NUMBER_OF_LEDS_PER_GROUP
 
-                group_index_to_led_range.append((shifted_start_index, shifted_end_index))
+                led_ranges.append((shifted_start_index, shifted_end_index))
+                group_led_ranges.append(led_ranges)
 
             if (self.__settings.should_reverse_leds):
-                group_index_to_led_range.reverse()
+                group_led_ranges.reverse()
 
-            return group_index_to_led_range
+            return group_led_ranges
 
         except ZeroDivisionError:
             return []
@@ -300,7 +300,7 @@ class AudioInController(Controller):
         if (LED_STRIP_TYPE_COMBO.value == LedStripType.GRAPHIC):
             self.__led_strip_gui.open()
 
-            return GraphicGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(),
+            return GraphicGroupedLeds(LED_RANGE, self.__create_group_led_ranges(),
                                       self.__led_strip_gui)
 
         elif (LED_STRIP_TYPE_COMBO.value == LedStripType.SERIAL):
@@ -313,7 +313,7 @@ class AudioInController(Controller):
             self.__serial.open(self.__settings.serial_port, self.__settings.serial_baudrate,
                                PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
 
-            return SerialGroupedLeds(LED_RANGE, self.__get_group_index_to_led_range(),
+            return SerialGroupedLeds(LED_RANGE, self.__create_group_led_ranges(),
                                      self.__serial, self.__settings.brightness)
 
         raise ValueError(f'The selected LedStripType {LED_STRIP_TYPE_COMBO.value} is an unrecognized LedStripType. '

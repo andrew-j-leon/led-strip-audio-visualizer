@@ -36,6 +36,7 @@ class TestEquals(SettingsTestCase):
         self.assertNotEqual(self.settings, Settings())
         self.assertNotEqual(self.settings, None)
 
+
 class TestStartLed(SettingsTestCase):
     def test_set_to_less_than_0(self):
         START_LEDS_LESS_THAN_0 = [-1, -100]
