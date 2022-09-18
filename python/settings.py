@@ -11,8 +11,8 @@ class Settings(Jsonable):
 
     def __init__(self, start_led: int = 0, end_led: int = 0, milliseconds_per_audio_chunk: int = 50,
                  serial_port: str = '', serial_baudrate: int = 1000000, brightness: int = 0,
-                 minimum_frequency: int = 0, maximum_frequency: int = 0, should_reverse_leds: bool = False,
-                 number_of_groups: int = 0, should_center_groups: bool = False):
+                 minimum_frequency: int = 0, maximum_frequency: int = 0, should_reverse_groups: bool = False,
+                 number_of_groups: int = 0, should_mirror_groups: bool = False):
 
         self.start_led = start_led
         self.end_led = end_led
@@ -22,17 +22,17 @@ class Settings(Jsonable):
         self.brightness = brightness
         self.minimum_frequency = minimum_frequency
         self.maximum_frequency = maximum_frequency
-        self.should_reverse_leds = should_reverse_leds
+        self.should_reverse_groups = should_reverse_groups
         self.number_of_groups = number_of_groups
-        self.should_center_groups = should_center_groups
+        self.should_mirror_groups = should_mirror_groups
 
     def __repr__(self) -> str:
         return (f'Settings(start_led = {self.start_led}, end_led = {self.end_led}, '
                 f'milliseconds_per_audio_chunk = {self.milliseconds_per_audio_chunk}, '
                 f'serial_port = {self.serial_port}, serial_baudrate = {self.serial_baudrate}, '
                 f'brightness = {self.brightness}, minimum_frequency = {self.minimum_frequency}, '
-                f'maximum_frequency = {self.maximum_frequency}, should_reverse_leds = {self.should_reverse_leds}, '
-                f'number_of_groups = {self.number_of_groups})')
+                f'maximum_frequency = {self.maximum_frequency}, should_reverse_groups = {self.should_reverse_groups}, '
+                f'number_of_groups = {self.number_of_groups}, should_mirror_groups = {self.should_mirror_groups})')
 
     def __eq__(self, other: Any) -> bool:
         if (isinstance(other, Settings)):
@@ -44,8 +44,9 @@ class Settings(Jsonable):
                     and self.brightness == other.brightness
                     and self.minimum_frequency == other.minimum_frequency
                     and self.maximum_frequency == other.maximum_frequency
-                    and self.should_reverse_leds == other.should_reverse_leds
-                    and self.number_of_groups == other.number_of_groups)
+                    and self.should_reverse_groups == other.should_reverse_groups
+                    and self.number_of_groups == other.number_of_groups
+                    and self.should_mirror_groups == other.should_mirror_groups)
 
         return False
 
@@ -55,8 +56,8 @@ class Settings(Jsonable):
                 'serial_port': self.serial_port, 'serial_baudrate': self.serial_baudrate,
                 'brightness': self.brightness, 'minimum_frequency': self.minimum_frequency,
                 'maximum_frequency': self.maximum_frequency,
-                'should_reverse_leds': self.should_reverse_leds, 'number_of_groups': self.number_of_groups,
-                'should_center_groups': self.should_center_groups}
+                'should_reverse_groups': self.should_reverse_groups, 'number_of_groups': self.number_of_groups,
+                'should_mirror_groups': self.should_mirror_groups}
 
     @property
     def start_led(self) -> int:

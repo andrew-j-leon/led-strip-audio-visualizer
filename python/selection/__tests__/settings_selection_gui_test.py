@@ -107,8 +107,8 @@ class SettingsSelectionGuiTestCase(TestCase):
         BRIGHTNESS = str(SELECTED_SETTINGS.brightness)
         MINIMUM_FREQUENCY = str(SELECTED_SETTINGS.minimum_frequency)
         MAXIMUM_FREQUENCY = str(SELECTED_SETTINGS.maximum_frequency)
-        SHOULD_REVERSE_LEDS = SELECTED_SETTINGS.should_reverse_leds
-        SHOULD_CENTER_GROUPS = SELECTED_SETTINGS.should_center_groups
+        SHOULD_REVERSE_LEDS = SELECTED_SETTINGS.should_reverse_groups
+        SHOULD_CENTER_GROUPS = SELECTED_SETTINGS.should_mirror_groups
 
         self.assertEqual(START_LED, get_widget_value(SettingsSelectionElement.START_LED_INPUT))
         self.assertEqual(END_LED, get_widget_value(SettingsSelectionElement.END_LED_INPUT))
@@ -118,8 +118,8 @@ class SettingsSelectionGuiTestCase(TestCase):
         self.assertEqual(BRIGHTNESS, get_widget_value(SettingsSelectionElement.BRIGHTNESS_INPUT))
         self.assertEqual(MINIMUM_FREQUENCY, get_widget_value(SettingsSelectionElement.MINIMUM_FREQUENCY_INPUT))
         self.assertEqual(MAXIMUM_FREQUENCY, get_widget_value(SettingsSelectionElement.MAXIMUM_FREQUENCY_INPUT))
-        self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(SettingsSelectionElement.REVERSE_LEDS_CHECK_BOX))
-        self.assertEqual(SHOULD_CENTER_GROUPS, get_widget_value(SettingsSelectionElement.CENTER_GROUPS_CHECK_BOX))
+        self.assertEqual(SHOULD_REVERSE_LEDS, get_widget_value(SettingsSelectionElement.REVERSE_GROUPS_CHECK_BOX))
+        self.assertEqual(SHOULD_CENTER_GROUPS, get_widget_value(SettingsSelectionElement.MIRROR_GROUPS_CHECK_BOX))
 
 
 class TestDisplay(SettingsSelectionGuiTestCase):

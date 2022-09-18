@@ -273,19 +273,48 @@ class AudioInController(Controller):
     def __create_group_led_ranges(self) -> List[List[Tuple[int, int]]]:
         try:
             NUMBER_OF_LEDS = self.__settings.end_led - self.__settings.start_led
-            NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // self.__settings.number_of_groups)
+            NUMBER_OF_GROUPS = self.__settings.number_of_groups
+            NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // NUMBER_OF_GROUPS)
+
             group_led_ranges: List[List[Tuple[int, int]]] = []
 
-            for group_number in range(self.__settings.number_of_groups):
-                led_ranges: List[Tuple[int, int]] = []
+            if (self.__settings.should_mirror_groups):
+                NUMBER_OF_LEDS_PER_LED_RANGE = max(1, NUMBER_OF_LEDS_PER_GROUP // 2)
+                NUMBER_OF_LED_RANGES = NUMBER_OF_LEDS // NUMBER_OF_LEDS_PER_LED_RANGE
+                group_led_ranges: List[List[Tuple[int, int]]] = [[] for group_number in range(NUMBER_OF_GROUPS)]
 
-                shifted_start_index = group_number * NUMBER_OF_LEDS_PER_GROUP + self.__settings.start_led
-                shifted_end_index = shifted_start_index + NUMBER_OF_LEDS_PER_GROUP
+                start_led = self.__settings.start_led
+                end_led = start_led + NUMBER_OF_LEDS_PER_LED_RANGE
 
-                led_ranges.append((shifted_start_index, shifted_end_index))
-                group_led_ranges.append(led_ranges)
+                group_number = NUMBER_OF_GROUPS - 1
 
-            if (self.__settings.should_reverse_leds):
+                while (group_number >= 0 and end_led <= self.__settings.end_led):
+                    group_led_ranges[group_number].append((start_led, end_led))
+
+                    start_led += NUMBER_OF_LEDS_PER_LED_RANGE
+                    end_led += NUMBER_OF_LEDS_PER_LED_RANGE
+                    group_number -= 1
+
+                group_number = 0 if (NUMBER_OF_LED_RANGES % 2 == 0) else 1
+
+                while (group_number < NUMBER_OF_GROUPS and end_led <= self.__settings.end_led):
+                    group_led_ranges[group_number].append((start_led, end_led))
+
+                    start_led += NUMBER_OF_LEDS_PER_LED_RANGE
+                    end_led += NUMBER_OF_LEDS_PER_LED_RANGE
+                    group_number += 1
+
+            else:
+                group_number = 0
+                start_led = self.__settings.start_led
+                end_led = start_led + NUMBER_OF_LEDS_PER_GROUP
+                while (group_number < NUMBER_OF_GROUPS and end_led <= self.__settings.end_led):
+                    group_led_ranges.append([(start_led, end_led)])
+                    start_led += NUMBER_OF_LEDS_PER_GROUP
+                    end_led += NUMBER_OF_LEDS_PER_GROUP
+                    group_number += 1
+
+            if (self.__settings.should_reverse_groups):
                 group_led_ranges.reverse()
 
             return group_led_ranges
