@@ -43,12 +43,6 @@ void setup() {
         while (group_setup_state->get_state() != GroupSetupStateState::END) {
             group_setup_state->update_state(read_serial(), on_group_received);
         }
-
-        uint32_t rgb = led_strip.Color(10, 20, 30);
-        for (int i = 0; i < 100; i++) {
-            led_strip.setPixelColor(i, rgb);
-        }
-        led_strip.show();
     }
     else {
         while(1);
