@@ -1,6 +1,6 @@
 import math
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Set, Tuple
 
 from libraries.canvas_gui import CanvasGui
 from libraries.serial import Serial
@@ -67,26 +67,23 @@ class GroupedLeds(ABC):
 
 class ProductionGroupedLeds(GroupedLeds):
     def __init__(self, led_range: Tuple[int, int] = (0, 0),
-                 group_led_ranges: List[List[Tuple[int, int]]] = []):
+                 group_led_ranges: List[Iterable[Tuple[int, int]]] = []):
         start, end = led_range
 
         self.__led_strip_range = NonNegativeIntRange(start, end)
         self.__group_led_ranges: List[List[NonNegativeIntRange]] = []
 
         for group_number in range(len(group_led_ranges)):
+            led_ranges: Set[Tuple(int, int)] = set()
 
-            led_ranges: List[Tuple(int, int)] = []
-
-            for led_range_number in range(len(group_led_ranges[group_number])):
-                start, end = group_led_ranges[group_number][led_range_number]
-
+            for start, end in group_led_ranges[group_number]:
                 led_range = NonNegativeIntRange(start, end)
 
                 if (led_range not in self.__led_strip_range):
-                    raise ValueError(f'group_led_ranges[{group_number}][{led_range_number}] = {(start, end)} '
+                    raise ValueError(f'group_led_ranges[{group_number}] contains {(start, end)}, which '
                                      f'is not within the bounds of led_range={led_range}.')
 
-                led_ranges.append(led_range)
+                led_ranges.add(led_range)
 
             self.__group_led_ranges.append(led_ranges)
 
@@ -108,14 +105,14 @@ class ProductionGroupedLeds(GroupedLeds):
     def end_led(self) -> int:
         return self.__led_strip_range.end
 
-    def get_group_led_ranges(self, group: int) -> List[Tuple[int, int]]:
+    def get_group_led_ranges(self, group: int) -> Set[Tuple[int, int]]:
         if (group < 0):
             raise ValueError(f'group must be >= 0, but was {group}.')
 
-        led_ranges: List[Tuple[int, int]] = []
+        led_ranges: Set[Tuple[int, int]] = set()
 
         for led_range in self.__group_led_ranges[group]:
-            led_ranges.append((led_range.start, led_range.end))
+            led_ranges.add((led_range.start, led_range.end))
 
         return led_ranges
 
@@ -137,7 +134,7 @@ class ProductionGroupedLeds(GroupedLeds):
 
 
 class GraphicGroupedLeds(ProductionGroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[List[Tuple[int, int]]],
+    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Iterable[Tuple[int, int]]],
                  gui: CanvasGui, led_diameter: int = 30):
         super().__init__(led_range, group_led_ranges)
 
@@ -207,7 +204,7 @@ BYTE_ORDER = 'little'
 
 
 class SerialGroupedLeds(ProductionGroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[List[Tuple[int, int]]],
+    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Iterable[Tuple[int, int]]],
                  serial: Serial, brightness: int):
         super().__init__(led_range, group_led_ranges)
 

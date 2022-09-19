@@ -56,7 +56,7 @@ class TestConstructor(unittest.TestCase):
         START_LED = 0
         END_LED = 100
         LED_RANGE = (START_LED, END_LED)
-        GROUP_LED_RANGES = [[], [(0, 10)], [(10, 20), (20, 30)], [(30, 40), (40, 50), (70, 80), (90, 100)]]
+        GROUP_LED_RANGES = [set(), {(0, 10)}, {(10, 20), (20, 30)}, {(30, 40), (40, 50), (70, 80), (90, 100)}]
 
         grouped_leds = ProductionGroupedLeds(LED_RANGE, GROUP_LED_RANGES)
 
@@ -192,7 +192,7 @@ class TestMethods(unittest.TestCase):
 
 class GroupMethodsTestCase(unittest.TestCase):
     LED_RANGE = (0, 100)
-    GROUP_LED_RANGES = [[(0, 10)], [(10, 20)], [(20, 30)]]
+    GROUP_LED_RANGES = [{(0, 10)}, {(10, 20)}, {(20, 30)}]
 
     NUMBER_OF_GROUPS = len(GROUP_LED_RANGES)
 

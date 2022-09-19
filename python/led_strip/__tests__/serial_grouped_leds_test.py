@@ -119,7 +119,7 @@ class TestConstructor(unittest.TestCase):
         END_LED = 100
         LED_RANGE = (START_LED, END_LED)
         NUMBER_OF_LEDS = END_LED - START_LED
-        GROUP_LED_RANGES = [[], [(0, 10)], [(10, 20), (20, 30)], [(30, 40), (40, 50), (70, 80), (90, 100)]]
+        GROUP_LED_RANGES = [set(), {(0, 10)}, {(10, 20), (20, 30)}, {(30, 40), (40, 50), (70, 80), (90, 100)}]
 
         grouped_leds = SerialGroupedLeds(LED_RANGE, GROUP_LED_RANGES, FakeSerial(NUMBER_OF_LEDS), self.BRIGHTNESS)
 

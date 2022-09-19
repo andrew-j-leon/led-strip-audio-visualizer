@@ -2,7 +2,7 @@ import math
 import unittest
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from led_strip.grouped_leds import GraphicGroupedLeds, Point
 from libraries.canvas_gui import CanvasGui
@@ -57,7 +57,7 @@ class FakeCanvasGui(CanvasGui):
     def set_element_fill_color(self, element_id: int, color: str):
         self.elements[element_id].set_fill_color(color)
 
-    def set_group_rgbs(self, leds: GraphicGroupedLeds, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
+    def set_group_rgbs(self, leds, group_rgbs):
         for group_number, rgb in group_rgbs:
             led_ranges = leds.get_group_led_ranges(group_number)
 
@@ -290,7 +290,7 @@ class TestConstructor(unittest.TestCase):
         START_LED = 0
         END_LED = 100
         LED_RANGE = (START_LED, END_LED)
-        GROUP_LED_RANGES = [[], [(0, 10)], [(10, 20), (20, 30)], [(30, 40), (40, 50), (70, 80), (90, 100)]]
+        GROUP_LED_RANGES = [set(), {(0, 10)}, {(10, 20), (20, 30)}, {(30, 40), (40, 50), (70, 80), (90, 100)}]
 
         grouped_leds = GraphicGroupedLeds(LED_RANGE, GROUP_LED_RANGES, FakeCanvasGui())
 

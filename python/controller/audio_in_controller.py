@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from queue import Empty
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Set, Tuple, Union
 
 from color_palette import ColorPalette
 from controller.controller import Controller, RunnableResource
@@ -46,6 +46,90 @@ class State(Enum):
 class LedStripType:
     GRAPHIC = 'Graphic LED Strip'
     SERIAL = 'Serial LED Strip'
+
+
+def _create_groups(start_led: int, end_led: int, number_of_groups: int) -> List[Set[Tuple[int, int]]]:
+    if (start_led < 0):
+        raise ValueError(f'start_led must be >= 0, but was {start_led}.')
+
+    if (end_led < 0):
+        raise ValueError(f'end_led must be >= 0, but was {end_led}.')
+
+    if (number_of_groups < 0):
+        raise ValueError(f'number_of_groups ({number_of_groups}) must be >= 0.')
+
+    NUMBER_OF_LEDS = end_led - start_led
+
+    if (NUMBER_OF_LEDS < 0):
+        raise ValueError(f'start_led ({start_led}) must be <= end_led ({end_led}).')
+
+    if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
+        return []
+
+    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, NUMBER_OF_LEDS // number_of_groups)
+
+    group_number = 0
+    group_start = start_led
+    group_end = group_start + NUMBER_OF_LEDS_PER_GROUP
+
+    group_led_ranges: List[Set[Tuple[int, int]]] = [set() for group_number in range(number_of_groups)]
+
+    while (group_number < number_of_groups and group_end <= end_led):
+        group_led_ranges[group_number].add((group_start, group_end))
+
+        group_start += NUMBER_OF_LEDS_PER_GROUP
+        group_end += NUMBER_OF_LEDS_PER_GROUP
+        group_number += 1
+
+    return group_led_ranges
+
+
+def _create_mirrored_groups(start_led: int, end_led: int, number_of_groups: int) -> List[Set[Tuple[int, int]]]:
+    if (start_led < 0):
+        raise ValueError(f'start_led must be >= 0, but was {start_led}.')
+
+    if (end_led < 0):
+        raise ValueError(f'end_led must be >= 0, but was {end_led}.')
+
+    if (number_of_groups < 0):
+        raise ValueError(f'number_of_groups ({number_of_groups}) must be >= 0.')
+
+    NUMBER_OF_LEDS = end_led - start_led
+
+    if (NUMBER_OF_LEDS < 0):
+        raise ValueError(f'start_led ({start_led}) must be <= end_led ({end_led}).')
+
+    if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
+        return []
+
+    NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // number_of_groups)
+    NUMBER_OF_LEDS_PER_LED_RANGE = max(1, NUMBER_OF_LEDS_PER_GROUP // 2)
+
+    group_led_ranges: List[Set[Tuple[int, int]]] = [set() for group_number in range(number_of_groups)]
+
+    led_range_start = start_led
+    led_range_end = led_range_start + NUMBER_OF_LEDS_PER_LED_RANGE
+
+    group_number = number_of_groups - 1
+
+    while (group_number >= 0 and led_range_end <= end_led):
+        group_led_ranges[group_number].add((led_range_start, led_range_end))
+
+        led_range_start += NUMBER_OF_LEDS_PER_LED_RANGE
+        led_range_end += NUMBER_OF_LEDS_PER_LED_RANGE
+        group_number -= 1
+
+    NUMBER_OF_LED_RANGES = NUMBER_OF_LEDS // NUMBER_OF_LEDS_PER_LED_RANGE
+    group_number = 0 if (NUMBER_OF_LED_RANGES % 2 == 0) else 1
+
+    while (group_number < number_of_groups and led_range_end <= end_led):
+        group_led_ranges[group_number].add((led_range_start, led_range_end))
+
+        led_range_start += NUMBER_OF_LEDS_PER_LED_RANGE
+        led_range_end += NUMBER_OF_LEDS_PER_LED_RANGE
+        group_number += 1
+
+    return group_led_ranges
 
 
 class AudioInController(Controller):
@@ -270,49 +354,15 @@ class AudioInController(Controller):
                                   NEXT_COLOR_PALETTE_BUTTON, LED_STRIP_TYPE_COMBO,
                                   CYCLE_COLOR_PALETTES_CHECKBOX, SECONDS_PER_COLOR_PALETTE_INPUT)
 
-    def __create_group_led_ranges(self) -> List[List[Tuple[int, int]]]:
+    def __create_groups(self) -> List[Set[Tuple[int, int]]]:
         try:
-            NUMBER_OF_LEDS = self.__settings.end_led - self.__settings.start_led
+            START_LED = self.__settings.start_led
+            END_LED = self.__settings.end_led
             NUMBER_OF_GROUPS = self.__settings.number_of_groups
-            NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // NUMBER_OF_GROUPS)
 
-            group_led_ranges: List[List[Tuple[int, int]]] = []
-
-            if (self.__settings.should_mirror_groups):
-                NUMBER_OF_LEDS_PER_LED_RANGE = max(1, NUMBER_OF_LEDS_PER_GROUP // 2)
-                NUMBER_OF_LED_RANGES = NUMBER_OF_LEDS // NUMBER_OF_LEDS_PER_LED_RANGE
-                group_led_ranges: List[List[Tuple[int, int]]] = [[] for group_number in range(NUMBER_OF_GROUPS)]
-
-                start_led = self.__settings.start_led
-                end_led = start_led + NUMBER_OF_LEDS_PER_LED_RANGE
-
-                group_number = NUMBER_OF_GROUPS - 1
-
-                while (group_number >= 0 and end_led <= self.__settings.end_led):
-                    group_led_ranges[group_number].append((start_led, end_led))
-
-                    start_led += NUMBER_OF_LEDS_PER_LED_RANGE
-                    end_led += NUMBER_OF_LEDS_PER_LED_RANGE
-                    group_number -= 1
-
-                group_number = 0 if (NUMBER_OF_LED_RANGES % 2 == 0) else 1
-
-                while (group_number < NUMBER_OF_GROUPS and end_led <= self.__settings.end_led):
-                    group_led_ranges[group_number].append((start_led, end_led))
-
-                    start_led += NUMBER_OF_LEDS_PER_LED_RANGE
-                    end_led += NUMBER_OF_LEDS_PER_LED_RANGE
-                    group_number += 1
-
-            else:
-                group_number = 0
-                start_led = self.__settings.start_led
-                end_led = start_led + NUMBER_OF_LEDS_PER_GROUP
-                while (group_number < NUMBER_OF_GROUPS and end_led <= self.__settings.end_led):
-                    group_led_ranges.append([(start_led, end_led)])
-                    start_led += NUMBER_OF_LEDS_PER_GROUP
-                    end_led += NUMBER_OF_LEDS_PER_GROUP
-                    group_number += 1
+            group_led_ranges = (_create_mirrored_groups(START_LED, END_LED, NUMBER_OF_GROUPS)
+                                if (self.__settings.should_mirror_groups)
+                                else _create_groups(START_LED, END_LED, NUMBER_OF_GROUPS))
 
             if (self.__settings.should_reverse_groups):
                 group_led_ranges.reverse()
@@ -329,7 +379,7 @@ class AudioInController(Controller):
         if (LED_STRIP_TYPE_COMBO.value == LedStripType.GRAPHIC):
             self.__led_strip_gui.open()
 
-            return GraphicGroupedLeds(LED_RANGE, self.__create_group_led_ranges(),
+            return GraphicGroupedLeds(LED_RANGE, self.__create_groups(),
                                       self.__led_strip_gui)
 
         elif (LED_STRIP_TYPE_COMBO.value == LedStripType.SERIAL):
@@ -342,7 +392,7 @@ class AudioInController(Controller):
             self.__serial.open(self.__settings.serial_port, self.__settings.serial_baudrate,
                                PARITY, STOP_BITS, BYTE_SIZE, READ_TIMEOUT, WRITE_TIMEOUT)
 
-            return SerialGroupedLeds(LED_RANGE, self.__create_group_led_ranges(),
+            return SerialGroupedLeds(LED_RANGE, self.__create_groups(),
                                      self.__serial, self.__settings.brightness)
 
         raise ValueError(f'The selected LedStripType {LED_STRIP_TYPE_COMBO.value} is an unrecognized LedStripType. '

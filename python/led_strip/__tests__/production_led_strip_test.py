@@ -1,5 +1,5 @@
 import unittest
-from typing import Iterable, List, Tuple
+from typing import Iterable, List
 
 from led_strip.grouped_leds import GroupedLeds
 from led_strip.led_strip import ProductionLedStrip
@@ -26,13 +26,13 @@ class FakeGroupedLeds(GroupedLeds):
     def end_led(self) -> int:
         return 1
 
-    def get_group_led_ranges(self, group: int) -> List[Tuple[int, int]]:
-        return [(0, 1)]
+    def get_group_led_ranges(self, group):
+        return {(0, 1)}
 
-    def get_group_rgb(self, group: int) -> RGB:
+    def get_group_rgb(self, group):
         return self.__group_colors[group]
 
-    def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
+    def set_group_rgbs(self, group_rgbs):
         for group, rgb in group_rgbs:
             self.__group_colors[group] = RGB(*rgb)
 
