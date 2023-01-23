@@ -7,6 +7,7 @@ from serial.serialutil import SerialException
 PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE = 'N', 'E', 'O', 'M', 'S'
 STOPBITS_ONE, STOPBITS_ONE_POINT_FIVE, STOPBITS_TWO = (1, 1.5, 2)
 FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5, 6, 7, 8)
+INIT_SERIAL_MESSAGE = b'\0'
 
 
 class Serial(ABC):
@@ -41,8 +42,10 @@ class ProductionSerial(Serial):
         self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
                                       read_timeout, write_timeout=write_timeout)
 
+        self.write(INIT_SERIAL_MESSAGE)
+
         NUMBER_OF_BYTES = 2
-        number_of_leds: bytes = self.__serial.read(NUMBER_OF_BYTES)
+        number_of_leds: bytes = self.read(NUMBER_OF_BYTES)
 
         if (len(number_of_leds) != NUMBER_OF_BYTES):
             raise ValueError(f'ProductionSerial expected {NUMBER_OF_BYTES} bytes from the serial connection (representing the number of leds in the led strip), but instead received {len(number_of_leds)} bytes.')

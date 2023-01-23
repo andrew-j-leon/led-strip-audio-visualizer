@@ -1,30 +1,36 @@
 #include <Arduino.h>
-#include <CDC.h>
+// #include <CDC.h> // Some systems need to include this header
 #include <FastLED_NeoPixel.h>
 #include "packet_state.h"
 #include "group_setup_state.h"
 #include "array.h"
 
 #define SERIAL_BAUD_RATE 1000000
-#define NUMBER_OF_LEDS 600
+#define NUMBER_OF_LEDS 125
 #define PIN_NUMBER 6
 #define BYTES_PER_PACKET 4
 
 u16Array* groups;
 
-FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip;
+// FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip; // Neopixel Strip
+FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_RGB> led_strip; // PL9823
+
 PacketState packet_state = PacketState(BYTES_PER_PACKET);
 GroupSetupState* group_setup_state = nullptr;
 
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE, SERIAL_8N1);
-    while (!Serial) {
-        ;
+
+    int number_of_bytes_received = Serial.available();
+
+    while (!(number_of_bytes_received == 1 && Serial.read() == 0x00)) {
+        number_of_bytes_received = Serial.available();
     }
 
     const uint8 LOW_ORDER_BYTE = (uint8)NUMBER_OF_LEDS;
-    const uint8 HIGH_ORDER_BYTE = ( (uint16_t)NUMBER_OF_LEDS >> 8 );
+    const uint8 HIGH_ORDER_BYTE = ((uint16)NUMBER_OF_LEDS >> 8);
+
     Serial.write(LOW_ORDER_BYTE);
     Serial.write(HIGH_ORDER_BYTE);
 

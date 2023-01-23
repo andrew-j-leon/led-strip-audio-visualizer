@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
+from libraries.serial import EIGHTBITS, INIT_SERIAL_MESSAGE, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, ProductionSerial
 
 
 class SerialTestCase(unittest.TestCase):
@@ -32,6 +32,7 @@ class TestOpen(SerialTestCase):
         self.production_serial.open(self.PORT, self.BAUD_RATE, PARITY_NONE, STOPBITS_ONE_POINT_FIVE,
                                     EIGHTBITS, self.READ_TIMEOUT, self.WRITE_TIMEOUT)
 
+        self.serial_instance_mock.write.assert_called_once_with(INIT_SERIAL_MESSAGE)
         self.assertEqual(self.production_serial.number_of_leds, NUMBER_OF_LEDS)
 
     def test_open_but_connection_failed(self):
@@ -100,7 +101,7 @@ class TestProductionSerialWhenConnectionIsOpen(SerialTestCase):
 
         self.production_serial.write(DATA)
 
-        self.serial_instance_mock.write.assert_called_once_with(DATA)
+        self.serial_instance_mock.write.assert_called_with(DATA)
 
     def test_close(self):
         self.production_serial.close()

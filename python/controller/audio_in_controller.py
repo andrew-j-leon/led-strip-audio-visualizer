@@ -10,7 +10,7 @@ from led_strip.grouped_leds import GraphicGroupedLeds, GroupedLeds, SerialGroupe
 from led_strip.led_strip import LedStrip, ProductionLedStrip
 from libraries.audio_in_stream import AudioInStream
 from libraries.canvas_gui import CanvasGui
-from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE_POINT_FIVE, Serial
+from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE, Serial
 from libraries.widget import Button, CheckBox, Combo, Input, Text
 from libraries.widget_gui import Font, WidgetGui, WidgetGuiEvent
 from selection.selection import Selection
@@ -384,7 +384,7 @@ class AudioInController(Controller):
 
         elif (LED_STRIP_TYPE_COMBO.value == LedStripType.SERIAL):
             PARITY = PARITY_NONE
-            STOP_BITS = STOPBITS_ONE_POINT_FIVE
+            STOP_BITS = STOPBITS_ONE
             BYTE_SIZE = EIGHTBITS
             READ_TIMEOUT = 10
             WRITE_TIMEOUT = 10
