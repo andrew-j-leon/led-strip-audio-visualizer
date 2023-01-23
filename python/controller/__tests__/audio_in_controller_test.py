@@ -640,7 +640,7 @@ class TestCreateGroups(TestCase):
         END_LED = 1
         NUMBER_OF_GROUPS = 5
 
-        EXPECTED = [{(0, 1)}, set(), set(), set(), set()]
+        EXPECTED = [{(START_LED, END_LED)}, set(), set(), set(), set()]
         self.assertEqual(_create_groups(START_LED, END_LED, NUMBER_OF_GROUPS), EXPECTED)
 
     def test_ten_leds(self):
@@ -734,15 +734,23 @@ class TestCreateGroups(TestCase):
         END_LED = 3
         NUMBER_OF_GROUPS = 4
 
-        EXPECTED = [{(0, 1)}, {(1, 2)}, {(2, 3)}, set()]
+        EXPECTED = [{(START_LED, 1)}, {(1, 2)}, {(2, END_LED)}, set()]
         self.assertEqual(_create_groups(START_LED, END_LED, NUMBER_OF_GROUPS), EXPECTED)
 
-    def test_cannot_evenly_divide_number_of_leds_by_number_of_groups(self):
+    def test_number_of_leds_divided_by_three_groups_has_a_remainder_of_1(self):
         START_LED = 0
         END_LED = 10
         NUMBER_OF_GROUPS = 3
 
-        EXPECTED = [{(0, 3)}, {(3, 6)}, {(6, 9)}]
+        EXPECTED = [{(START_LED, 3)}, {(3, 6)}, {(6, END_LED)}]
+        self.assertEqual(_create_groups(START_LED, END_LED, NUMBER_OF_GROUPS), EXPECTED)
+
+    def test_number_of_leds_divided_by_three_groups_has_a_remainder_of_2(self):
+        START_LED = 0
+        END_LED = 29
+        NUMBER_OF_GROUPS = 3
+
+        EXPECTED = [{(START_LED, 10)}, {(10, 20)}, {(20, END_LED)}]
         self.assertEqual(_create_groups(START_LED, END_LED, NUMBER_OF_GROUPS), EXPECTED)
 
     def test_start_led_at_zero(self):

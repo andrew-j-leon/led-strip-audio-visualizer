@@ -66,20 +66,34 @@ def _create_groups(start_led: int, end_led: int, number_of_groups: int) -> List[
     if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
         return []
 
-    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, NUMBER_OF_LEDS // number_of_groups)
+    # NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, NUMBER_OF_LEDS // number_of_groups)
+    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, round(NUMBER_OF_LEDS / number_of_groups))
 
     group_number = 0
-    group_start = start_led
-    group_end = group_start + NUMBER_OF_LEDS_PER_GROUP
+    group_start_led = start_led
+    group_end_led = group_start_led + NUMBER_OF_LEDS_PER_GROUP
 
     group_led_ranges: List[Set[Tuple[int, int]]] = [set() for group_number in range(number_of_groups)]
 
-    while (group_number < number_of_groups and group_end <= end_led):
-        group_led_ranges[group_number].add((group_start, group_end))
+    while (group_number < number_of_groups and group_start_led < end_led):
+        group_led_ranges[group_number].add((group_start_led, group_end_led))
 
-        group_start += NUMBER_OF_LEDS_PER_GROUP
-        group_end += NUMBER_OF_LEDS_PER_GROUP
+        group_start_led += NUMBER_OF_LEDS_PER_GROUP
+        group_end_led += NUMBER_OF_LEDS_PER_GROUP
         group_number += 1
+
+    try:
+        LAST_GROUP_LED_RANGE = group_led_ranges[-1].pop()
+        LAST_GROUP_START_LED = LAST_GROUP_LED_RANGE[0]
+        group_led_ranges[-1].add((LAST_GROUP_START_LED, end_led))
+
+    except IndexError as err:
+        if (not len(group_led_ranges) == 0):
+            raise err
+
+    except KeyError as err:
+        if (not len(group_led_ranges[-1]) == 0):
+            raise err
 
     return group_led_ranges
 
