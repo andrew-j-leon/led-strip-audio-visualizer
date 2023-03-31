@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import time
 from typing import Any, Union
 
 import serial
@@ -41,6 +42,9 @@ class ProductionSerial(Serial):
 
         self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
                                       read_timeout, write_timeout=write_timeout)
+
+        SERIAL_INIT_DELAY = 1
+        time.sleep(SERIAL_INIT_DELAY)
 
         self.write(INIT_SERIAL_MESSAGE)
 

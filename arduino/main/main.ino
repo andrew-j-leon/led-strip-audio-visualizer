@@ -22,6 +22,10 @@ GroupSetupState* group_setup_state = nullptr;
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE, SERIAL_8N1);
 
+    if (!Serial) { // For Arduino Wifi-Rev2
+
+    }
+
     int number_of_bytes_received = Serial.available();
 
     while (!(number_of_bytes_received == 1 && Serial.read() == 0x00)) {

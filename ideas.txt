@@ -1,0 +1,4 @@
+1) Re-write in C++
+2) Launch from command line just like other command line programs (e.g. grep)
+	E.g. "audio-visualizer --config-file <path_to_config_file>
+3) Try and use autotools to make installation easier (just type 'make' and you can start using the program)
