@@ -5,7 +5,7 @@
 #include "group_setup_state.h"
 #include "array.h"
 
-#define SERIAL_BAUD_RATE 1000000
+#define SERIAL_BAUD_RATE 2000000
 #define NUMBER_OF_LEDS 125
 #define PIN_NUMBER 6
 #define BYTES_PER_PACKET 4
