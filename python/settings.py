@@ -6,8 +6,7 @@ from util import Jsonable
 
 
 class Settings(Jsonable):
-    SERIAL_BAUDRATES = [2000000, 1000000, 500000, 115200, 57600, 38400, 31250, 28800, 19200, 14400,
-                        9600, 4800, 2400, 1200, 600, 300]
+    SERIAL_BAUDRATES = [2000000, 1999999, 1750000, 1500000, 1000000]
 
     def __init__(self, start_led: int = 0, end_led: int = 0, milliseconds_per_audio_chunk: int = 50,
                  serial_port: str = '', serial_baudrate: int = 1000000, brightness: int = 0,

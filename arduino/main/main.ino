@@ -5,15 +5,15 @@
 #include "group_setup_state.h"
 #include "array.h"
 
-#define SERIAL_BAUD_RATE 2000000
-#define NUMBER_OF_LEDS 125
+#define SERIAL_BAUD_RATE 1999999
+#define NUMBER_OF_LEDS 600
 #define PIN_NUMBER 6
 #define BYTES_PER_PACKET 4
 
 u16Array* groups;
 
-// FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip; // Neopixel Strip
-FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_RGB> led_strip; // PL9823
+FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip; // Neopixel Strip
+// FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_RGB> led_strip; // PL9823
 
 PacketState packet_state = PacketState(BYTES_PER_PACKET);
 GroupSetupState* group_setup_state = nullptr;
@@ -22,8 +22,8 @@ GroupSetupState* group_setup_state = nullptr;
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE, SERIAL_8N1);
 
-    if (!Serial) { // For Arduino Wifi-Rev2
-
+    while (!Serial) { // For Arduino Wifi-Rev2
+      ;
     }
 
     int number_of_bytes_received = Serial.available();
