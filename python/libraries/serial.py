@@ -3,12 +3,15 @@ from abc import ABC, abstractmethod
 from typing import Any, Union
 
 import serial
-from serial.serialutil import SerialException
 
 PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE = 'N', 'E', 'O', 'M', 'S'
 STOPBITS_ONE, STOPBITS_ONE_POINT_FIVE, STOPBITS_TWO = (1, 1.5, 2)
 FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5, 6, 7, 8)
-INIT_SERIAL_MESSAGE = b'\0'
+
+
+class SerialException(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 class Serial(ABC):
@@ -18,7 +21,7 @@ class Serial(ABC):
         pass
 
     @abstractmethod
-    def read(self, number_of_bytes: int) -> Any:
+    def read(self, number_of_bytes: int) -> bytes:
         pass
 
     @abstractmethod
@@ -35,6 +38,11 @@ class Serial(ABC):
         pass
 
 
+INIT_SERIAL_MESSAGE = b'\0'
+SERIAL_INIT_DELAY = 1
+SERIAL_ERROR_MESSAGE = "Did you remember to call open(...)? Did you call open(...), and then call close(...), but never called open(...) again?"
+
+
 class ProductionSerial(Serial):
     def open(self, port: str, baud_rate: int, parity: str, stop_bits: Union[int, float], byte_size: int,
              read_timeout: int, write_timeout: int):
@@ -43,43 +51,38 @@ class ProductionSerial(Serial):
         self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
                                       read_timeout, write_timeout=write_timeout)
 
-        SERIAL_INIT_DELAY = 1
         time.sleep(SERIAL_INIT_DELAY)
-
         self.write(INIT_SERIAL_MESSAGE)
 
         NUMBER_OF_BYTES = 2
-        number_of_leds: bytes = self.read(NUMBER_OF_BYTES)
-
-        if (len(number_of_leds) != NUMBER_OF_BYTES):
-            raise ValueError(f'ProductionSerial expected {NUMBER_OF_BYTES} bytes from the serial connection (representing the number of leds in the led strip), but instead received {len(number_of_leds)} bytes.')
-
-        self.__number_of_leds = int.from_bytes(number_of_leds, byteorder="little")
+        self.__number_of_leds = int.from_bytes(self.read(NUMBER_OF_BYTES), byteorder="little")
 
     @property
     def number_of_leds(self) -> int:
         try:
             return self.__number_of_leds
 
-        except (AttributeError, SerialException):
-            raise ValueError('No Serial connection is established. Did you remember to call '
-                             'open? Did you call close, but never called open after?')
+        except AttributeError:
+            raise SerialException(f"Did not receive the number of LEDs from the serial connection. {SERIAL_ERROR_MESSAGE}")
 
-    def read(self, number_of_bytes: int) -> Any:
+    def read(self, number_of_bytes):
         try:
-            return self.__serial.read(number_of_bytes)
+            data = self.__serial.read(number_of_bytes)
 
-        except (AttributeError, SerialException):
-            raise ValueError('No Serial connection is established. Did you remember to call '
-                             'open? Did you call close, but never called open after?')
+            if (len(data) < number_of_bytes):
+                raise SerialException(f"Expected {number_of_bytes} bytes from serial connection, but received {len(data)} bytes.")
+
+            return data
+
+        except (AttributeError, serial.SerialException):
+            raise SerialException(f"Did not receive the number of LEDs from the serial connection. {SERIAL_ERROR_MESSAGE}")
 
     def write(self, data: bytes):
         try:
             return self.__serial.write(data)
 
-        except (AttributeError, SerialException):
-            raise ValueError('No Serial connection is established. Did you remember to call '
-                             'open? Did you call close, but never called open after?')
+        except (AttributeError, serial.SerialException):
+            raise SerialException("No serial connection is currently established.")
 
     def close(self):
         try:

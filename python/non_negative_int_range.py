@@ -45,7 +45,7 @@ class NonNegativeIntRange:
 
         if (isinstance(value, NonNegativeIntRange)):
             if (value.start == value.end):
-                return True
+                return False
 
             return (value.start in self) and (value.end - 1 in self)
 

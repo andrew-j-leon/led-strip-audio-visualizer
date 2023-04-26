@@ -4,12 +4,14 @@ from typing import Any
 
 from util import Jsonable
 
+DEFAULT_SERIAL_BAUDRATE = 1000000
+
 
 class Settings(Jsonable):
-    SERIAL_BAUDRATES = [2000000, 1999999, 1750000, 1500000, 1000000]
+    SERIAL_BAUDRATES = [1999999, 1750000, 1500000, DEFAULT_SERIAL_BAUDRATE]
 
     def __init__(self, start_led: int = 0, end_led: int = 0, milliseconds_per_audio_chunk: int = 50,
-                 serial_port: str = '', serial_baudrate: int = 1000000, brightness: int = 0,
+                 serial_port: str = '', serial_baudrate: int = DEFAULT_SERIAL_BAUDRATE, brightness: int = 0,
                  minimum_frequency: int = 0, maximum_frequency: int = 0, should_reverse_groups: bool = False,
                  number_of_groups: int = 0, should_mirror_groups: bool = False):
 

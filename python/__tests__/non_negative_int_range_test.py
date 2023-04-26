@@ -106,14 +106,10 @@ class TestContains(unittest.TestCase):
 
         non_negative_integer_range = NonNegativeIntRange(START, END)
 
-        IN_BOUNDS_VALUES = [NonNegativeIntRange(1, 10),
-                            NonNegativeIntRange(1, 5),
-                            NonNegativeIntRange(5, 10),
-                            NonNegativeIntRange(2, 9),
-                            NonNegativeIntRange(0, 0),
-                            NonNegativeIntRange(10, 10),
-                            NonNegativeIntRange(11, 11),
-                            NonNegativeIntRange(20, 20)]
+        IN_BOUNDS_VALUES = [NonNegativeIntRange(START, END),
+                            NonNegativeIntRange(START, END // 2),
+                            NonNegativeIntRange(END // 2, END),
+                            NonNegativeIntRange(START + 1, END - 1)]
 
         for value in IN_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):
@@ -123,7 +119,11 @@ class TestContains(unittest.TestCase):
                                 NonNegativeIntRange(0, 1),
                                 NonNegativeIntRange(10, 11),
                                 NonNegativeIntRange(9, 11),
-                                NonNegativeIntRange(20, 100)]
+                                NonNegativeIntRange(20, 100),
+                                NonNegativeIntRange(0, 0),
+                                NonNegativeIntRange(END, END),
+                                NonNegativeIntRange(11, 11),
+                                NonNegativeIntRange(20, 20)]
 
         for value in OUT_OF_BOUNDS_VALUES:
             with self.subTest(f'{value} in {repr(non_negative_integer_range)}'):

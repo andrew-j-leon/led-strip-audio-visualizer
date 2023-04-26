@@ -72,13 +72,9 @@ class TestConstructor(unittest.TestCase):
     def test_group_led_ranges_with_led_range_starting_at_0(self):
         LED_RANGE_STARTING_AT_0 = (0, 150)
 
-        VALID_GROUP_LED_RANGES = [[[(0, 0)]],
-                                  [[(0, 1)]],
+        VALID_GROUP_LED_RANGES = [[[(0, 1)]],
                                   [[(0, 150)]],
-                                  [[(1, 1)]],
-                                  [[(1, 150)]],
-                                  [[(150, 150)], [(151, 151)], [(300, 300)]]
-                                  ]
+                                  [[(1, 150)]]]
 
         INVALID_GROUP_LED_RANGES = [[[(-1, 0)]],
                                     [[(0, -1)]],
@@ -88,7 +84,8 @@ class TestConstructor(unittest.TestCase):
                                     [[(1, 0)]],
                                     [[(10, 0)]],
                                     [[(10, 9)]],
-                                    [[(10, 5)]]]
+                                    [[(10, 5)]],
+                                    [[(0, 0)]], [[(1, 1)]], [[(150, 150)], [(151, 151)], [(300, 300)]]]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_0, VALID_GROUP_LED_RANGES)
         self.check_invalid_group_led_ranges(LED_RANGE_STARTING_AT_0, INVALID_GROUP_LED_RANGES)
@@ -97,11 +94,9 @@ class TestConstructor(unittest.TestCase):
         LED_RANGE_STARTING_AT_10 = (10, 150)
 
         VALID_GROUP_LED_RANGES = [
-            [[(10, 10)]],
             [[(10, 11)]],
             [[(10, 150)]],
             [[(149, 150)]],
-            [[(150, 150)]],
             [[(10, 90)], [(90, 150)]]
         ]
 
@@ -122,7 +117,8 @@ class TestConstructor(unittest.TestCase):
             [[(150, 151)]],
             [[(150, 300)]],
             [[(151, 152)]],
-            [[(152, 300)]]
+            [[(152, 300)]],
+            [[(10, 10)]], [[(150, 150)]]
         ]
 
         self.check_valid_group_led_ranges(LED_RANGE_STARTING_AT_10, VALID_GROUP_LED_RANGES)

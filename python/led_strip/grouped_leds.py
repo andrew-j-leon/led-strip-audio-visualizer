@@ -81,7 +81,7 @@ class ProductionGroupedLeds(GroupedLeds):
 
                 if (led_range not in self.__led_strip_range):
                     raise ValueError(f'group_led_ranges[{group_number}] contains {(start, end)}, which '
-                                     f'is not within the bounds of led_range={led_range}.')
+                                     f'is not within the bounds of {self.__led_strip_range}.')
 
                 led_ranges.add(led_range)
 
@@ -204,22 +204,51 @@ BYTE_ORDER = 'little'
 
 
 class SerialGroupedLeds(ProductionGroupedLeds):
+
+    class SerialWriter:
+        def __init__(self, serial: Serial, divisor: int):
+            self.__dividend = 0
+            self.__divisor = divisor
+
+            if (divisor == 0):
+                raise ValueError("Received a modulus divisor of 0.")
+
+            self.__serial = serial
+
+        def write(self, data: bytes):
+            for byte_ in data:
+                byte_ = byte_.to_bytes(length=1, byteorder=BYTE_ORDER)
+
+                if (self.__dividend == 0):
+                    echo = bytes()
+                    while (echo == bytes()):
+                        self.__serial.write(byte_)
+                        echo = self.__serial.read(1)
+
+                else:
+                    self.__serial.write(byte_)
+
+                self.__dividend = (self.__dividend + 1) % self.__divisor
+
     def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Iterable[Tuple[int, int]]],
                  serial: Serial, brightness: int):
         super().__init__(led_range, group_led_ranges)
+
+        self.__brightness = brightness
 
         # Serial logic
         if (brightness < 0 or brightness > 255):
             raise ValueError(f'brightness must be >= 0 and <= 255, but was {brightness}.')
 
-        self.__serial = serial
-        self.__brightness = brightness
-
         if (self.number_of_leds > serial.number_of_leds):
-            raise ValueError(f"The serial connection stated that there are {serial.number_of_leds} leds, but this LedStrip object is set for {self.number_of_leds} leds.")
+            raise ValueError(f"The serial connection stated that there are {serial.number_of_leds} LEDs, but this LedStrip object is set for {self.number_of_leds} LEDs.")
 
         if (self.end_led > serial.number_of_leds and self.number_of_leds > 0):
-            raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial.number_of_leds} (exclusive), but this LedStrip ranges from {self.start_led} (inclusive) to {self.end_led} (exclusive).")
+            raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial.number_of_leds} "
+                             "(exclusive), but this LedStrip ranges from {self.start_led} (inclusive) to {self.end_led} (exclusive).")
+
+        DIVISOR = int.from_bytes(serial.read(1), byteorder="little")
+        self.__serial_writer = self.SerialWriter(serial, DIVISOR)
 
         self.__configure_serial()
 
@@ -269,20 +298,4 @@ class SerialGroupedLeds(ProductionGroupedLeds):
         self.__send_bytes(check_sum)
 
     def __send_bytes(self, bytes_: bytes):
-        '''
-            Sends the bytes_ over the serial one byte at a time. Continually resends
-            the data if an acknowledgement is not received within serial's read timeout.
-        '''
-        for byte_ in bytes_:
-            self.__send_byte_lossless(byte_)
-
-    def __send_byte_lossless(self, byte_: int):
-        '''
-            Send a byte of data over serial. If an acknowledgement is
-            not recieved within serial's read timeout, the byte is sent again. This continues
-            indefinitely until an acknowledgement is received.
-        '''
-        echo = bytes()
-        while (echo == bytes()):
-            self.__serial.write(byte_.to_bytes(length=1, byteorder=BYTE_ORDER))
-            echo = self.__serial.read(1)
+        self.__serial_writer.write(bytes_)

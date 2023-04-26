@@ -66,7 +66,7 @@ def _create_groups(start_led: int, end_led: int, number_of_groups: int) -> List[
     if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
         return []
 
-    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, round(NUMBER_OF_LEDS / number_of_groups))
+    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, NUMBER_OF_LEDS // number_of_groups)
 
     group_number = 0
     group_start_led = start_led

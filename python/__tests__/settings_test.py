@@ -1,6 +1,6 @@
 import unittest
 
-from settings import Settings
+from settings import DEFAULT_SERIAL_BAUDRATE, Settings
 
 
 class SettingsTestCase(unittest.TestCase):
@@ -8,7 +8,7 @@ class SettingsTestCase(unittest.TestCase):
     END_LED = 300
     MILLISECONDS_PER_AUDIO_CHUNK = 60
     SERIAL_PORT = 'COM4'
-    SERIAL_BAUDRATE = 9600
+    SERIAL_BAUDRATE = DEFAULT_SERIAL_BAUDRATE
     BRIGHTNESS = 50
     MINIMUM_FREQUENCY = 0
     MAXIMUM_FREQUENCY = 2000

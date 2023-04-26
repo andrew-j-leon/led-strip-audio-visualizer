@@ -750,7 +750,7 @@ class TestCreateGroups(TestCase):
         END_LED = 29
         NUMBER_OF_GROUPS = 3
 
-        EXPECTED = [{(START_LED, 10)}, {(10, 20)}, {(20, END_LED)}]
+        EXPECTED = [{(START_LED, 9)}, {(9, 18)}, {(18, END_LED)}]
         self.assertEqual(_create_groups(START_LED, END_LED, NUMBER_OF_GROUPS), EXPECTED)
 
     def test_start_led_at_zero(self):
