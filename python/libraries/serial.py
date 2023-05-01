@@ -48,14 +48,18 @@ class ProductionSerial(Serial):
              read_timeout: int, write_timeout: int):
         self.close()
 
-        self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
-                                      read_timeout, write_timeout=write_timeout)
+        try:
+            self.__serial = serial.Serial(port, baud_rate, byte_size, parity, stop_bits,
+                                          read_timeout, write_timeout=write_timeout)
 
-        time.sleep(SERIAL_INIT_DELAY)
-        self.write(INIT_SERIAL_MESSAGE)
+            time.sleep(SERIAL_INIT_DELAY)
+            self.write(INIT_SERIAL_MESSAGE)
 
-        NUMBER_OF_BYTES = 2
-        self.__number_of_leds = int.from_bytes(self.read(NUMBER_OF_BYTES), byteorder="little")
+            NUMBER_OF_BYTES = 2
+            self.__number_of_leds = int.from_bytes(self.read(NUMBER_OF_BYTES), byteorder="little")
+
+        except serial.SerialException as err:
+            raise SerialException(str(err))
 
     @property
     def number_of_leds(self) -> int:

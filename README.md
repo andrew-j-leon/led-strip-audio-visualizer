@@ -2,8 +2,6 @@
 
 This project visualizes the audio going into your computer's **default audio input device** (such as a microphone) as a colorful [spectrogram](https://en.wikipedia.org/wiki/Spectrogram) displayed on either a **strip of individually addressable LEDs** (specifically WS2812B LEDs) or through a **GUI**.
 
-[Here is a YouTube video demonstrating what it can do on a WS2812B LED strip.](https://youtu.be/pxNwhaRPMZ4)
-
 # Before Getting Started
 
 I recommend reading through the following resources to get an understanding of the technologies you will be using.
@@ -50,7 +48,9 @@ You can install the necessary 3rd party Python dependencies by running the follo
 
     python -m pip install -r python/requirements.txt
 
-> **Note:** If you have trouble installing the PyAudio dependencies, you may need to download it from the [official website](https://people.csail.mit.edu/hubert/pyaudio/). On Windows, you can also try installing PyAudio using [PipWin](https://pypi.org/project/pipwin/) instead of pip.
+> **Note:** If you have trouble installing the PyAudio dependencies, you may need to download it from the [official website](https://people.csail.mit.edu/hubert/pyaudio/). On Windows, you can also try installing PyAudio using [PipWin](https://pypi.org/project/pipwin/) instead of pip. On Ubuntu, you may need to install the PyAudio dependenciy "libasound". To do so, simply do...
+
+    sudo apt-get install libasound-dev
 
 ## Step 5: Connect the Arduino to the LED Strip
 
@@ -77,24 +77,6 @@ Finally, upload the **arduino/main/main.ino** sketch to your Arduino.
 
 ## Step 8: Run the Python Scripts and set the Correct Serial Settings
 
-You should now be able to run **python/main.py** to start the program.
+You should now be able to run **python/main.py** to start the program. See the --help documentation for instructions on how to use the program.
 
-Do so now. You should see a GUI appear.
-
-Click the **Settings button** and make sure you set the following values correctly:
-
-1. `Port:` Set this to the USB port your Arduino is connected to (on Windows, this may be COM3; on Ubuntu, it may be /dev/ttyACM0). The correct port number should be shown in the Arduino IDE.
-
-2. `Baudrate:` Set this to 1000000.
-
-> **Note:** If you want to use a different baudrate, you can edit the **arduino/main/main.ino** sketch's `SERIAL_BAUD_RATE` global variable. If you do so, don't forget to re-upload the sketch!
-
-Save your settings.
-
-Close the settings page.
-
-Back on the main page, select "Serial LED Strip" for the `LED Strip Type`.
-
-Click Play. The program will now listen in on your computer's default input device and update the LED strip accordingly.
-
-> **Tip:** On **Windows** machines, you can follow [this tutorial](https://www.howtogeek.com/364369/how-to-record-your-pcs-audio-with-vb-cable/) to redirect your speaker's audio to your default input device. On **Linux**, you can use [this tutorial](https://www.kirsle.net/redirect-audio-out-to-mic-in-linux) to do something similar. You can now play music on your computer and the LEDs will light up in response!
+> **Tip:** On **Windows** machines, you can follow [this tutorial](https://www.howtogeek.com/364369/how-to-record-your-pcs-audio-with-vb-cable/) to redirect your speaker's audio to your default input device. On **Linux**, you can use [this tutorial](https://www.kirsle.net/redirect-audio-out-to-mic-in-linux) to do something similar.

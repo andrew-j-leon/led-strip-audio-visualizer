@@ -4,7 +4,7 @@ from statistics import mean
 from typing import Iterable, List, Union
 
 import numpy
-from led_strip.led_strip import LedStrip
+from leds.led_strip import LedStrip
 from non_negative_int_range import NonNegativeIntRange
 from util import RGB
 

@@ -47,7 +47,7 @@ class CanvasGui(ABC):
 class ProductionCanvasGui(CanvasGui):
     CANVAS_KEY = 'canvas'
 
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int = 1350, height: int = 600):
         if (width < 0):
             raise ValueError(f'width must be >= 0, but was {width}.')
 

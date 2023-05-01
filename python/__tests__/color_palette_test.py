@@ -78,19 +78,3 @@ class TestSettingAmplitudeRgbs(ColorPaletteTestCase):
 
                 with self.assertRaises(ValueError):
                     self.color_palette.amplitude_rgbs = amplitude_rgbs
-
-
-class TestToJson(ColorPaletteTestCase):
-    def test_empty(self):
-        color_palette = ColorPalette()
-
-        EXPECTED = {'amplitude_rgbs': []}
-        ACTUAL = color_palette.to_json()
-
-        self.assertEqual(EXPECTED, ACTUAL)
-
-    def test_not_empty(self):
-        EXPECTED = {'amplitude_rgbs': self.AMPLITUDE_RGBS}
-        ACTUAL = self.color_palette.to_json()
-
-        self.assertEqual(EXPECTED, ACTUAL)

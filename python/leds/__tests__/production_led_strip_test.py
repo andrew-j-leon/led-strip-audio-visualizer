@@ -1,8 +1,8 @@
 import unittest
 from typing import Iterable, List
 
-from led_strip.grouped_leds import GroupedLeds
-from led_strip.led_strip import ProductionLedStrip
+from leds.grouped_leds import GroupedLeds
+from leds.led_strip import ProductionLedStrip
 from util import RGB
 
 

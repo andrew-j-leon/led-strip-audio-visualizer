@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Tuple
 
-from led_strip.grouped_leds import GroupedLeds, ProductionGroupedLeds
+from leds.grouped_leds import GroupedLeds, ProductionGroupedLeds
 from util import RGB
 
 

@@ -1,11 +1,30 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Tuple
-
-from util import Jsonable
+from typing import Any, Iterable, Iterator, List, Tuple
 
 
-class ColorPalette(Jsonable):
+def load_color_palettes(lines: Iterable[str]) -> List[ColorPalette]:
+    color_palettes = []
+    amplitude_rgbs = []
+
+    for line in lines:
+        stripped_line = line.strip()
+
+        if (stripped_line == '' and len(amplitude_rgbs) > 0):
+            color_palettes.append(ColorPalette(amplitude_rgbs))
+            amplitude_rgbs = []
+
+        elif(not stripped_line.startswith('#')):
+            count, red, green, blue = stripped_line.split()
+            amplitude_rgbs.extend((int(red), int(green), int(blue)) for i in range(int(count)))
+
+    if (len(amplitude_rgbs) > 0):
+        color_palettes.append(ColorPalette(amplitude_rgbs))
+
+    return color_palettes
+
+
+class ColorPalette:
     def __init__(self, amplitude_rgbs: List[Iterable[int]] = []):
         self.amplitude_rgbs = amplitude_rgbs
 
@@ -15,8 +34,8 @@ class ColorPalette(Jsonable):
 
         return False
 
-    def to_json(self):
-        return {'amplitude_rgbs': self.amplitude_rgbs}
+    def __iter__(self) -> Iterator[Iterable[int]]:
+        return iter(self.amplitude_rgbs)
 
     @property
     def amplitude_rgbs(self) -> List[Tuple[int, int, int]]:

@@ -2,7 +2,7 @@ import os
 import unittest
 from typing import List, Tuple
 
-from led_strip.led_strip import FakeLedStrip
+from leds.led_strip import FakeLedStrip
 from spectrogram import ProductionSpectrogram
 
 

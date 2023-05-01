@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from typing import Any, Dict, List, Tuple
 
-from led_strip.grouped_leds import GraphicGroupedLeds, Point
+from leds.grouped_leds import GraphicGroupedLeds, Point
 from libraries.canvas_gui import CanvasGui
 from util import Font, rgb_to_hex
 
