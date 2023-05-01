@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from typing import Any, Dict, List, Tuple
 
-from leds.grouped_leds import GraphicGroupedLeds, Point
+from leds.frequency_band_leds import GraphicFrequencyBandLeds, Point
 from libraries.canvas_gui import CanvasGui
 from util import Font, rgb_to_hex
 
@@ -57,9 +57,9 @@ class FakeCanvasGui(CanvasGui):
     def set_element_fill_color(self, element_id: int, color: str):
         self.elements[element_id].set_fill_color(color)
 
-    def set_group_rgbs(self, leds, group_rgbs):
-        for group_number, rgb in group_rgbs:
-            led_ranges = leds.get_group_led_ranges(group_number)
+    def set_band_colors(self, leds, band_colors):
+        for band_number, rgb in band_colors:
+            led_ranges = leds.get_band_led_ranges(band_number)
 
             for start, end in led_ranges:
                 for i in range(start, end):
@@ -200,7 +200,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(repr(point), f'Point({X}, {Y})')
 
 
-def create_gui_after_init(gui_width: int, leds: GraphicGroupedLeds) -> FakeCanvasGui:
+def create_gui_after_init(gui_width: int, leds: GraphicFrequencyBandLeds) -> FakeCanvasGui:
     FONT_NAME = 'Arial'
     FONT_SIZE = int((leds.led_diameter + 5) / len(str(leds.number_of_leds)))
     FONT_STYLE = 'bold'
@@ -239,10 +239,10 @@ class TestConstructor(unittest.TestCase):
         for valid_led_range in VALID_LED_RANGES:
             with self.subTest(led_range=valid_led_range):
 
-                group_led_ranges = []
+                band_led_ranges = []
                 gui = FakeCanvasGui()
 
-                leds = GraphicGroupedLeds(valid_led_range, group_led_ranges, gui)
+                leds = GraphicFrequencyBandLeds(valid_led_range, band_led_ranges, gui)
 
                 expected_gui = create_gui_after_init(gui.width, leds)
                 self.assertEqual(gui, expected_gui)
@@ -257,10 +257,10 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(led_range=invalid_led_range):
 
                 with self.assertRaises(ValueError):
-                    group_led_ranges = []
+                    band_led_ranges = []
                     gui = FakeCanvasGui()
 
-                    GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
+                    GraphicFrequencyBandLeds(invalid_led_range, band_led_ranges, gui)
 
     def test_led_ranges_where_start_is_not_int(self):
         INVALID_LED_RANGES = [(0.0, 1), (1.0, 10), (100.0, 200)]
@@ -269,10 +269,10 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(led_range=invalid_led_range):
 
                 with self.assertRaises(TypeError):
-                    group_led_ranges = []
+                    band_led_ranges = []
                     gui = FakeCanvasGui()
 
-                    GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
+                    GraphicFrequencyBandLeds(invalid_led_range, band_led_ranges, gui)
 
     def test_led_ranges_where_end_is_float(self):
         INVALID_LED_RANGES = [(0, 0.0), (0, 1.0), (0, 100.0)]
@@ -281,10 +281,10 @@ class TestConstructor(unittest.TestCase):
             with self.subTest(led_range=invalid_led_range):
 
                 with self.assertRaises(TypeError):
-                    group_led_ranges = []
+                    band_led_ranges = []
                     gui = FakeCanvasGui()
 
-                    GraphicGroupedLeds(invalid_led_range, group_led_ranges, gui)
+                    GraphicFrequencyBandLeds(invalid_led_range, band_led_ranges, gui)
 
     def test_group_led_ranges_with_varying_lengths(self):
         START_LED = 0
@@ -292,16 +292,16 @@ class TestConstructor(unittest.TestCase):
         LED_RANGE = (START_LED, END_LED)
         GROUP_LED_RANGES = [set(), {(0, 10)}, {(10, 20), (20, 30)}, {(30, 40), (40, 50), (70, 80), (90, 100)}]
 
-        grouped_leds = GraphicGroupedLeds(LED_RANGE, GROUP_LED_RANGES, FakeCanvasGui())
+        frequency_band_leds = GraphicFrequencyBandLeds(LED_RANGE, GROUP_LED_RANGES, FakeCanvasGui())
 
-        self.assertEqual(grouped_leds.start_led, START_LED)
-        self.assertEqual(grouped_leds.end_led, END_LED)
-        self.assertEqual(grouped_leds.number_of_groups, len(GROUP_LED_RANGES))
-        self.assertEqual(grouped_leds.number_of_leds, END_LED - START_LED)
+        self.assertEqual(frequency_band_leds.start_led, START_LED)
+        self.assertEqual(frequency_band_leds.end_led, END_LED)
+        self.assertEqual(frequency_band_leds.number_of_bands, len(GROUP_LED_RANGES))
+        self.assertEqual(frequency_band_leds.number_of_leds, END_LED - START_LED)
 
-        for group_number in range(len(GROUP_LED_RANGES)):
-            with self.subTest(group_number=group_number):
-                self.assertEqual(grouped_leds.get_group_led_ranges(group_number), GROUP_LED_RANGES[group_number])
+        for band_number in range(len(GROUP_LED_RANGES)):
+            with self.subTest(band_number=band_number):
+                self.assertEqual(frequency_band_leds.get_band_led_ranges(band_number), GROUP_LED_RANGES[band_number])
 
     def test_group_led_ranges_with_led_range_starting_at_0(self):
         LED_RANGE_STARTING_AT_0 = (0, 150)
@@ -363,7 +363,7 @@ class TestConstructor(unittest.TestCase):
         for led_ranges in valid_group_led_ranges:
             with self.subTest(led_range=led_range, led_ranges=led_ranges):
                 gui = FakeCanvasGui()
-                leds = GraphicGroupedLeds(led_range, led_ranges, gui)
+                leds = GraphicFrequencyBandLeds(led_range, led_ranges, gui)
 
                 expected_gui = create_gui_after_init(gui.width, leds)
                 self.assertEqual(gui, expected_gui)
@@ -375,7 +375,7 @@ class TestConstructor(unittest.TestCase):
 
                 with self.assertRaises(ValueError):
                     gui = FakeCanvasGui()
-                    GraphicGroupedLeds(led_range, led_ranges, gui)
+                    GraphicFrequencyBandLeds(led_range, led_ranges, gui)
 
 
 class TestSetGroupRGB(unittest.TestCase):
@@ -392,7 +392,7 @@ class TestSetGroupRGB(unittest.TestCase):
 
     def setUp(self):
         self.gui = FakeCanvasGui()
-        self.leds = GraphicGroupedLeds(self.LED_RANGE, self.GROUP_LED_RANGES, self.gui)
+        self.leds = GraphicFrequencyBandLeds(self.LED_RANGE, self.GROUP_LED_RANGES, self.gui)
 
         self.gui_after_init = create_gui_after_init(self.gui.width, self.leds)
 
@@ -403,25 +403,25 @@ class TestSetGroupRGB(unittest.TestCase):
 
         GROUP_RGBS = [(self.GROUP_0, RGB)]
 
-        self.leds.set_group_rgbs(GROUP_RGBS)
+        self.leds.set_band_colors(GROUP_RGBS)
 
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), self.BLACK_RGB)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), self.BLACK_RGB)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_0), RGB)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_1), self.BLACK_RGB)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_2), self.BLACK_RGB)
 
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS)
         self.assertEqual(self.gui, self.gui_after_init)
 
     def test_set_no_group(self):
         GROUP_RGBS = []
 
-        self.leds.set_group_rgbs(GROUP_RGBS)
+        self.leds.set_band_colors(GROUP_RGBS)
 
-        for group in range(self.NUMBER_OF_GROUPS):
-            with self.subTest(group=group):
-                self.assertEqual(self.leds.get_group_rgb(group), self.BLACK_RGB)
+        for band in range(self.NUMBER_OF_GROUPS):
+            with self.subTest(band=band):
+                self.assertEqual(self.leds.get_band_color(band), self.BLACK_RGB)
 
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS)
         self.assertEqual(self.gui, self.gui_after_init)
 
     def test_set_multiple_groups(self):
@@ -433,17 +433,17 @@ class TestSetGroupRGB(unittest.TestCase):
         GROUP_RGBS_1 = [(self.GROUP_1, RGB_1)]
         GROUP_RGBS_2 = [(self.GROUP_2, RGB_2)]
 
-        self.leds.set_group_rgbs(GROUP_RGBS_0)
-        self.leds.set_group_rgbs(GROUP_RGBS_1)
-        self.leds.set_group_rgbs(GROUP_RGBS_2)
+        self.leds.set_band_colors(GROUP_RGBS_0)
+        self.leds.set_band_colors(GROUP_RGBS_1)
+        self.leds.set_band_colors(GROUP_RGBS_2)
 
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_0)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_1), RGB_1)
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_2), RGB_2)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_0), RGB_0)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_1), RGB_1)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_2), RGB_2)
 
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS_0)
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS_1)
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS_2)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS_0)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS_1)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS_2)
         self.assertEqual(self.gui, self.gui_after_init)
 
     def test_set_same_group_multiple_times_separate_calls(self):
@@ -453,13 +453,13 @@ class TestSetGroupRGB(unittest.TestCase):
         GROUP_RGBS_OLD = [(self.GROUP_0, RGB_OLD)]
         GROUP_RGBS_NEW = [(self.GROUP_0, RGB_NEW)]
 
-        self.leds.set_group_rgbs(GROUP_RGBS_OLD)
-        self.leds.set_group_rgbs(GROUP_RGBS_NEW)
+        self.leds.set_band_colors(GROUP_RGBS_OLD)
+        self.leds.set_band_colors(GROUP_RGBS_NEW)
 
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_NEW)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_0), RGB_NEW)
 
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS_OLD)
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS_NEW)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS_OLD)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS_NEW)
         self.assertEqual(self.gui, self.gui_after_init)
 
     def test_set_same_group_multiple_times_same_call(self):
@@ -468,11 +468,11 @@ class TestSetGroupRGB(unittest.TestCase):
 
         GROUP_RGBS = [(self.GROUP_0, RGB_OLD), (self.GROUP_0, RGB_NEW)]
 
-        self.leds.set_group_rgbs(GROUP_RGBS)
+        self.leds.set_band_colors(GROUP_RGBS)
 
-        self.assertEqual(self.leds.get_group_rgb(self.GROUP_0), RGB_NEW)
+        self.assertEqual(self.leds.get_band_color(self.GROUP_0), RGB_NEW)
 
-        self.gui_after_init.set_group_rgbs(self.leds, GROUP_RGBS)
+        self.gui_after_init.set_band_colors(self.leds, GROUP_RGBS)
         self.assertEqual(self.gui, self.gui_after_init)
 
     def test_no_groups(self):
@@ -480,47 +480,47 @@ class TestSetGroupRGB(unittest.TestCase):
         GROUP_LED_RANGES = []
         gui = FakeCanvasGui()
 
-        leds = GraphicGroupedLeds(LED_RANGE, GROUP_LED_RANGES, gui)
+        leds = GraphicFrequencyBandLeds(LED_RANGE, GROUP_LED_RANGES, gui)
 
         GROUPS = [0, 1, 100]
 
-        for group in GROUPS:
-            with self.subTest(group=group):
+        for band in GROUPS:
+            with self.subTest(band=band):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
-                    group_rgbs = [(group, rgb)]
+                    band_colors = [(band, rgb)]
 
-                    leds.set_group_rgbs(group_rgbs)
+                    leds.set_band_colors(band_colors)
 
                 self.assertEqual(self.gui, self.gui_after_init)
 
     def test_group_less_than_0(self):
         GROUPS = [-1, -2, -100]
 
-        for group in GROUPS:
-            with self.subTest(group=group):
+        for band in GROUPS:
+            with self.subTest(band=band):
 
                 with self.assertRaises(ValueError):
                     rgb = (10, 20, 30)
 
-                    group_rgbs = [(group, rgb)]
+                    band_colors = [(band, rgb)]
 
-                    self.leds.set_group_rgbs(group_rgbs)
+                    self.leds.set_band_colors(band_colors)
 
                 self.assertEqual(self.gui, self.gui_after_init)
 
     def test_group_exceeds_max_group(self):
         GROUPS = [self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 1, self.NUMBER_OF_GROUPS + 100]
 
-        for group in GROUPS:
-            with self.subTest(group=group):
+        for band in GROUPS:
+            with self.subTest(band=band):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
 
-                    group_rgbs = [(group, rgb)]
+                    band_colors = [(band, rgb)]
 
-                    self.leds.set_group_rgbs(group_rgbs)
+                    self.leds.set_band_colors(band_colors)
 
                 self.assertEqual(self.gui, self.gui_after_init)

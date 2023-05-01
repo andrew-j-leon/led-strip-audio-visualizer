@@ -13,7 +13,7 @@ class ColorPaletteTestCase(unittest.TestCase):
 
 class TestConstructor(ColorPaletteTestCase):
     def test_constructor(self):
-        self.assertEqual(self.color_palette.amplitude_rgbs, self.AMPLITUDE_RGBS)
+        self.assertEqual(self.color_palette.amplitude_colors, self.AMPLITUDE_RGBS)
 
 
 class TestEqual(ColorPaletteTestCase):
@@ -39,19 +39,19 @@ class TestSettingAmplitudeRgbs(ColorPaletteTestCase):
 
                           [(255, 0, 0)], [(0, 255, 0)], [(0, 0, 255)]]
 
-        for amplitude_rgbs in AMPLITUDE_RGBS:
+        for amplitude_colors in AMPLITUDE_RGBS:
 
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-                self.color_palette.amplitude_rgbs = amplitude_rgbs
+            with self.subTest(amplitude_colors=amplitude_colors):
+                self.color_palette.amplitude_colors = amplitude_colors
 
-                self.assertEqual(self.color_palette.amplitude_rgbs, amplitude_rgbs)
+                self.assertEqual(self.color_palette.amplitude_colors, amplitude_colors)
 
     def test_empty_amplitude_rgbs(self):
         AMPLITUDE_RGBS = []
 
-        self.color_palette.amplitude_rgbs = AMPLITUDE_RGBS
+        self.color_palette.amplitude_colors = AMPLITUDE_RGBS
 
-        self.assertEqual(self.color_palette.amplitude_rgbs, AMPLITUDE_RGBS)
+        self.assertEqual(self.color_palette.amplitude_colors, AMPLITUDE_RGBS)
 
     def test_color_value_out_of_range(self):
         AMPLITUDE_RGBS = [[(-1, 0, 0)], [(0, -1, 0)], [(0, 0, -1)],
@@ -62,19 +62,19 @@ class TestSettingAmplitudeRgbs(ColorPaletteTestCase):
 
                           [(300, 0, 0)], [(0, 300, 0)], [(0, 0, 300)]]
 
-        for amplitude_rgbs in AMPLITUDE_RGBS:
+        for amplitude_colors in AMPLITUDE_RGBS:
 
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
+            with self.subTest(amplitude_colors=amplitude_colors):
 
                 with self.assertRaises(ValueError):
-                    self.color_palette.amplitude_rgbs = amplitude_rgbs
+                    self.color_palette.amplitude_colors = amplitude_colors
 
     def test_not_an_rgb(self):
         NOT_AMPLITUDE_RGBS = [[(1, 2, 3, 4)], [(1, 2)]]
 
-        for amplitude_rgbs in NOT_AMPLITUDE_RGBS:
+        for amplitude_colors in NOT_AMPLITUDE_RGBS:
 
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
+            with self.subTest(amplitude_colors=amplitude_colors):
 
                 with self.assertRaises(ValueError):
-                    self.color_palette.amplitude_rgbs = amplitude_rgbs
+                    self.color_palette.amplitude_colors = amplitude_colors

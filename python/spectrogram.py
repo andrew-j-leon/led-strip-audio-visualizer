@@ -4,7 +4,7 @@ from statistics import mean
 from typing import Iterable, List, Union
 
 import numpy
-from leds.led_strip import LedStrip
+from leds.led_array import LedArray
 from non_negative_int_range import NonNegativeIntRange
 from util import RGB
 
@@ -53,15 +53,15 @@ def _get_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_f
 
 class Spectrogram(ABC):
     @abstractmethod
-    def set_amplitude_rgbs(self, amplitude_rgbs: List[Iterable[int]]):
+    def set_amplitude_colors(self, amplitude_colors: List[Iterable[int]]):
         pass
 
     @abstractmethod
-    def set_frequency_range(self, start_frequency: int, end_frequency: int):
+    def set_frequency_range(self, min_frequency: int, max_frequency: int):
         pass
 
     @abstractmethod
-    def update_led_strip(self, led_strip: LedStrip, audio_data: bytes, number_of_frames: int, sampling_rate: int):
+    def update_led_strip(self, led_strip: LedArray, audio_data: bytes, number_of_frames: int, sampling_rate: int):
         '''
             Args:
                 `audio_data (bytes)`: WAV audio data.
@@ -72,19 +72,19 @@ class Spectrogram(ABC):
 
 
 class ProductionSpectrogram(Spectrogram):
-    def __init__(self, amplitude_rgbs: List[Iterable[int]] = [],
-                 start_frequency: int = 0, end_frequency: int = 0):
-        self.__amplitude_rgbs: List[RGB] = []
+    def __init__(self, amplitude_colors: List[Iterable[int]] = [],
+                 min_frequency: int = 0, max_frequency: int = 0):
+        self.__amplitude_colors: List[RGB] = []
         self.__frequency_range: NonNegativeIntRange = NonNegativeIntRange()
 
-        self.set_amplitude_rgbs(amplitude_rgbs)
-        self.set_frequency_range(start_frequency, end_frequency)
+        self.set_amplitude_colors(amplitude_colors)
+        self.set_frequency_range(min_frequency, max_frequency)
 
-    def set_amplitude_rgbs(self, amplitude_rgbs):
-        self.__amplitude_rgbs = [RGB(red, green, blue) for red, green, blue in amplitude_rgbs]
+    def set_amplitude_colors(self, amplitude_colors):
+        self.__amplitude_colors = [RGB(red, green, blue) for red, green, blue in amplitude_colors]
 
-    def set_frequency_range(self, start_frequency, end_frequency):
-        self.__frequency_range = NonNegativeIntRange(start_frequency, end_frequency)
+    def set_frequency_range(self, min_frequency, max_frequency):
+        self.__frequency_range = NonNegativeIntRange(min_frequency, max_frequency)
 
     def update_led_strip(self, led_strip, audio_data, number_of_frames, sampling_rate):
         '''
@@ -105,10 +105,10 @@ class ProductionSpectrogram(Spectrogram):
         fft_end_at_max_freq: int = min(fft_length - 1,
                                        _get_fft_index(self.__frequency_range.end, sampling_rate, number_of_frames)) + 1
 
-        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // led_strip.number_of_groups)
+        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // led_strip.number_of_bands)
 
-        for fft_sublist_start, led_strip_group in zip(range(fft_start_at_min_freq, fft_end_at_max_freq, fft_sublist_length),
-                                                      range(led_strip.number_of_groups)):
+        for fft_sublist_start, led_strip_band in zip(range(fft_start_at_min_freq, fft_end_at_max_freq, fft_sublist_length),
+                                                     range(led_strip.number_of_bands)):
 
             fft_sublist_end: int = min(fft_sublist_start + fft_sublist_length, fft_end_at_max_freq)
 
@@ -117,8 +117,8 @@ class ProductionSpectrogram(Spectrogram):
 
             rgb = self.__get_rgb(fft_sublist_average_amplitude)
 
-            if (not led_strip.group_is_rgb(led_strip_group, rgb)):
-                led_strip.enqueue_rgb(led_strip_group, rgb)
+            if (not led_strip.band_is_rgb(led_strip_band, rgb)):
+                led_strip.enqueue_rgb(led_strip_band, rgb)
 
         led_strip.show_queued_colors()
         led_strip.clear_queued_colors()
@@ -126,8 +126,8 @@ class ProductionSpectrogram(Spectrogram):
     def __get_rgb(self, amplitude: Union[int, float]) -> RGB:
         try:
             amplitude = max(0, amplitude)
-            amplitude = min(amplitude, len(self.__amplitude_rgbs) - 1)
-            return self.__amplitude_rgbs[round(amplitude)]
+            amplitude = min(amplitude, len(self.__amplitude_colors) - 1)
+            return self.__amplitude_colors[round(amplitude)]
 
         except IndexError:
             return RGB()

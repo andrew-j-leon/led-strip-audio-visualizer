@@ -79,11 +79,11 @@ void setup() {
     led_strip.begin();
     led_strip.show();
 
-    uint8 number_of_groups = serial_reader->read();
+    uint8 number_of_bands = serial_reader->read();
 
-    if (number_of_groups > 0) {
-        group_setup_state = new GroupSetupState(number_of_groups);
-        groups = new u16Array[number_of_groups];
+    if (number_of_bands > 0) {
+        group_setup_state = new GroupSetupState(number_of_bands);
+        groups = new u16Array[number_of_bands];
 
         while (group_setup_state->get_state() != GroupSetupStateState::END) {
             group_setup_state->update_state(serial_reader->read(), on_group_received);
@@ -105,14 +105,14 @@ void on_end_of_message(uint8* packets, unsigned int number_of_packets) {
     for (unsigned int packet_number = 0; packet_number < number_of_packets; packet_number++) {
         unsigned int packet_start = packet_number * BYTES_PER_PACKET;
 
-        uint8 group_number = packets[packet_start];
-        u16Array* group = &groups[group_number];
+        uint8 band_number = packets[packet_start];
+        u16Array* band = &groups[band_number];
 
         uint32_t rgb = led_strip.Color(packets[packet_start+1], packets[packet_start+2], packets[packet_start+3]);
 
-        for (unsigned int i = 0; i < group->get_length(); i += 2) {
-            uint16 start_led = group->get(i);
-            uint16 end_led= group->get(i + 1);
+        for (unsigned int i = 0; i < band->get_length(); i += 2) {
+            uint16 start_led = band->get(i);
+            uint16 end_led= band->get(i + 1);
 
             for (uint16 led = start_led; led < end_led; led++) {
                 led_strip.setPixelColor(led, rgb);
@@ -124,11 +124,11 @@ void on_end_of_message(uint8* packets, unsigned int number_of_packets) {
 }
 
 
-void on_group_received(uint16* led_ranges, uint8 number_of_led_ranges, uint8 group_number) {
+void on_group_received(uint16* led_ranges, uint8 number_of_led_ranges, uint8 band_number) {
     unsigned int led_ranges_length = number_of_led_ranges * GroupSetupState::LEDS_PER_LED_RANGE;
-    groups[group_number].set_length(led_ranges_length);
+    groups[band_number].set_length(led_ranges_length);
 
     for (unsigned int i = 0; i < led_ranges_length; i++) {
-        groups[group_number].set(i, led_ranges[i]);
+        groups[band_number].set(i, led_ranges[i]);
     }
 }

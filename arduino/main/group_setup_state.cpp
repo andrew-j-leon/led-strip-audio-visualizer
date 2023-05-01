@@ -3,7 +3,7 @@
 
 GroupSetupState::GroupSetupState(uint8 number_of_expected_groups) {
     state = GroupSetupStateState::START_OF_MESSAGE;
-    group = nullptr;
+    band = nullptr;
 
     groups_received = 0;
     groups_expected = number_of_expected_groups;
@@ -13,8 +13,8 @@ GroupSetupState::GroupSetupState(uint8 number_of_expected_groups) {
 }
 
 GroupSetupState::~GroupSetupState() {
-    delete[] group;
-    group = nullptr;
+    delete[] band;
+    band = nullptr;
 }
 
 void GroupSetupState::update_state(uint8 byte, void (*on_group_received)(uint16*, uint8, uint8)) {
@@ -24,14 +24,14 @@ void GroupSetupState::update_state(uint8 byte, void (*on_group_received)(uint16*
     else if (state == GroupSetupStateState::NUMBER_OF_LED_RANGES) {
         led_ranges_expected = byte;
         led_ranges_received = 0;
-        delete[] group;
+        delete[] band;
 
         if (led_ranges_expected > 0) {
-            group = new uint16[led_ranges_expected * LEDS_PER_LED_RANGE];
+            band = new uint16[led_ranges_expected * LEDS_PER_LED_RANGE];
             state = GroupSetupStateState::START_LED_LOWER_BYTE;
         }
         else {
-            group = nullptr;
+            band = nullptr;
             start_led_lower_byte = 0x00;
             start_led_upper_byte = 0x00;
             end_led_lower_byte = 0x00;
@@ -45,7 +45,7 @@ void GroupSetupState::update_state(uint8 byte, void (*on_group_received)(uint16*
     }
     else if (state == GroupSetupStateState::START_LED_UPPER_BYTE) {
         start_led_upper_byte = byte;
-        group[led_ranges_received * LEDS_PER_LED_RANGE] = uint8_to_uint16(start_led_upper_byte, start_led_lower_byte);
+        band[led_ranges_received * LEDS_PER_LED_RANGE] = uint8_to_uint16(start_led_upper_byte, start_led_lower_byte);
         state = GroupSetupStateState::END_LED_LOWER_BYTE;
     }
     else if (state == GroupSetupStateState::END_LED_LOWER_BYTE) {
@@ -54,7 +54,7 @@ void GroupSetupState::update_state(uint8 byte, void (*on_group_received)(uint16*
     }
     else if (state == GroupSetupStateState::END_LED_UPPER_BYTE) {
         end_led_upper_byte = byte;
-        group[led_ranges_received * LEDS_PER_LED_RANGE + 1] = uint8_to_uint16(end_led_upper_byte, end_led_lower_byte);
+        band[led_ranges_received * LEDS_PER_LED_RANGE + 1] = uint8_to_uint16(end_led_upper_byte, end_led_lower_byte);
         state = GroupSetupStateState::CHECK_SUM;
     }
     else if (state == GroupSetupStateState::CHECK_SUM) {
@@ -68,7 +68,7 @@ void GroupSetupState::update_state(uint8 byte, void (*on_group_received)(uint16*
                 state = GroupSetupStateState::START_LED_LOWER_BYTE;
             }
             else {
-                on_group_received(group, led_ranges_expected, groups_received);
+                on_group_received(band, led_ranges_expected, groups_received);
 
                 groups_received++;
 

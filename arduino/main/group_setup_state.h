@@ -24,7 +24,7 @@ class GroupSetupState {
 
     private:
         GroupSetupStateState state;
-        uint16* group;
+        uint16* band;
 
         uint8 groups_expected;
         uint8 groups_received;

@@ -21,6 +21,10 @@ class Serial(ABC):
         pass
 
     @abstractmethod
+    def is_open(self) -> bool:
+        pass
+
+    @abstractmethod
     def read(self, number_of_bytes: int) -> bytes:
         pass
 
@@ -69,6 +73,12 @@ class ProductionSerial(Serial):
         except AttributeError:
             raise SerialException(f"Did not receive the number of LEDs from the serial connection. {SERIAL_ERROR_MESSAGE}")
 
+    def is_open(self):
+        try:
+            return self.__serial.is_open
+        except AttributeError:
+            return False
+
     def read(self, number_of_bytes):
         try:
             data = self.__serial.read(number_of_bytes)
@@ -104,6 +114,9 @@ class FakeSerial(Serial):
     @property
     def number_of_leds(self) -> int:
         return self.__number_of_leds
+
+    def is_open(self):
+        return self.opened
 
     def read(self, number_of_bytes: int) -> Any:
         LENGTH = 2

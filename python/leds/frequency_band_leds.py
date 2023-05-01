@@ -25,10 +25,10 @@ class Point:
         return f'Point({self.x}, {self.y})'
 
 
-class GroupedLeds(ABC):
+class FrequencyBandLeds(ABC):
     @property
     @abstractmethod
-    def number_of_groups(self) -> int:
+    def number_of_bands(self) -> int:
         pass
 
     @property
@@ -53,45 +53,45 @@ class GroupedLeds(ABC):
         '''
 
     @abstractmethod
-    def get_group_led_ranges(self, group: int) -> Tuple[int, int]:
+    def get_band_led_ranges(self, band: int) -> Tuple[int, int]:
         pass
 
     @abstractmethod
-    def get_group_rgb(self, group: int) -> RGB:
+    def get_band_color(self, band: int) -> RGB:
         pass
 
     @abstractmethod
-    def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
+    def set_band_colors(self, band_colors: Iterable[Tuple[int, Iterable[int]]]):
         pass
 
 
-class ProductionGroupedLeds(GroupedLeds):
+class ProductionFrequencyBandLeds(FrequencyBandLeds):
     def __init__(self, led_range: Tuple[int, int] = (0, 0),
-                 group_led_ranges: List[Iterable[Tuple[int, int]]] = []):
+                 band_led_ranges: List[Iterable[Tuple[int, int]]] = []):
         start, end = led_range
 
         self.__led_strip_range = NonNegativeIntRange(start, end)
-        self.__group_led_ranges: List[List[NonNegativeIntRange]] = []
+        self.__band_led_ranges: List[List[NonNegativeIntRange]] = []
 
-        for group_number in range(len(group_led_ranges)):
+        for band_number in range(len(band_led_ranges)):
             led_ranges: Set[Tuple(int, int)] = set()
 
-            for start, end in group_led_ranges[group_number]:
+            for start, end in band_led_ranges[band_number]:
                 led_range = NonNegativeIntRange(start, end)
 
                 if (led_range not in self.__led_strip_range):
-                    raise ValueError(f'group_led_ranges[{group_number}] contains {(start, end)}, which '
+                    raise ValueError(f'band_led_ranges[{band_number}] contains {(start, end)}, which '
                                      f'is not within the bounds of {self.__led_strip_range}.')
 
                 led_ranges.add(led_range)
 
-            self.__group_led_ranges.append(led_ranges)
+            self.__band_led_ranges.append(led_ranges)
 
-        self.__group_colors = [RGB()] * len(group_led_ranges)
+        self.__band_colors = [RGB()] * len(band_led_ranges)
 
     @property
-    def number_of_groups(self) -> int:
-        return len(self.__group_led_ranges)
+    def number_of_bands(self) -> int:
+        return len(self.__band_led_ranges)
 
     @property
     def number_of_leds(self) -> int:
@@ -105,38 +105,38 @@ class ProductionGroupedLeds(GroupedLeds):
     def end_led(self) -> int:
         return self.__led_strip_range.end
 
-    def get_group_led_ranges(self, group: int) -> Set[Tuple[int, int]]:
-        if (group < 0):
-            raise ValueError(f'group must be >= 0, but was {group}.')
+    def get_band_led_ranges(self, band: int) -> Set[Tuple[int, int]]:
+        if (band < 0):
+            raise ValueError(f'band must be >= 0, but was {band}.')
 
         led_ranges: Set[Tuple[int, int]] = set()
 
-        for led_range in self.__group_led_ranges[group]:
+        for led_range in self.__band_led_ranges[band]:
             led_ranges.add((led_range.start, led_range.end))
 
         return led_ranges
 
-    def get_group_rgb(self, group: int) -> RGB:
-        if (group < 0):
-            raise ValueError(f'group must be >= 0, but was {group}.')
+    def get_band_color(self, band: int) -> RGB:
+        if (band < 0):
+            raise ValueError(f'band must be >= 0, but was {band}.')
 
-        return self.__group_colors[group]
+        return self.__band_colors[band]
 
-    def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        for group, rgb in group_rgbs:
-            self._set_group_rgbs(group, RGB(*rgb))
+    def set_band_colors(self, band_colors: Iterable[Tuple[int, Iterable[int]]]):
+        for band, rgb in band_colors:
+            self._set_band_rgbs(band, RGB(*rgb))
 
-    def _set_group_rgbs(self, group: int, rgb: RGB):
-        if (group < 0):
-            raise ValueError(f'group must be >= 0, but was {group}.')
+    def _set_band_rgbs(self, band: int, rgb: RGB):
+        if (band < 0):
+            raise ValueError(f'band must be >= 0, but was {band}.')
 
-        self.__group_colors[group] = rgb
+        self.__band_colors[band] = rgb
 
 
-class GraphicGroupedLeds(ProductionGroupedLeds):
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Iterable[Tuple[int, int]]],
+class GraphicFrequencyBandLeds(ProductionFrequencyBandLeds):
+    def __init__(self, led_range: Tuple[int, int], band_led_ranges: List[Iterable[Tuple[int, int]]],
                  gui: CanvasGui, led_diameter: int = 30):
-        super().__init__(led_range, group_led_ranges)
+        super().__init__(led_range, band_led_ranges)
 
         self.__gui = gui
         self.__gui.update()
@@ -150,18 +150,18 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
     def led_diameter(self) -> int:
         return self.__led_diameter
 
-    def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        super().set_group_rgbs(group_rgbs)
+    def set_band_colors(self, band_colors: Iterable[Tuple[int, Iterable[int]]]):
+        super().set_band_colors(band_colors)
 
         self.__gui.update()
 
-    def _set_group_rgbs(self, group: int, rgb: RGB):
-        self.__recolor_leds(group, rgb)
+    def _set_band_rgbs(self, band: int, rgb: RGB):
+        self.__recolor_leds(band, rgb)
 
-        super()._set_group_rgbs(group, rgb)
+        super()._set_band_rgbs(band, rgb)
 
-    def __recolor_leds(self, group: int, rgb: RGB):
-        for start, end in self.get_group_led_ranges(group):
+    def __recolor_leds(self, band: int, rgb: RGB):
+        for start, end in self.get_band_led_ranges(band):
             for led in range(start, end):
                 element_id = self.__led_element_ids[led]
                 self.__gui.set_element_fill_color(element_id, rgb_to_hex(rgb.red, rgb.green, rgb.blue))
@@ -194,16 +194,16 @@ class GraphicGroupedLeds(ProductionGroupedLeds):
         self.__gui.update()
 
 
-GROUP_SETUP_START_OF_MESSAGE_CODE = 0xFE
-GROUP_SETUP_END_OF_MESSAGE_CODE = 0xFF
+BAND_SETUP_START_OF_MESSAGE_CODE = 0xFE
+BAND_SETUP_END_OF_MESSAGE_CODE = 0xFF
 
-GROUP_COLOR_START_OF_MESSAGE_CODE = 0xFE
-GROUP_COLOR_END_OF_MESSAGE_CODE = 0xFF
+BAND_COLOR_START_OF_MESSAGE_CODE = 0xFE
+BAND_COLOR_END_OF_MESSAGE_CODE = 0xFF
 
 BYTE_ORDER = 'little'
 
 
-class SerialGroupedLeds(ProductionGroupedLeds):
+class SerialFrequencyBandLeds(ProductionFrequencyBandLeds):
 
     class SerialWriter:
         def __init__(self, serial: Serial, divisor: int):
@@ -230,9 +230,9 @@ class SerialGroupedLeds(ProductionGroupedLeds):
 
                 self.__dividend = (self.__dividend + 1) % self.__divisor
 
-    def __init__(self, led_range: Tuple[int, int], group_led_ranges: List[Iterable[Tuple[int, int]]],
+    def __init__(self, led_range: Tuple[int, int], band_led_ranges: List[Iterable[Tuple[int, int]]],
                  serial: Serial, brightness: int):
-        super().__init__(led_range, group_led_ranges)
+        super().__init__(led_range, band_led_ranges)
 
         self.__brightness = brightness
 
@@ -241,37 +241,37 @@ class SerialGroupedLeds(ProductionGroupedLeds):
             raise ValueError(f'brightness must be >= 0 and <= 255, but was {brightness}.')
 
         if (self.number_of_leds > serial.number_of_leds):
-            raise ValueError(f"The serial connection stated that there are {serial.number_of_leds} LEDs, but this LedStrip object is set for {self.number_of_leds} LEDs.")
+            raise ValueError(f"The serial connection stated that there are {serial.number_of_leds} LEDs, but this LedArray object is set for {self.number_of_leds} LEDs.")
 
         if (self.end_led > serial.number_of_leds and self.number_of_leds > 0):
             raise ValueError(f"The serial connection stated that its led indicies range from 0 (inclusive) to {serial.number_of_leds} "
-                             "(exclusive), but this LedStrip ranges from {self.start_led} (inclusive) to {self.end_led} (exclusive).")
+                             "(exclusive), but this LedArray ranges from {self.start_led} (inclusive) to {self.end_led} (exclusive).")
 
         DIVISOR = int.from_bytes(serial.read(1), byteorder="little")
         self.__serial_writer = self.SerialWriter(serial, DIVISOR)
 
         self.__configure_serial()
 
-    def set_group_rgbs(self, group_rgbs: Iterable[Tuple[int, Iterable[int]]]):
-        self.__send_bytes(GROUP_COLOR_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
-        self.__send_bytes(len(group_rgbs).to_bytes(1, BYTE_ORDER))
+    def set_band_colors(self, band_colors: Iterable[Tuple[int, Iterable[int]]]):
+        self.__send_bytes(BAND_COLOR_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(len(band_colors).to_bytes(1, BYTE_ORDER))
 
-        super().set_group_rgbs(group_rgbs)
+        super().set_band_colors(band_colors)
 
-        self.__send_bytes(GROUP_COLOR_END_OF_MESSAGE_CODE.to_bytes(1, BYTE_ORDER))
+        self.__send_bytes(BAND_COLOR_END_OF_MESSAGE_CODE.to_bytes(1, BYTE_ORDER))
 
-    def _set_group_rgbs(self, group: int, rgb: RGB):
-        self.__send_packet(group, rgb)
+    def _set_band_rgbs(self, band: int, rgb: RGB):
+        self.__send_packet(band, rgb)
 
-        super()._set_group_rgbs(group, rgb)
+        super()._set_band_rgbs(band, rgb)
 
     def __configure_serial(self):
         self.__send_bytes(self.__brightness.to_bytes(length=1, byteorder=BYTE_ORDER))
-        self.__send_bytes(self.number_of_groups.to_bytes(length=1, byteorder=BYTE_ORDER))
-        self.__send_bytes(GROUP_SETUP_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(self.number_of_bands.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(BAND_SETUP_START_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
 
-        for group_number in range(self.number_of_groups):
-            led_ranges = self.get_group_led_ranges(group_number)
+        for band_number in range(self.number_of_bands):
+            led_ranges = self.get_band_led_ranges(band_number)
             led_ranges_length_bytes = len(led_ranges).to_bytes(length=1, byteorder=BYTE_ORDER)
             self.__send_bytes(led_ranges_length_bytes)
 
@@ -283,7 +283,7 @@ class SerialGroupedLeds(ProductionGroupedLeds):
                 packet = start_bytes + end_bytes + checksum.to_bytes(length=1, byteorder=BYTE_ORDER)
                 self.__send_bytes(packet)
 
-        self.__send_bytes(GROUP_SETUP_END_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
+        self.__send_bytes(BAND_SETUP_END_OF_MESSAGE_CODE.to_bytes(length=1, byteorder=BYTE_ORDER))
 
     def __send_packet(self, group_index: int, rgb: RGB):
         packet = group_index.to_bytes(length=1, byteorder=BYTE_ORDER)

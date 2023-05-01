@@ -1,18 +1,18 @@
 import unittest
 from typing import Iterable, List
 
-from leds.grouped_leds import GroupedLeds
-from leds.led_strip import ProductionLedStrip
+from leds.frequency_band_leds import FrequencyBandLeds
+from leds.led_array import ProductionLedArray
 from util import RGB
 
 
-class FakeGroupedLeds(GroupedLeds):
-    def __init__(self, number_of_groups: int = 0):
-        self.__group_colors: List[RGB] = [RGB() for i in range(number_of_groups)]
+class FakeGroupedLeds(FrequencyBandLeds):
+    def __init__(self, number_of_bands: int = 0):
+        self.__band_colors: List[RGB] = [RGB() for i in range(number_of_bands)]
 
     @property
-    def number_of_groups(self) -> int:
-        return len(self.__group_colors)
+    def number_of_bands(self) -> int:
+        return len(self.__band_colors)
 
     @property
     def number_of_leds(self) -> int:
@@ -26,15 +26,15 @@ class FakeGroupedLeds(GroupedLeds):
     def end_led(self) -> int:
         return 1
 
-    def get_group_led_ranges(self, group):
+    def get_band_led_ranges(self, band):
         return {(0, 1)}
 
-    def get_group_rgb(self, group):
-        return self.__group_colors[group]
+    def get_band_color(self, band):
+        return self.__band_colors[band]
 
-    def set_group_rgbs(self, group_rgbs):
-        for group, rgb in group_rgbs:
-            self.__group_colors[group] = RGB(*rgb)
+    def set_band_colors(self, band_colors):
+        for band, rgb in band_colors:
+            self.__band_colors[band] = RGB(*rgb)
 
 
 class TestProductionLedStrip(unittest.TestCase):
@@ -42,21 +42,21 @@ class TestProductionLedStrip(unittest.TestCase):
 
     def setUp(self) -> None:
         self.leds = FakeGroupedLeds(self.NUMBER_OF_GROUPS)
-        self.led_strip = ProductionLedStrip(self.leds)
+        self.led_strip = ProductionLedArray(self.leds)
 
     def test_number_of_groups(self):
-        self.assertEqual(self.leds.number_of_groups,
-                         self.led_strip.number_of_groups)
+        self.assertEqual(self.leds.number_of_bands,
+                         self.led_strip.number_of_bands)
 
     def test_turn_off(self):
         self.led_strip.turn_off()
 
-        for group in range(self.leds.number_of_groups):
+        for band in range(self.leds.number_of_bands):
 
-            with self.subTest(f'group {group} is black.'):
+            with self.subTest(f'band {band} is black.'):
 
-                self.assertTrue(self.leds.get_group_rgb(group) == (0, 0, 0))
-                self.assertTrue(self.led_strip.group_is_rgb(group, (0, 0, 0)))
+                self.assertTrue(self.leds.get_band_color(band) == (0, 0, 0))
+                self.assertTrue(self.led_strip.band_is_rgb(band, (0, 0, 0)))
 
     def test_number_of_queued_colors(self):
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
@@ -91,11 +91,11 @@ class EnqueueRGBTestCase(unittest.TestCase):
 
     def setUp(self):
         self.leds = FakeGroupedLeds(self.NUMBER_OF_GROUPS)
-        self.led_strip = ProductionLedStrip(self.leds)
+        self.led_strip = ProductionLedArray(self.leds)
 
     def check_all_groups_are_rgb(self, rgb: Iterable[int]):
-        for group in range(self.NUMBER_OF_GROUPS):
-            self.assertTrue(self.led_strip.group_is_rgb(group, rgb))
+        for band in range(self.NUMBER_OF_GROUPS):
+            self.assertTrue(self.led_strip.band_is_rgb(band, rgb))
 
 
 class TestEnqueueRGB(EnqueueRGBTestCase):
@@ -108,9 +108,9 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
 
         self.led_strip.show_queued_colors()
 
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_0, RGB))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_1, self.BLACK_RGB))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_2, self.BLACK_RGB))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_0, RGB))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_1, self.BLACK_RGB))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_2, self.BLACK_RGB))
 
     def test_enqueue_one_group_many_times(self):
         RGB_1 = (1, 2, 3)
@@ -125,9 +125,9 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
 
         self.led_strip.show_queued_colors()
 
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_0, RGB_3))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_1, self.BLACK_RGB))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_2, self.BLACK_RGB))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_0, RGB_3))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_1, self.BLACK_RGB))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_2, self.BLACK_RGB))
 
     def test_enqueue_multiple_groups(self):
         RGB_0 = (1, 2, 3)
@@ -142,19 +142,19 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
 
         self.led_strip.show_queued_colors()
 
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_0, RGB_0))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_1, RGB_1))
-        self.assertTrue(self.led_strip.group_is_rgb(self.GROUP_2, RGB_2))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_0, RGB_0))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_1, RGB_1))
+        self.assertTrue(self.led_strip.band_is_rgb(self.GROUP_2, RGB_2))
 
     def test_zero_groups(self):
         NUMBER_OF_GROUPS = 0
 
         leds = FakeGroupedLeds(NUMBER_OF_GROUPS)
-        led_strip = ProductionLedStrip(leds)
+        led_strip = ProductionLedArray(leds)
 
         INVALID_GROUPS = [0, 1, 100]
         for invalid_group in INVALID_GROUPS:
-            with self.subTest(group=invalid_group):
+            with self.subTest(band=invalid_group):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)
@@ -167,7 +167,7 @@ class TestEnqueueRGB(EnqueueRGBTestCase):
         INVALID_GROUPS = [-100, -1, self.NUMBER_OF_GROUPS, self.NUMBER_OF_GROUPS + 100]
 
         for invalid_group in INVALID_GROUPS:
-            with self.subTest(group=invalid_group):
+            with self.subTest(band=invalid_group):
 
                 with self.assertRaises(IndexError):
                     rgb = (10, 20, 30)

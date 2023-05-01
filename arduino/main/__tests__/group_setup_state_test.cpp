@@ -6,10 +6,10 @@ uint8 group_received_number_of_led_ranges = 0;
 uint8 group_received_number_of_groups_received = 0;
 uint8 group_received_group_number = 0;
 
-void on_group_received(uint16* led_ranges, uint8 number_of_led_ranges, uint8 group_number) {
+void on_group_received(uint16* led_ranges, uint8 number_of_led_ranges, uint8 band_number) {
     group_received_led_ranges = led_ranges;
     group_received_number_of_led_ranges = number_of_led_ranges;
-    group_received_group_number = group_number;
+    group_received_group_number = band_number;
     group_received_number_of_groups_received++;
 }
 

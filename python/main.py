@@ -8,109 +8,109 @@ from typing import List, Set, Tuple
 
 import text
 from color_palette import ColorPalette, load_color_palettes
-from leds.grouped_leds import GraphicGroupedLeds, SerialGroupedLeds
-from leds.led_strip import ProductionLedStrip
+from leds.frequency_band_leds import GraphicFrequencyBandLeds, SerialFrequencyBandLeds
+from leds.led_array import ProductionLedArray
 from libraries.audio_in_stream import ProductionAudioInStream
 from libraries.canvas_gui import ProductionCanvasGui
 from libraries.serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE, ProductionSerial, SerialException
 from spectrogram import ProductionSpectrogram
 
 
-def create_groups(start_led: int, end_led: int, number_of_groups: int) -> List[Set[Tuple[int, int]]]:
+def create_bands(start_led: int, end_led: int, number_of_bands: int) -> List[Set[Tuple[int, int]]]:
     if (start_led < 0):
         raise ValueError(f'start_led must be >= 0, but was {start_led}.')
 
     if (end_led < 0):
         raise ValueError(f'end_led must be >= 0, but was {end_led}.')
 
-    if (number_of_groups < 0):
-        raise ValueError(f'number_of_groups ({number_of_groups}) must be >= 0.')
+    if (number_of_bands < 0):
+        raise ValueError(f'number_of_bands ({number_of_bands}) must be >= 0.')
 
     NUMBER_OF_LEDS = end_led - start_led
 
     if (NUMBER_OF_LEDS < 0):
         raise ValueError(f'start_led ({start_led}) must be <= end_led ({end_led}).')
 
-    if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
+    if (NUMBER_OF_LEDS == 0 or number_of_bands == 0):
         return []
 
-    NUMBER_OF_LEDS_PER_GROUP = 0 if (number_of_groups == 0) else max(1, NUMBER_OF_LEDS // number_of_groups)
+    NUMBER_OF_LEDS_PER_BAND = 0 if (number_of_bands == 0) else max(1, NUMBER_OF_LEDS // number_of_bands)
 
-    group_number = 0
-    group_start_led = start_led
-    group_end_led = group_start_led + NUMBER_OF_LEDS_PER_GROUP
+    band_number = 0
+    band_start_led = start_led
+    band_end_led = band_start_led + NUMBER_OF_LEDS_PER_BAND
 
-    group_led_ranges: List[Set[Tuple[int, int]]] = [set() for group_number in range(number_of_groups)]
+    band_led_ranges: List[Set[Tuple[int, int]]] = [set() for band_number in range(number_of_bands)]
 
-    while (group_number < number_of_groups and group_start_led < end_led):
-        group_led_ranges[group_number].add((group_start_led, group_end_led))
+    while (band_number < number_of_bands and band_start_led < end_led):
+        band_led_ranges[band_number].add((band_start_led, band_end_led))
 
-        group_start_led += NUMBER_OF_LEDS_PER_GROUP
-        group_end_led += NUMBER_OF_LEDS_PER_GROUP
-        group_number += 1
+        band_start_led += NUMBER_OF_LEDS_PER_BAND
+        band_end_led += NUMBER_OF_LEDS_PER_BAND
+        band_number += 1
 
     try:
-        LAST_GROUP_LED_RANGE = group_led_ranges[-1].pop()
-        LAST_GROUP_START_LED = LAST_GROUP_LED_RANGE[0]
-        group_led_ranges[-1].add((LAST_GROUP_START_LED, end_led))
+        LAST_BAND_LED_RANGE = band_led_ranges[-1].pop()
+        LAST_BAND_START_LED = LAST_BAND_LED_RANGE[0]
+        band_led_ranges[-1].add((LAST_BAND_START_LED, end_led))
 
     except IndexError as err:
-        if (not len(group_led_ranges) == 0):
+        if (not len(band_led_ranges) == 0):
             raise err
 
     except KeyError as err:
-        if (not len(group_led_ranges[-1]) == 0):
+        if (not len(band_led_ranges[-1]) == 0):
             raise err
 
-    return group_led_ranges
+    return band_led_ranges
 
 
-def create_mirrored_groups(start_led: int, end_led: int, number_of_groups: int) -> List[Set[Tuple[int, int]]]:
+def create_mirrored_bands(start_led: int, end_led: int, number_of_bands: int) -> List[Set[Tuple[int, int]]]:
     if (start_led < 0):
         raise ValueError(f'start_led must be >= 0, but was {start_led}.')
 
     if (end_led < 0):
         raise ValueError(f'end_led must be >= 0, but was {end_led}.')
 
-    if (number_of_groups < 0):
-        raise ValueError(f'number_of_groups ({number_of_groups}) must be >= 0.')
+    if (number_of_bands < 0):
+        raise ValueError(f'number_of_bands ({number_of_bands}) must be >= 0.')
 
     NUMBER_OF_LEDS = end_led - start_led
 
     if (NUMBER_OF_LEDS < 0):
         raise ValueError(f'start_led ({start_led}) must be <= end_led ({end_led}).')
 
-    if (NUMBER_OF_LEDS == 0 or number_of_groups == 0):
+    if (NUMBER_OF_LEDS == 0 or number_of_bands == 0):
         return []
 
-    NUMBER_OF_LEDS_PER_GROUP = max(1, NUMBER_OF_LEDS // number_of_groups)
-    NUMBER_OF_LEDS_PER_LED_RANGE = max(1, NUMBER_OF_LEDS_PER_GROUP // 2)
+    NUMBER_OF_LEDS_PER_BAND = max(1, NUMBER_OF_LEDS // number_of_bands)
+    NUMBER_OF_LEDS_PER_LED_RANGE = max(1, NUMBER_OF_LEDS_PER_BAND // 2)
 
-    group_led_ranges: List[Set[Tuple[int, int]]] = [set() for group_number in range(number_of_groups)]
+    band_led_ranges: List[Set[Tuple[int, int]]] = [set() for band_number in range(number_of_bands)]
 
     led_range_start = start_led
     led_range_end = led_range_start + NUMBER_OF_LEDS_PER_LED_RANGE
 
-    group_number = number_of_groups - 1
+    band_number = number_of_bands - 1
 
-    while (group_number >= 0 and led_range_end <= end_led):
-        group_led_ranges[group_number].add((led_range_start, led_range_end))
+    while (band_number >= 0 and led_range_end <= end_led):
+        band_led_ranges[band_number].add((led_range_start, led_range_end))
 
         led_range_start += NUMBER_OF_LEDS_PER_LED_RANGE
         led_range_end += NUMBER_OF_LEDS_PER_LED_RANGE
-        group_number -= 1
+        band_number -= 1
 
     NUMBER_OF_LED_RANGES = NUMBER_OF_LEDS // NUMBER_OF_LEDS_PER_LED_RANGE
-    group_number = 0 if (NUMBER_OF_LED_RANGES % 2 == 0) else 1
+    band_number = 0 if (NUMBER_OF_LED_RANGES % 2 == 0) else 1
 
-    while (group_number < number_of_groups and led_range_end <= end_led):
-        group_led_ranges[group_number].add((led_range_start, led_range_end))
+    while (band_number < number_of_bands and led_range_end <= end_led):
+        band_led_ranges[band_number].add((led_range_start, led_range_end))
 
         led_range_start += NUMBER_OF_LEDS_PER_LED_RANGE
         led_range_end += NUMBER_OF_LEDS_PER_LED_RANGE
-        group_number += 1
+        band_number += 1
 
-    return group_led_ranges
+    return band_led_ranges
 
 
 def create_default_color_palettes():
@@ -133,7 +133,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description=(text.wrap_text('Display an audio spectrogram of this device\'s default audio input on an array of LEDs. '
-                                                                 'Physical LEDs require a microcontroller (or similar device); serial data is sent from this program to said '
+                                                                 'Physical LEDs require a microcontroller (or similar device); '
+                                                                 'serial data is sent from this program to said '
                                                                  'microcontroller via a user specified serial port.',
                                                                  width=100)))
 
@@ -157,7 +158,7 @@ if __name__ == '__main__':
         parser.error(text.create_invalid_choice_parser_error(BRIGHTNESS_OPT, args.brightness, 'an integer from the range [0, 255])'))
 
     SETTINGS_FIELDNAMES = ['start_led', 'end_led', 'milliseconds_per_audio_chunk', 'min_frequency',
-                           'max_frequency', 'number_of_groups', 'reverse_groups', 'mirror_groups']
+                           'max_frequency', 'number_of_bands', 'reverse_bands', 'mirror_bands']
     SettingsTuple = namedtuple('SettingsTuple', SETTINGS_FIELDNAMES)
 
     settings: SettingsTuple = None
@@ -193,21 +194,21 @@ if __name__ == '__main__':
     except PermissionError:
         parser.error(text.create_read_permission_error_parser_error(COLOR_PALETTES_FILENAME_ARG, args.settings_filename))
 
-    led_strip = ProductionLedStrip()
+    led_strip = ProductionLedArray()
     spectrogram = ProductionSpectrogram()
     try:
         spectrogram = ProductionSpectrogram(color_palettes[0], settings.min_frequency, settings.max_frequency)
     except IndexError:
-        spectrogram = ProductionSpectrogram(start_frequency=settings.min_frequency, end_frequency=settings.max_frequency)
+        spectrogram = ProductionSpectrogram(min_frequency=settings.min_frequency, max_frequency=settings.max_frequency)
 
     with (closing(ProductionAudioInStream()) as audio_in_stream,
           closing(ProductionCanvasGui()) as canvas_gui,
           closing(ProductionSerial()) as serial):
 
-        led_groups = (create_mirrored_groups(settings.start_led, settings.end_led, settings.number_of_groups)
-                      if (settings.mirror_groups) else create_groups(settings.start_led, settings.end_led, settings.number_of_groups))
+        led_groups = (create_mirrored_bands(settings.start_led, settings.end_led, settings.number_of_bands)
+                      if (settings.mirror_bands) else create_bands(settings.start_led, settings.end_led, settings.number_of_bands))
 
-        if (settings.reverse_groups):
+        if (settings.reverse_bands):
             led_groups.reverse()
 
         LED_RANGE = (settings.start_led, settings.end_led)
@@ -218,11 +219,11 @@ if __name__ == '__main__':
                 WRITE_TIMEOUT = 10
 
                 serial.open(args.serial_port, args.baudrate, PARITY_NONE, STOPBITS_ONE, EIGHTBITS, READ_TIMEOUT, WRITE_TIMEOUT)
-                led_strip = ProductionLedStrip(SerialGroupedLeds(LED_RANGE, led_groups, serial, args.brightness))
+                led_strip = ProductionLedArray(SerialFrequencyBandLeds(LED_RANGE, led_groups, serial, args.brightness))
 
             else:
                 canvas_gui.open()
-                led_strip = ProductionLedStrip(GraphicGroupedLeds(LED_RANGE, led_groups, canvas_gui))
+                led_strip = ProductionLedArray(GraphicFrequencyBandLeds(LED_RANGE, led_groups, canvas_gui))
 
         except ValueError as err:
             if (settings.start_led < 0):
@@ -257,7 +258,7 @@ if __name__ == '__main__':
         while True:
             try:
                 if (args.duration is not None and time.time() >= epoch_until_next_color_palette_change and len(color_palettes) > 0):
-                    spectrogram.set_amplitude_rgbs(color_palettes[color_palette_index])
+                    spectrogram.set_amplitude_colors(color_palettes[color_palette_index])
                     color_palette_index = (color_palette_index + 1) % len(color_palettes)
                     epoch_until_next_color_palette_change = time.time() + args.duration
 
@@ -265,10 +266,14 @@ if __name__ == '__main__':
                 spectrogram.update_led_strip(led_strip, AUDIO_CHUNK, NUMBER_OF_FRAMES, audio_in_stream.sample_rate)
 
             except KeyboardInterrupt:
-                led_strip.turn_off()
+                if (serial.is_open()):
+                    led_strip.turn_off()
+
                 print("\nShutting down.")
                 break
 
             except Exception as e:
-                led_strip.turn_off()
+                if (serial.is_open()):
+                    led_strip.turn_off()
+
                 raise e

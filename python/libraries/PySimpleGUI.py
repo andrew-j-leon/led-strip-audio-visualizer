@@ -2620,7 +2620,7 @@ LB = Listbox
 # ---------------------------------------------------------------------- #
 class Radio(Element):
     """
-    Radio Button Element - Used in a group of other Radio Elements to provide user with ability to select only
+    Radio Button Element - Used in a band of other Radio Elements to provide user with ability to select only
     1 choice in a list of choices.
     """
 
@@ -2632,7 +2632,7 @@ class Radio(Element):
         :type text:              (str)
         :param group_id:         Groups together multiple Radio Buttons. Any type works
         :type group_id:          (Any)
-        :param default:          Set to True for the one element of the group you want initially selected
+        :param default:          Set to True for the one element of the band you want initially selected
         :type default:           (bool)
         :param disabled:         set disable state
         :type disabled:          (bool)
@@ -2722,7 +2722,7 @@ class Radio(Element):
         function "pin" to ensure your element is "pinned" to that location in your layout so that it returns there
         when made visible.
 
-        :param value:            if True change to selected and set others in group to unselected
+        :param value:            if True change to selected and set others in band to unselected
         :type value:             (bool)
         :param text:             Text to display next to radio button
         :type text:              (str)
@@ -2793,7 +2793,7 @@ class Radio(Element):
 
     def reset_group(self):
         """
-        Sets all Radio Buttons in the group to not selected
+        Sets all Radio Buttons in the band to not selected
         """
         self.TKIntVar.set(0)
 
@@ -7032,7 +7032,7 @@ class Tab(Element):
 # ---------------------------------------------------------------------- #
 class TabGroup(Element):
     """
-    TabGroup Element groups together your tabs into the group of tabs you see displayed in your window
+    TabGroup Element groups together your tabs into the band of tabs you see displayed in your window
     """
 
     def __init__(self, layout, tab_location=None, title_color=None, tab_background_color=None, selected_title_color=None, selected_background_color=None,
@@ -18841,7 +18841,7 @@ def theme_previewer_swatches():
 def change_look_and_feel(index, force=False):
     """
     Change the "color scheme" of all future PySimpleGUI Windows.
-    The scheme are string names that specify a group of colors. Background colors, text colors, button colors.
+    The scheme are string names that specify a band of colors. Background colors, text colors, button colors.
     There are 13 different color settings that are changed at one time using a single call to ChangeLookAndFeel
     The look and feel table itself has these indexes into the dictionary LOOK_AND_FEEL_TABLE.
     The original list was (prior to a major rework and renaming)... these names still work...
@@ -23578,7 +23578,7 @@ def _copy_files_from_github():
     package_version = "Unknown"
     match = re.search(r'__version__ = \"([\d\.]+)', text_data)
     if match:
-        package_version = match.group(1)
+        package_version = match.band(1)
 
     # create a setup.py file from scratch
     setup_text = ''.join([

@@ -2,7 +2,7 @@ import os
 import unittest
 from typing import List, Tuple
 
-from leds.led_strip import FakeLedStrip
+from leds.led_array import FakeLedArray
 from spectrogram import ProductionSpectrogram
 
 
@@ -28,7 +28,7 @@ class TestSpectrogram(unittest.TestCase):
                       + [RGB_4] * 143)
 
     def setUp(self):
-        self.led_strip = FakeLedStrip(self.NUMBER_OF_GROUPS)
+        self.led_strip = FakeLedArray(self.NUMBER_OF_GROUPS)
         self.spectrogram = ProductionSpectrogram(self.AMPLITUDE_RGBS, self.START_FREQUENCY, self.END_FREQUENCY)
 
     def test_setting_valid_amplitude_rgbs(self):
@@ -36,9 +36,9 @@ class TestSpectrogram(unittest.TestCase):
                                 [(10, 10, 10)],
                                 [(10, 10, 10), (20, 20, 20), (30, 30, 30)]]
 
-        for amplitude_rgbs in VALID_AMPLITUDE_RGBS:
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
-                self.spectrogram.set_amplitude_rgbs(amplitude_rgbs)
+        for amplitude_colors in VALID_AMPLITUDE_RGBS:
+            with self.subTest(amplitude_colors=amplitude_colors):
+                self.spectrogram.set_amplitude_colors(amplitude_colors)
 
     def test_setting_invalid_amplitude_rgbs(self):
         INVALID_AMPLITUDE_RGBS = [[(-1, 0, 0)], [(0, -1, 0)], [(0, 0, -1)],
@@ -47,41 +47,41 @@ class TestSpectrogram(unittest.TestCase):
                                   [(256, 0, 0)], [(0, 256, 0)], [(0, 0, 256)],
                                   [(300, 0, 0)], [(0, 300, 0)], [(0, 0, 300)]]
 
-        for amplitude_rgbs in INVALID_AMPLITUDE_RGBS:
-            with self.subTest(amplitude_rgbs=amplitude_rgbs):
+        for amplitude_colors in INVALID_AMPLITUDE_RGBS:
+            with self.subTest(amplitude_colors=amplitude_colors):
                 with self.assertRaises(ValueError):
-                    self.spectrogram.set_amplitude_rgbs(amplitude_rgbs)
+                    self.spectrogram.set_amplitude_colors(amplitude_colors)
 
     def test_setting_valid_frequency_ranges(self):
         FREQUENCY_RANGES = [(0, 0), (0, 1), (1, 10), (0, 2300)]
 
-        for start_frequency, end_frequency in FREQUENCY_RANGES:
-            with self.subTest(start_frequency=start_frequency, end_frequency=end_frequency):
-                self.spectrogram.set_frequency_range(start_frequency, end_frequency)
+        for min_frequency, max_frequency in FREQUENCY_RANGES:
+            with self.subTest(min_frequency=min_frequency, max_frequency=max_frequency):
+                self.spectrogram.set_frequency_range(min_frequency, max_frequency)
 
     def test_setting_frequency_range_where_start_frequency_is_greater_than_end_frequency(self):
         FREQUENCY_RANGES = [(1, 0), (2, 1), (100, 50)]
 
-        for start_frequency, end_frequency in FREQUENCY_RANGES:
-            with self.subTest(start_frequency=start_frequency, end_frequency=end_frequency):
+        for min_frequency, max_frequency in FREQUENCY_RANGES:
+            with self.subTest(min_frequency=min_frequency, max_frequency=max_frequency):
                 with self.assertRaises(ValueError):
-                    self.spectrogram.set_frequency_range(start_frequency, end_frequency)
+                    self.spectrogram.set_frequency_range(min_frequency, max_frequency)
 
     def test_setting_frequency_range_where_start_frequency_is_less_than_0(self):
         FREQUENCY_RANGES = [(-1, 10), (-100, 10)]
 
-        for start_frequency, end_frequency in FREQUENCY_RANGES:
-            with self.subTest(start_frequency=start_frequency, end_frequency=end_frequency):
+        for min_frequency, max_frequency in FREQUENCY_RANGES:
+            with self.subTest(min_frequency=min_frequency, max_frequency=max_frequency):
                 with self.assertRaises(ValueError):
-                    self.spectrogram.set_frequency_range(start_frequency, end_frequency)
+                    self.spectrogram.set_frequency_range(min_frequency, max_frequency)
 
     def test_setting_frequency_range_where_end_frequency_is_less_than_0(self):
         FREQUENCY_RANGES = [(0, -1), (0, -10)]
 
-        for start_frequency, end_frequency in FREQUENCY_RANGES:
-            with self.subTest(start_frequency=start_frequency, end_frequency=end_frequency):
+        for min_frequency, max_frequency in FREQUENCY_RANGES:
+            with self.subTest(min_frequency=min_frequency, max_frequency=max_frequency):
                 with self.assertRaises(ValueError):
-                    self.spectrogram.set_frequency_range(start_frequency, end_frequency)
+                    self.spectrogram.set_frequency_range(min_frequency, max_frequency)
 
     def test_complex_audio_data(self):
         EXPECTED_COLORS = [(165, 165, 13), (165, 165, 13), (165, 165, 13), (165, 13, 13), (165, 13, 13), (165, 165, 13),
@@ -99,9 +99,9 @@ class TestSpectrogram(unittest.TestCase):
 
     def test_no_amplitude_rgbs(self):
         AMPLITUDE_RGBS = []
-        self.spectrogram.set_amplitude_rgbs(AMPLITUDE_RGBS)
+        self.spectrogram.set_amplitude_colors(AMPLITUDE_RGBS)
 
-        EXPECTED_COLORS = [(0, 0, 0)] * self.led_strip.number_of_groups
+        EXPECTED_COLORS = [(0, 0, 0)] * self.led_strip.number_of_bands
 
         self.check_update_led_strips(EXPECTED_COLORS)
 
@@ -139,10 +139,10 @@ class TestSpectrogram(unittest.TestCase):
 
         self.assertEqual(self.led_strip.number_of_queued_colors, 0)
 
-        for group in range(self.led_strip.number_of_groups):
-            with self.subTest(led_strip_group=group, actual_group_color=self.led_strip.group_colors[group]):
+        for band in range(self.led_strip.number_of_bands):
+            with self.subTest(led_strip_band=band, actual_group_color=self.led_strip.band_colors[band]):
 
-                self.assertTrue(self.led_strip.group_is_rgb(group, self.RGB_0))
+                self.assertTrue(self.led_strip.band_is_rgb(band, self.RGB_0))
 
     def check_update_led_strips(self, expected_rgbs: List[Tuple[int, int, int]]):
         ''' Check against the audio data contained in the file: `./audio` '''
@@ -155,9 +155,9 @@ class TestSpectrogram(unittest.TestCase):
             self.spectrogram.update_led_strip(self.led_strip, audio_data, self.NUMBER_OF_FRAMES, self.SAMPLING_RATE)
 
             self.assertEqual(self.led_strip.number_of_queued_colors, 0)
-            self.assertEqual(self.led_strip.number_of_groups, len(expected_rgbs))
+            self.assertEqual(self.led_strip.number_of_bands, len(expected_rgbs))
 
-            for group in range(self.led_strip.number_of_groups):
-                with self.subTest(led_strip_group=group, actual_group_color=self.led_strip.group_colors[group]):
+            for band in range(self.led_strip.number_of_bands):
+                with self.subTest(led_strip_band=band, actual_group_color=self.led_strip.band_colors[band]):
 
-                    self.assertTrue(self.led_strip.group_is_rgb(group, expected_rgbs[group]))
+                    self.assertTrue(self.led_strip.band_is_rgb(band, expected_rgbs[band]))
