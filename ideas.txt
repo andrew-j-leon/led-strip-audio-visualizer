@@ -4,3 +4,5 @@
 3) Try and use autotools to make installation easier (just type 'make' and you can start using the program)
 4) For terminal version, pass in things like the port (/dev/ttyACM0) & baudrate? as command line arguments; leave things like color pallettes for config files (then pass their location via command line arguments)
 5) Make 3D visualizer kinda like this (where x-axis is time; each row is a different frequency?) : https://www.youtube.com/watch?v=HOLHZk45K8I&ab_channel=Kurenai
+6) Add --verbose option
+7) Add options to override settings; what should happen if all required settings are met with options? No setting_filename required?
