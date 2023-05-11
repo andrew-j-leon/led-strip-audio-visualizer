@@ -48,7 +48,7 @@ You can install the necessary 3rd party Python dependencies by running the follo
 
     python -m pip install -r python/requirements.txt
 
-> **Note:** If you have trouble installing the PyAudio dependencies, you may need to download it from the [official website](https://people.csail.mit.edu/hubert/pyaudio/). On Windows, you can also try installing PyAudio using [PipWin](https://pypi.org/project/pipwin/) instead of pip. On Ubuntu, you may need to install the PyAudio dependenciy "libasound". To do so, simply do...
+> **Note:** If you have trouble installing the PyAudio dependencies, you may need to download it from the [official website](https://people.csail.mit.edu/hubert/pyaudio/). On Windows, you can also try installing PyAudio using [PipWin](https://pypi.org/project/pipwin/) instead of pip. On Ubuntu, you may need to install the PyAudio dependency "libasound". To do so, simply do...
 
     sudo apt-get install libasound-dev
 
