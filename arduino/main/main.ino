@@ -43,8 +43,8 @@ SerialReader* serial_reader;
 
 u16Array* groups;
 
-FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip; // Neopixel Strip
-// FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_RGB> led_strip; // PL9823
+// FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_GRB> led_strip; // Neopixel Strip
+FastLED_NeoPixel<NUMBER_OF_LEDS, PIN_NUMBER, NEO_RGB> led_strip; // PL9823
 
 PacketState packet_state = PacketState(BYTES_PER_PACKET);
 GroupSetupState* group_setup_state = nullptr;

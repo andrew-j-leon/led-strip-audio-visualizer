@@ -114,13 +114,33 @@ def create_mirrored_bands(start_led: int, end_led: int, number_of_bands: int) ->
 
 
 def create_default_color_palettes():
-    BLUE = (13, 13, 165)
-    LIGHT_BLUE = (13, 165, 165)
-    GREEN = (13, 165, 13)
-    YELLOW = (165, 165, 13)
-    RED = (165, 13, 13)
+    BLUE_1 = (13, 13, 165)
+    LIGHT_BLUE_1 = (13, 165, 165)
+    GREEN_1 = (13, 165, 13)
+    YELLOW_1 = (165, 165, 13)
+    RED_1 = (165, 13, 13)
 
-    return [ColorPalette(30 * [BLUE] + 5 * [LIGHT_BLUE] + 5 * [GREEN] + 5 * [YELLOW] + 1 * [RED])]
+    GREEN_2 = (0, 79, 79)
+    BLUE_2 = (80, 199, 118)
+    YELLOW_2 = (219, 237, 52)
+    ORANGE_2 = (250, 124, 0)
+
+    PURPLE_3 = (13, 0, 51)
+    LIGHT_PURPLE_3 = (96, 0, 148)
+    LIGHTER_PURPLE_3 = (209, 88, 134)
+    PINK_3 = (252, 0, 80)
+
+    PURPLE_4 = (66, 10, 92)
+    PINK_4 = (235, 18, 181)
+    BLUE_4 = (0, 166, 166)
+    YELLOW_4 = (253, 253, 0)
+
+    COLOR_PALETTE_1 = ColorPalette(30 * [BLUE_1] + 5 * [LIGHT_BLUE_1] + 5 * [GREEN_1] + 5 * [YELLOW_1] + 1 * [RED_1])
+    COLOR_PALETTE_2 = ColorPalette(30 * [GREEN_2] + 7 * [BLUE_2] + 8 * [YELLOW_2] + 1 * [ORANGE_2])
+    COLOR_PALETTE_3 = ColorPalette(30 * [PURPLE_3] + 7 * [LIGHT_PURPLE_3] + 8 * [LIGHTER_PURPLE_3] + 1 * [PINK_3])
+    COLOR_PALETTE_4 = ColorPalette(30 * [PURPLE_4] + 7 * [PINK_4] + 8 * [BLUE_4] + 1 * [YELLOW_4])
+
+    return [COLOR_PALETTE_1, COLOR_PALETTE_2, COLOR_PALETTE_3, COLOR_PALETTE_4]
 
 
 if __name__ == '__main__':
