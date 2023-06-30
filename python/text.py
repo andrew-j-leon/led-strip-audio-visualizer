@@ -1,15 +1,6 @@
 import textwrap
 
 
-def wrap_text(text: str, width: int = 70) -> str:
-    lines = text.splitlines()
-
-    for i, line in enumerate(lines):
-        lines[i] = textwrap.fill(line, width)
-
-    return '\n'.join(lines)
-
-
 def create_generic_parser_error(argument_names, message):
     args = '/'.join(argument_names)
     return (f'argument {args}: {message}')
@@ -28,7 +19,21 @@ def create_read_permission_error_parser_error(argument_name, filename):
     return f'Could not open the {argument_name} "{filename}" : do not have read permission.'
 
 
-SETTINGS_HELP_MESSAGE = (
+def _wrap_text(text: str, width: int = 80) -> str:
+    lines = text.splitlines()
+
+    for i, line in enumerate(lines):
+        lines[i] = textwrap.fill(line, width)
+
+    return '\n'.join(lines)
+
+
+PROGRAM_DESCRIPTION = _wrap_text('Display an audio spectrogram of this device\'s default audio input on an array of LEDs. '
+                                 'Physical LEDs require a microcontroller (or similar device); '
+                                 'serial data is sent from this program to said '
+                                 'microcontroller via a user specified serial port.')
+
+SETTINGS_HELP_MESSAGE = _wrap_text(
     '''\
 The path to a JSON file containing configuration settings for this program. Said JSON file MUST include the following fields:
 
@@ -51,7 +56,7 @@ mirror_bands (boolean): If True, will split bands symmetrically about the center
 )
 
 
-COLOR_PALETTES_EXAMPLE = (
+COLOR_PALETTES_EXAMPLE = _wrap_text(
     '''\
 # Green, Blue, Yellow, Orange
 30 0 79 39
@@ -67,7 +72,7 @@ COLOR_PALETTES_EXAMPLE = (
 '''
 )
 
-COLOR_PALETTES_HELP_MESSAGE = (
+COLOR_PALETTES_HELP_MESSAGE = _wrap_text(
     f'''\
 The path to a text file containing information about each color palette. If left empty, this program uses a default color palette.
 
@@ -103,7 +108,8 @@ Lines 8 - 11: *These lines define another color palette (similar to lines 2-5).*
 '''
 )
 
-DURATION_HELP_MESSAGE = 'The number of seconds between each color palette change. If left empty, the first color palette is used indefinitely.'
-SERIAL_PORT_HELP_MESSAGE = 'The serial port. If left empty, will display a graphical LED spectrogram.'
-BAUDRATE_HELP_MESSAGE = 'The serial baudrate.'
-BRIGHTNESS_HELP_MESSAGE = 'The brightness of the physical LEDs. Allowed values include integers within the range [0, 255].'
+DURATION_HELP_MESSAGE = _wrap_text('The number of seconds between each color palette change. If left empty, the first color palette is used indefinitely.')
+SERIAL_PORT_HELP_MESSAGE = _wrap_text('The serial port. If left empty, will display a graphical LED spectrogram.')
+BAUDRATE_HELP_MESSAGE = _wrap_text('The serial baudrate.')
+BRIGHTNESS_HELP_MESSAGE = _wrap_text('The brightness of the physical LEDs. Allowed values include integers within the range [0, 255].')
+REVERSE_BANDS_HELP_MESSAGE = _wrap_text('A value of 0 will order frequency bands from smallest_frequency -> largest_frequency. A non-zero value will order frequency bands from largest_frequency -> smallest_freqency. Will override (not "overwrite") the settings file\'s configuration.')

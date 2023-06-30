@@ -2,8 +2,8 @@ import argparse
 import json
 import sys
 import time
-from collections import namedtuple
 from contextlib import closing
+from types import SimpleNamespace
 from typing import List, Set, Tuple
 
 import text
@@ -150,21 +150,19 @@ if __name__ == '__main__':
     SERIAL_PORT_OPT = ['-p', '--serial_port']
     BAUDRATE_OPT = ['-r', '--baudrate']
     BRIGHTNESS_OPT = ['-b', '--brightness']
+    REVERSE_BANDS_OPT = ['--reverse_bands']
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                     description=(text.wrap_text('Display an audio spectrogram of this device\'s default audio input on an array of LEDs. '
-                                                                 'Physical LEDs require a microcontroller (or similar device); '
-                                                                 'serial data is sent from this program to said '
-                                                                 'microcontroller via a user specified serial port.',
-                                                                 width=100)))
+                                     description=text.PROGRAM_DESCRIPTION)
 
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
-    parser.add_argument(SETTINGS_FILENAME_ARG, help=text.wrap_text(text.SETTINGS_HELP_MESSAGE))
-    parser.add_argument(COLOR_PALETTES_FILENAME_ARG, nargs='?', help=text.wrap_text(text.COLOR_PALETTES_HELP_MESSAGE))
-    parser.add_argument(*DURATION_OPT, type=int, help=text.wrap_text(text.DURATION_HELP_MESSAGE))
-    parser.add_argument(*SERIAL_PORT_OPT, help=text.wrap_text(text.SERIAL_PORT_HELP_MESSAGE))
-    parser.add_argument(*BAUDRATE_OPT, type=int, default=1999999, help=text.wrap_text(text.BAUDRATE_HELP_MESSAGE))
-    parser.add_argument(*BRIGHTNESS_OPT, type=int, default=20, help=text.wrap_text(text.BRIGHTNESS_HELP_MESSAGE))
+    parser.add_argument(SETTINGS_FILENAME_ARG, help=text.SETTINGS_HELP_MESSAGE)
+    parser.add_argument(COLOR_PALETTES_FILENAME_ARG, nargs='?', help=text.COLOR_PALETTES_HELP_MESSAGE)
+    parser.add_argument(*DURATION_OPT, type=int, help=text.DURATION_HELP_MESSAGE)
+    parser.add_argument(*SERIAL_PORT_OPT, help=text.SERIAL_PORT_HELP_MESSAGE)
+    parser.add_argument(*BAUDRATE_OPT, type=int, default=1999999, help=text.BAUDRATE_HELP_MESSAGE)
+    parser.add_argument(*BRIGHTNESS_OPT, type=int, default=20, help=text.BRIGHTNESS_HELP_MESSAGE)
+    parser.add_argument(*REVERSE_BANDS_OPT, type=int, help=text.REVERSE_BANDS_HELP_MESSAGE)
 
     args = parser.parse_args()
 
@@ -177,25 +175,20 @@ if __name__ == '__main__':
     if (args.brightness not in range(0, 255)):
         parser.error(text.create_invalid_choice_parser_error(BRIGHTNESS_OPT, args.brightness, 'an integer from the range [0, 255])'))
 
-    SETTINGS_FIELDNAMES = ['start_led', 'end_led', 'milliseconds_per_audio_chunk', 'min_frequency',
-                           'max_frequency', 'number_of_bands', 'reverse_bands', 'mirror_bands']
-    SettingsTuple = namedtuple('SettingsTuple', SETTINGS_FIELDNAMES)
-
-    settings: SettingsTuple = None
+    settings = SimpleNamespace()
 
     try:
         with open(args.settings_filename) as file:
-            settings = SettingsTuple(**json.load(file))
+            settings = SimpleNamespace(**json.load(file))
+
+            if (args.reverse_bands is not None):
+                settings.reverse_bands = args.reverse_bands
 
     except FileNotFoundError:
         parser.error(text.create_file_not_found_parser_error(SETTINGS_FILENAME_ARG, args.settings_filename))
 
     except PermissionError:
         parser.error(text.create_read_permission_error_parser_error(SETTINGS_FILENAME_ARG, args.settings_filename))
-
-    except TypeError:
-        parser.error(f'The {SETTINGS_FILENAME_ARG} {args.settings_filename} must point to a JSON '
-                     f'file with only the following fields: {SETTINGS_FIELDNAMES}.')
 
     color_palettes = create_default_color_palettes()
 
@@ -218,6 +211,7 @@ if __name__ == '__main__':
     spectrogram = ProductionSpectrogram()
     try:
         spectrogram = ProductionSpectrogram(color_palettes[0], settings.min_frequency, settings.max_frequency)
+
     except IndexError:
         spectrogram = ProductionSpectrogram(min_frequency=settings.min_frequency, max_frequency=settings.max_frequency)
 
