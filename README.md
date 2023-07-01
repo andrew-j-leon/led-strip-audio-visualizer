@@ -50,7 +50,12 @@ You can install the necessary 3rd party Python dependencies by running the follo
 
 > **Note:** If you have trouble installing the PyAudio dependencies, you may need to download it from the [official website](https://people.csail.mit.edu/hubert/pyaudio/). On Windows, you can also try installing PyAudio using [PipWin](https://pypi.org/project/pipwin/) instead of pip. On Ubuntu, you may need to install the PyAudio dependency "libasound". To do so, simply do...
 
-    sudo apt-get install libasound-dev
+    sudo apt-get install libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0
+
+> **Note:** Sometimes, Python does not come pre-installed with Tkinter. To install Tkinter for 
+Python3.10 on Linux:
+
+    sudo apt-get install python3.10-tk
 
 ## Step 5: Connect the Arduino to the LED Strip
 
