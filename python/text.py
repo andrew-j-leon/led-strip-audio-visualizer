@@ -47,7 +47,7 @@ min_frequency (int): The minimum frequency (in Hertz [Hz]) of the frequency rang
 
 max_frequency (int): The maximum frequency (in Hertz [Hz]) of the frequency range this audio spectrogram will display.
 
-number_of_bands (int): The number of audio bands the audio spectrogram will divide the frequency range into. The LED range [start_led, end_led] is equally divided into number_of_bands many band; each band of LEDs represents a frequency band. If number_of_bands is not a factor of the number of LEDs, then all remaining LEDs are treated as the last frequency band.
+number_of_groups (int): The number of audio bands the audio spectrogram will divide the frequency range into. The LED range [start_led, end_led] is equally divided into number_of_groups many band; each band of LEDs represents a frequency band. If number_of_groups is not a factor of the number of LEDs, then all remaining LEDs are treated as the last frequency band.
 
 reverse_bands (boolean): If True, will display bands ascending (from highest frequency to lowest frequency). If False, will display bands ascending (from lowest frequency to highest frequency).
 

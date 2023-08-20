@@ -4,7 +4,4 @@ __pycache__
 venv
 htmlcov
 [.]coverage
-saved_settings
-playground.py
-/diagrams
 /saves

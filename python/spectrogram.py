@@ -1,12 +1,10 @@
 import math
-from abc import ABC, abstractmethod
-from statistics import mean
-from typing import Iterable, List, Union
+import statistics
+from typing import List, Union
 
 import numpy
-from leds.led_array import LedArray
-from non_negative_int_range import NonNegativeIntRange
-from util import RGB
+from color_palette import ColorPalette
+from grouped_leds import GroupedLedsQueue
 
 # ================================================================== Some useful formulas ==================================================================
 #
@@ -51,83 +49,26 @@ def _get_fft_index(frequency: Union[int, float], sampling_rate: int, number_of_f
     return round(frequency / (sampling_rate / number_of_frames))
 
 
-class Spectrogram(ABC):
-    @abstractmethod
-    def set_amplitude_colors(self, amplitude_colors: List[Iterable[int]]):
-        pass
+def update(grouped_leds: GroupedLedsQueue, audio_data: bytes, number_of_frames: int, sampling_rate: int,
+           bands: List[List[int]], color_palette_groups: List[ColorPalette]):
 
-    @abstractmethod
-    def set_frequency_range(self, min_frequency: int, max_frequency: int):
-        pass
+    audio_data_decimal: bytes = numpy.frombuffer(audio_data, dtype=numpy.int16)
+    fft: numpy.ndarray = numpy.fft.fft(audio_data_decimal)
 
-    @abstractmethod
-    def update_led_strip(self, led_strip: LedArray, audio_data: bytes, number_of_frames: int, sampling_rate: int):
-        '''
-            Args:
-                `audio_data (bytes)`: WAV audio data.
-                `number_of_frames (int)`: The number of frames `audio_data` represents.
-                `sampling_rate (int)`: The number of samples per second.
-                `format (numpy.signedinteger)`: The format of the audio (i.e. 16 bit, 32 bit, etc.).
-        '''
+    fft_length = math.ceil(len(fft) / 2)  # the first half of the fft is a mirror copy of the 2nd half; we can ignore the 2nd half
 
+    for band in bands:
+        frequency_start_index = _get_fft_index(band[0], sampling_rate, number_of_frames)
+        frequency_end_index = _get_fft_index(band[1], sampling_rate, number_of_frames)
 
-class ProductionSpectrogram(Spectrogram):
-    def __init__(self, amplitude_colors: List[Iterable[int]] = [],
-                 min_frequency: int = 0, max_frequency: int = 0):
-        self.__amplitude_colors: List[RGB] = []
-        self.__frequency_range: NonNegativeIntRange = NonNegativeIntRange()
+        average_amplitude = statistics.mean(_get_fft_amplitude(fft[i], fft_length)
+                                            for i in range(frequency_start_index, frequency_end_index))
 
-        self.set_amplitude_colors(amplitude_colors)
-        self.set_frequency_range(min_frequency, max_frequency)
+        colors = color_palette_groups[band[2]].get_colors(average_amplitude)
 
-    def set_amplitude_colors(self, amplitude_colors):
-        self.__amplitude_colors = [RGB(red, green, blue) for red, green, blue in amplitude_colors]
+        for i in range(3, len(band)):
+            if (not grouped_leds.group_is_color(band[i], colors[i - 3])):
+                grouped_leds.enqueue_color(band[i], colors[i - 3])
 
-    def set_frequency_range(self, min_frequency, max_frequency):
-        self.__frequency_range = NonNegativeIntRange(min_frequency, max_frequency)
-
-    def update_led_strip(self, led_strip, audio_data, number_of_frames, sampling_rate):
-        '''
-            Args:
-                `audio_data (bytes)`: WAV audio data.
-                `number_of_frames (int)`: The number of frames `audio_data` represents.
-                `sampling_rate (int)`: The number of samples per second.
-                `format (numpy.signedinteger)`: The format of the audio (i.e. 16 bit, 32 bit, etc.).
-        '''
-        audio_data_decimal: bytes = numpy.frombuffer(audio_data, dtype=numpy.int16)
-        fft: numpy.ndarray = numpy.fft.fft(audio_data_decimal)
-
-        fft_length = math.ceil(len(fft) / 2)  # the first half of the fft is a mirror copy of the 2nd half; we can ignore the 2nd half
-
-        fft_start_at_min_freq: int = min(fft_length - 1,
-                                         _get_fft_index(self.__frequency_range.start, sampling_rate, number_of_frames))
-
-        fft_end_at_max_freq: int = min(fft_length - 1,
-                                       _get_fft_index(self.__frequency_range.end, sampling_rate, number_of_frames)) + 1
-
-        fft_sublist_length: int = max(1, (fft_end_at_max_freq - fft_start_at_min_freq) // led_strip.number_of_bands)
-
-        for fft_sublist_start, led_strip_band in zip(range(fft_start_at_min_freq, fft_end_at_max_freq, fft_sublist_length),
-                                                     range(led_strip.number_of_bands)):
-
-            fft_sublist_end: int = min(fft_sublist_start + fft_sublist_length, fft_end_at_max_freq)
-
-            fft_sublist_average_amplitude = mean(_get_fft_amplitude(fft[i], fft_length)
-                                                 for i in range(fft_sublist_start, fft_sublist_end))
-
-            rgb = self.__get_rgb(fft_sublist_average_amplitude)
-
-            if (not led_strip.band_is_rgb(led_strip_band, rgb)):
-                led_strip.enqueue_rgb(led_strip_band, rgb)
-
-        led_strip.show_queued_colors()
-        led_strip.clear_queued_colors()
-
-    def __get_rgb(self, amplitude: Union[int, float]) -> RGB:
-        try:
-            amplitude = max(0, amplitude)
-            amplitude = min(amplitude, len(self.__amplitude_colors) - 1)
-            return self.__amplitude_colors[round(amplitude)]
-
-        except IndexError:
-            return RGB()
+    grouped_leds.show_queued_colors()
+    grouped_leds.clear_queued_colors()
