@@ -108,13 +108,12 @@ if __name__ == '__main__':
         FRAMES_PER_MILLISECOND = audio_in_stream.sample_rate / MILLISECONDS_PER_SECOND
         NUMBER_OF_FRAMES = int(FRAMES_PER_MILLISECOND * args.milliseconds_per_audio_chunk)
 
-        color_palette_group_deadline = time.time() + args.duration
+        color_palette_group_deadline = time.time() if (args.duration is None) else time.time() + args.duration
         color_palette_group_index = 0
 
         while True:
             try:
-                if (args.duration is not None and time.time() >= color_palette_group_deadline
-                        and len(color_palette_groups) > 0):
+                if (args.duration is not None and time.time() >= color_palette_group_deadline):
 
                     color_palette_group_index = (color_palette_group_index + 1) % len(color_palette_groups)
                     color_palette_group_deadline = time.time() + args.duration
