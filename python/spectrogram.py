@@ -5,6 +5,7 @@ from typing import List, Union
 import numpy
 from color_palette import ColorPalette
 from grouped_leds import GroupedLedsQueue
+from phons import Sones
 
 # ================================================================== Some useful formulas ==================================================================
 #
@@ -65,6 +66,34 @@ def update(grouped_leds: GroupedLedsQueue, audio_data: bytes, number_of_frames: 
                                             for i in range(frequency_start_index, frequency_end_index))
 
         colors = color_palette_groups[band[2]].get_colors(average_amplitude)
+
+        for i in range(3, len(band)):
+            if (not grouped_leds.group_is_color(band[i], colors[i - 3])):
+                grouped_leds.enqueue_color(band[i], colors[i - 3])
+
+    grouped_leds.show_queued_colors()
+    grouped_leds.clear_queued_colors()
+
+
+def update_sones(grouped_leds: GroupedLedsQueue, audio_data: bytes, number_of_frames: int, sampling_rate: int,
+                 bands: List[List[int]], color_palette_groups: List[ColorPalette], amp_to_sones: List[Sones]):
+
+    audio_data_decimal: bytes = numpy.frombuffer(audio_data, dtype=numpy.int16)
+    fft: numpy.ndarray = numpy.fft.fft(audio_data_decimal)
+
+    fft_length = math.ceil(len(fft) / 2)  # the first half of the fft is a mirror copy of the 2nd half; we can ignore the 2nd half
+
+    for band_number in range(len(bands)):
+        band = bands[band_number]
+        frequency_start_index = _get_fft_index(band[0], sampling_rate, number_of_frames)
+        frequency_end_index = _get_fft_index(band[1], sampling_rate, number_of_frames)
+
+        average_amplitude = statistics.mean(_get_fft_amplitude(fft[i], fft_length)
+                                            for i in range(frequency_start_index, frequency_end_index))
+
+        sones = amp_to_sones[band_number].from_amplitude(average_amplitude)
+
+        colors = color_palette_groups[band[2]].get_colors(sones)
 
         for i in range(3, len(band)):
             if (not grouped_leds.group_is_color(band[i], colors[i - 3])):

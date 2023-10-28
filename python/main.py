@@ -57,6 +57,7 @@ if __name__ == '__main__':
     SERIAL_PORT_OPT = ['-p', '--serial_port']
     BAUDRATE_OPT = ['-r', '--baudrate']
     BRIGHTNESS_OPT = ['-b', '--brightness']
+    # SONES_OPT = ['-s', '--sones']
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description=text.PROGRAM_DESCRIPTION)
@@ -67,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument(*SERIAL_PORT_OPT)
     parser.add_argument(*BAUDRATE_OPT, type=int, default=1999999)
     parser.add_argument(*BRIGHTNESS_OPT, type=int, default=20)
+    # parser.add_argument(*SONES_OPT, type=bool, action=argparse.BooleanOptionalAction, default=False)
 
     args = parser.parse_args()
 
@@ -111,6 +113,12 @@ if __name__ == '__main__':
         color_palette_group_deadline = time.time() if (args.duration is None) else time.time() + args.duration
         color_palette_group_index = 0
 
+        # sones = []
+        # if (args.sones):
+        #     for band in settings.bands:
+        #         avg_frequency = (band[0] + band[1])/2
+        #         sones.append(Sones(round(avg_frequency)))
+
         while True:
             try:
                 if (args.duration is not None and time.time() >= color_palette_group_deadline):
@@ -119,6 +127,11 @@ if __name__ == '__main__':
                     color_palette_group_deadline = time.time() + args.duration
 
                 AUDIO_CHUNK = audio_in_stream.read(NUMBER_OF_FRAMES)
+
+                # if (args.sones):
+                #     spectrogram.update_sones(grouped_leds_queue, AUDIO_CHUNK, NUMBER_OF_FRAMES, audio_in_stream.sample_rate,
+                #                    settings.bands, color_palette_groups[color_palette_group_index], sones)
+
                 spectrogram.update(grouped_leds_queue, AUDIO_CHUNK, NUMBER_OF_FRAMES, audio_in_stream.sample_rate,
                                    settings.bands, color_palette_groups[color_palette_group_index])
 
