@@ -2,3 +2,4 @@ numpy==1.21.4
 Pillow==10.1.0
 PyAudio==0.2.11
 pyserial==3.5
+pyserial==3.5
